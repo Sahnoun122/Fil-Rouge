@@ -1,0 +1,314 @@
+ CAHIER DES CHARGES 
+Application intelligente de planification marketing et de contenu digital
+
+1. Présentation générale du projet
+1.1 Contexte
+Dans le domaine du marketing digital, de nombreuses entreprises et créateurs de contenu publient sur les réseaux sociaux sans stratégie marketing structurée. Cette approche improvisée entraîne un manque de cohérence, une faible acquisition de prospects, un taux de conversion réduit et une fidélisation insuffisante.
+
+1.2 Objectif général
+Développer une application web intelligente permettant de :
+Concevoir automatiquement une stratégie marketing digitale complète
+
+
+Basée sur le modèle « Plan Marketing en une page »
+
+
+Faciliter la planification du contenu sur les réseaux sociaux
+
+
+Assister les marketeurs grâce à l’intelligence artificielle
+
+
+
+1.3 Public cible
+Marketeurs débutants
+
+
+Freelancers en marketing digital
+
+
+Petites et moyennes entreprises (PME)
+
+
+Créateurs de contenu et entrepreneurs
+
+
+
+2. Problématique
+Les marketeurs manquent d’outils simples et intelligents pour construire rapidement une stratégie marketing claire, cohérente et exploitable, tout en organisant efficacement leur contenu digital.
+
+3. Solution proposée
+L’application propose une solution centralisée qui permet à l’utilisateur de :
+Remplir un formulaire stratégique simple
+
+
+Générer automatiquement une stratégie marketing complète
+
+
+Structurer l’acquisition, la conversion et la fidélisation
+
+
+Transformer la stratégie en planning de contenu
+
+
+Exporter la stratégie en format PDF
+
+
+
+4. Rôles et profils des utilisateurs
+4.1 Administrateur
+Gestion des utilisateurs
+
+
+Supervision des stratégies générées
+
+
+Consultation des statistiques globales
+
+
+Maintenance de la plateforme
+
+
+4.2 Marketeur / Utilisateur
+Création de stratégies marketing
+
+
+Utilisation du module IA
+
+
+Planification du contenu
+
+
+Export PDF
+
+
+Accès au tableau de bord
+
+
+4.3 Visiteur
+Consultation de la page d’accueil
+
+
+Inscription et connexion
+
+
+
+🤖 5. MODULE INTELLIGENCE ARTIFICIELLE
+5.1 Rôle de l’IA
+L’intelligence artificielle agit comme un assistant marketing stratégique.
+ Elle aide l’utilisateur à structurer ses idées et à générer une stratégie claire à partir d’informations simples.
+
+5.2 Fonctionnement de l’IA
+L’IA :
+Analyse les données saisies par l’utilisateur
+
+
+Applique des règles marketing prédéfinies
+
+
+Génère automatiquement des recommandations textuelles
+
+
+Propose une organisation stratégique cohérente
+
+
+
+📊 6. STRATÉGIE MARKETING (PLAN MARKETING EN 1 PAGE)
+
+🔴 AVANT – PROSPECT
+1️⃣ Marché cible
+Définition automatique de :
+Persona principal
+
+
+Besoins et problèmes
+
+
+Comportement digital
+
+
+
+2️⃣ Message marketing
+Génération de :
+Proposition de valeur
+
+
+Message principal
+
+
+Ton de communication
+
+
+
+3️⃣ Canaux de communication
+Sélection intelligente :
+Réseaux sociaux adaptés
+
+
+Type de contenu par plateforme
+
+
+
+🟡 PENDANT – LEAD
+4️⃣ Système de capture de prospects
+Formulaire
+
+
+Landing page
+
+
+Offres incitatives (réduction, contenu gratuit)
+
+
+
+5️⃣ Système de nurturing (fidélisation du prospect)
+Séquences de contenu
+
+
+Emails informatifs
+
+
+Relances programmées
+
+
+
+6️⃣ Stratégie de conversion
+Appels à l’action
+
+
+Offres promotionnelles
+
+
+Argumentaire de vente
+
+
+
+🟢 APRÈS – CLIENT
+7️⃣ Expérience client
+Qualité du service
+
+
+Suivi client
+
+
+Satisfaction utilisateur
+
+
+
+8️⃣ Augmentation de la valeur client
+Programmes de fidélité
+
+
+Offres personnalisées
+
+
+Vente additionnelle
+
+
+
+9️⃣ Stratégie de recommandation
+Parrainage
+
+
+Avis clients
+
+
+Récompenses
+
+
+
+📅 7. MODULE PLANIFICATION DE CONTENU
+Fonctionnalités principales
+Création de publications
+
+
+Choix de la plateforme
+
+
+Date de publication
+
+
+Association à une stratégie
+
+
+Calendrier mensuel
+
+
+Statut (à publier / publié)
+
+
+
+Fonctionnalités avancées
+Suggestions de contenu par l’IA
+
+
+Répartition du contenu (Avant / Pendant / Après)
+
+
+Alertes de régularité
+
+
+Historique des publications
+
+
+
+📊 8. TABLEAU DE BORD
+Nombre de stratégies créées
+
+
+Publications planifiées
+
+
+Répartition par plateforme
+
+
+Recommandations générées par l’IA
+
+
+
+9. Exigences fonctionnelles
+Gestion complète des stratégies
+
+
+Génération automatique via l’IA
+
+
+Planification de contenu
+
+
+Export PDF
+
+
+
+10. Exigences non fonctionnelles
+Interface simple et intuitive
+
+
+Application responsive
+
+
+Sécurité des données
+
+
+Performance optimale
+
+
+
+11. Technologies utilisées
+Frontend : React.js
+
+
+Backend : Node.js / Express.js
+
+
+Base de données : MongoDB
+
+
+Authentification : JWT
+
+
+Génération PDF
+
+
+IA : règles métier + génération de texte
+
