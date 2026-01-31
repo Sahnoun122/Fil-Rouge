@@ -1,0 +1,1 @@
+// Strategies list page
