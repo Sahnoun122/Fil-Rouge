@@ -1,1 +1,0 @@
-// Create strategy page

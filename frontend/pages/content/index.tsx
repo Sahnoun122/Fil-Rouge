@@ -1,1 +1,0 @@
-// Content list page
