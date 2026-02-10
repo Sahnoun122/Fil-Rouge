@@ -51,7 +51,7 @@ const Footer = () => {
             {/* Logo and Description */}
             <div className="lg:col-span-2">
               <Link href="/" className="font-bold text-2xl mb-4 block">
-                <span className="text-blue-400">MarketPlan</span> IA
+                <span className="text-violet-400">MarketPlan</span> IA
               </Link>
               <p className="text-slate-400 mb-6 max-w-md">
                 L'outil intelligent qui transforme vos idées en stratégie marketing complète. 
@@ -122,9 +122,9 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Votre adresse email"
-                className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors duration-200"
+                className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-violet-500 transition-colors duration-200"
               />
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 whitespace-nowrap">
+              <button className="bg-violet-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-violet-700 transition-colors duration-200 whitespace-nowrap">
                 S'abonner
               </button>
             </div>

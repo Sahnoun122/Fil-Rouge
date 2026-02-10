@@ -13,7 +13,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="font-bold text-xl text-slate-900">
-              <span className="text-blue-600">MarketPlan</span> IA
+              <span className="text-violet-500">MarketPlan</span> IA
             </Link>
           </div>
 

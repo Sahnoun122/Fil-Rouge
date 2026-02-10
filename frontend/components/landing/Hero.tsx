@@ -9,8 +9,8 @@ const Hero = () => {
           <div className="max-w-xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">
               Planifiez votre{' '}
-              <span className="text-blue-600">stratégie marketing</span> en quelques minutes grâce à{' '}
-              <span className="text-cyan-500">l'IA</span>
+              <span className="text-violet-500">stratégie marketing</span> en quelques minutes grâce à{' '}
+              <span className="text-violet-400">l'IA</span>
             </h1>
             
             <p className="mt-6 text-xl text-slate-600 leading-relaxed">
@@ -92,7 +92,7 @@ const Hero = () => {
             </div>
             
             {/* Floating elements */}
-            <div className="absolute -top-4 -right-4 bg-cyan-500 text-white p-3 rounded-lg shadow-lg">
+            <div className="absolute -top-4 -right-4 bg-violet-500 text-white p-3 rounded-lg shadow-lg">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>

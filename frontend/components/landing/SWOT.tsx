@@ -35,10 +35,10 @@ const SWOT = () => {
       subtitle: "Opportunities", 
       description: "Explorez les tendances du marché et opportunités externes à saisir.",
       examples: ["Marché émergent", "Nouvelles technologies", "Partenariats"],
-      color: "bg-blue-500",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
-      textColor: "text-blue-600", 
+      color: "bg-violet-500",
+      bgColor: "bg-violet-50",
+      borderColor: "border-violet-200",
+      textColor: "text-violet-600", 
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -137,7 +137,7 @@ const SWOT = () => {
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-cyan-100 text-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
@@ -167,7 +167,7 @@ const SWOT = () => {
             <p className="text-slate-600 mb-8">
               Découvrez en quelques minutes les points clés de votre position stratégique
             </p>
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 mr-4">
+            <button className="bg-violet-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-violet-700 transition-colors duration-200 mr-4">
               Générer mon SWOT
             </button>
             <button className="border-2 border-slate-300 text-slate-700 px-8 py-3 rounded-lg font-semibold hover:border-slate-400 transition-colors duration-200">

@@ -86,7 +86,7 @@ const FAQ = () => {
 
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
-          <div className="bg-blue-50 rounded-2xl p-8">
+          <div className="bg-violet-50 rounded-2xl p-8">
             <h3 className="text-2xl font-bold text-slate-900 mb-4">
               Vous avez d'autres questions ?
             </h3>
@@ -94,10 +94,10 @@ const FAQ = () => {
               Notre équipe support est là pour vous accompagner dans l'utilisation de MarketPlan IA
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200">
+              <button className="bg-violet-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-violet-700 transition-colors duration-200">
                 Contacter le support
               </button>
-              <button className="border-2 border-blue-200 text-blue-600 px-6 py-3 rounded-lg font-semibold hover:border-blue-300 transition-colors duration-200">
+              <button className="border-2 border-violet-200 text-violet-600 px-6 py-3 rounded-lg font-semibold hover:border-violet-300 transition-colors duration-200">
                 Consulter la documentation
               </button>
             </div>

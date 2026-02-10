@@ -60,13 +60,13 @@ const HowItWorks = () => {
             {steps.map((step, index) => (
               <div key={index} className="text-center">
                 {/* Step number */}
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white text-xl font-bold rounded-full mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-600 text-white text-xl font-bold rounded-full mb-6">
                   {step.step}
                 </div>
                 
                 {/* Icon */}
                 <div className="flex justify-center mb-6">
-                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+                  <div className="w-16 h-16 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center">
                     {step.icon}
                   </div>
                 </div>
@@ -97,7 +97,7 @@ const HowItWorks = () => {
             {/* Video placeholder */}
             <div className="bg-slate-100 rounded-xl p-16 border-2 border-dashed border-slate-300">
               <div className="flex flex-col items-center">
-                <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mb-4">
+                <div className="w-20 h-20 bg-violet-600 text-white rounded-full flex items-center justify-center mb-4">
                   <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>

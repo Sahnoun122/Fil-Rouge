@@ -75,7 +75,7 @@ const Features = () => {
           {features.map((feature, index) => (
             <div 
               key={index}
-              className="group p-6 border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-lg transition-all duration-300"
+              className="group p-6 border border-slate-200 rounded-xl hover:border-violet-300 hover:shadow-lg transition-all duration-300"
             >
               <div className="flex items-center mb-4">
                 <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
@@ -103,7 +103,7 @@ const Features = () => {
             <p className="text-slate-600 mb-8">
               Rejoignez des centaines de marketeurs qui utilisent déjà MarketPlan IA pour créer des stratégies gagnantes.
             </p>
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200">
+            <button className="bg-violet-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-violet-700 transition-colors duration-200">
               Commencer maintenant
             </button>
           </div>

@@ -36,7 +36,7 @@ const Pricing = () => {
       ],
       limitations: [],
       buttonText: "Commencer l'essai gratuit",
-      buttonStyle: "bg-blue-600 text-white hover:bg-blue-700",
+      buttonStyle: "bg-violet-600 text-white hover:bg-violet-700",
       popular: true
     },
     {
@@ -81,13 +81,13 @@ const Pricing = () => {
             <div 
               key={index}
               className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 ${
-                plan.popular ? 'border-blue-500 scale-105' : 'border-slate-200'
+                plan.popular ? 'border-violet-500 scale-105' : 'border-slate-200'
               } hover:shadow-xl transition-all duration-300`}
             >
               {/* Popular badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                  <span className="bg-violet-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
                     Le plus populaire
                   </span>
                 </div>
@@ -156,7 +156,7 @@ const Pricing = () => {
               </div>
               
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
