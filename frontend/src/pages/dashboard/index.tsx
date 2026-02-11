@@ -1,10 +1,9 @@
 'use client';
 
-// pages/dashboard/index.tsx - Dashboard après connexion
+// pages/dashboard/index.tsx - Dashboard utilisateur
 
 import { useAuth } from '../../hooks/useAuth';
-import ProtectedRoute from '../../components/ProtectedRoute';
-import UserPlan from '../../components/UserPlan';
+import UserLayout from '../../components/layout/UserLayout';
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -18,16 +17,26 @@ export default function DashboardPage() {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <UserLayout title="Dashboard">
+      <div className="p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Bienvenue, {user?.fullName} !
           </h1>
           <p className="text-gray-600 mt-2">
-            Voici votre tableau de bord MarketPlan IA
+            Votre tableau de bord MarketPlan IA
           </p>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h2 className="text-lg font-semibold mb-4">Vue d'ensemble</h2>
+          <p className="text-gray-600">
+            Utilisez la navigation principale pour accéder à vos stratégies, analyses SWOT, et outils de planification.
+          </p>
+        </div>
+      </div>
+    </UserLayout>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

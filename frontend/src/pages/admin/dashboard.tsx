@@ -3,7 +3,7 @@
 // pages/admin/dashboard.tsx - Dashboard administrateur
 
 import { useAuth } from '../../hooks/useAuth';
-import ProtectedRoute from '../../components/ProtectedRoute';
+import AdminLayout from '../../components/layout/AdminLayout';
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
@@ -17,17 +17,26 @@ export default function AdminDashboard() {
   }
 
   return (
-    <ProtectedRoute requiredRole="admin">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout title="Dashboard Administrateur">
+      <div className="p-6">
         {/* Header Admin */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Tableau de bord administrateur
           </h1>
           <p className="text-gray-600 mt-2">
             Bienvenue, {user?.fullName} - Administration MarketPlan IA
           </p>
         </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h2 className="text-lg font-semibold mb-4">Administration MarketPlan IA</h2>
+          <p className="text-gray-600">
+            Interface d'administration professionnelle. Utilisez la navigation principale pour accéder aux outils d'administration.
+          </p>
+        </div>
+      </div>
+    </AdminLayout>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Statistiques principales */}
