@@ -6,9 +6,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
+import { redirectAfterLogin } from '../utils/roleRedirect';
 
 export default function RegisterPage() {
-  const { register, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { register, isAuthenticated, isLoading, error, clearError, user } = useAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -22,12 +23,13 @@ export default function RegisterPage() {
   });
   const [formError, setFormError] = useState('');
 
-  // Rediriger si déjà connecté
+  // Rediriger si déjà connecté - selon le rôle
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && user) {
+      const dashboardUrl = redirectAfterLogin(user);
+      router.push(dashboardUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   // Nettoyer les erreurs quand le composant se monte
   useEffect(() => {
@@ -87,8 +89,10 @@ export default function RegisterPage() {
     try {
       // Préparer les données pour l'API (sans confirmPassword)
       const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
-      // La redirection sera gérée par l'effet useEffect
+      const user = await register(registerData);
+      // Redirection selon le rôle après inscription réussie
+      const dashboardUrl = redirectAfterLogin(user);
+      router.push(dashboardUrl);
     } catch (err) {
       // L'erreur sera affichée via le contexte
     }

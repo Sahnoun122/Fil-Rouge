@@ -25,7 +25,17 @@ export interface AuthTokens {
 
 export interface LoginResponse {
   user: User;
-  tokens: AuthTokens;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+// Type pour les réponses API génériques
+interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
 }
 
 export interface RegisterData {
@@ -58,32 +68,86 @@ export interface ChangePasswordData {
 export class AuthService {
   // 🔐 AUTHENTIFICATION
   static async register(data: RegisterData): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/auth/register', data);
+    console.log('🔑 Starting register process...');
     
-    if (response.success && response.data) {
-      // Sauvegarder les tokens
-      TokenManager.setTokens(
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken
-      );
-      return response.data;
+    const response = await api.post('/auth/register', data) as any;
+    
+    console.log('🔑 Register API response received:', JSON.stringify(response, null, 2));
+    
+    if (response.success) {
+      // Les données sont directement dans response, pas dans response.data
+      const user = response.user || response.data?.user;
+      const tokens = response.tokens || response.data?.tokens;
+      
+      console.log('🔑 Register response structure:', {
+        hasUser: !!user,
+        hasTokens: !!tokens,
+        userKeys: user ? Object.keys(user) : [],
+        tokenKeys: tokens ? Object.keys(tokens) : [],
+        fullResponse: Object.keys(response)
+      });
+      
+      if (tokens && tokens.accessToken && tokens.refreshToken) {
+        // Sauvegarder les tokens
+        TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+        console.log('✅ Tokens saved successfully after registration');
+        
+        // Diagnostic pour vérifier
+        TokenManager.diagnose();
+        
+        return { user, tokens };
+      } else {
+        console.error('❌ Invalid tokens structure in registration:', tokens);
+        console.error('❌ Full response for debugging:', response);
+        throw new Error('Tokens invalides reçus lors de l\'inscription');
+      }
     }
     
+    console.error('❌ Registration failed:', response);
     throw new Error(response.message || 'Erreur lors de l\'inscription');
   }
 
   static async login(data: LoginData): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/auth/login', data);
+    console.log('🔑 Starting login process...');
     
-    if (response.success && response.data) {
-      // Sauvegarder les tokens
-      TokenManager.setTokens(
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken
-      );
-      return response.data;
+    const response = await api.post('/auth/login', data) as any;
+    
+    console.log('🔑 Login API response received:', JSON.stringify(response, null, 2));
+    
+    if (response.success) {
+      // Les données sont directement dans response, pas dans response.data
+      const user = response.user || response.data?.user;
+      const tokens = response.tokens || response.data?.tokens;
+      
+      console.log('🔑 Response data structure:', {
+        hasUser: !!user,
+        hasTokens: !!tokens,
+        userKeys: user ? Object.keys(user) : [],
+        tokenKeys: tokens ? Object.keys(tokens) : [],
+        fullResponse: Object.keys(response)
+      });
+      
+      if (tokens && tokens.accessToken && tokens.refreshToken) {
+        console.log('🔑 Valid tokens found, saving...');
+        console.log('🔑 AccessToken length:', tokens.accessToken.length);
+        console.log('🔑 RefreshToken length:', tokens.refreshToken.length);
+        
+        // Sauvegarder les tokens
+        TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+        console.log('✅ Tokens saved successfully after login');
+        
+        // Diagnostic pour vérifier
+        TokenManager.diagnose();
+        
+        return { user, tokens };
+      } else {
+        console.error('❌ Invalid tokens structure:', tokens);
+        console.error('❌ Full response for debugging:', response);
+        throw new Error('Tokens invalides reçus du serveur');
+      }
     }
     
+    console.error('❌ Login failed:', response);
     throw new Error(response.message || 'Erreur lors de la connexion');
   }
 
@@ -102,22 +166,42 @@ export class AuthService {
   static async refreshToken(): Promise<AuthTokens | null> {
     try {
       const refreshToken = TokenManager.getRefreshToken();
-      if (!refreshToken) return null;
-
-      const response = await api.post<AuthTokens>('/auth/refresh-token', {
-        refreshToken,
-      });
-
-      if (response.success && response.data) {
-        TokenManager.setTokens(
-          response.data.accessToken,
-          response.data.refreshToken
-        );
-        return response.data;
+      if (!refreshToken) {
+        console.warn('No refresh token available');
+        return null;
       }
 
+      console.log('🔄 Starting token refresh...');
+      const response = await api.post('/auth/refresh-token', {
+        refreshToken,
+      }) as any; // Assertion de type temporaire pour éviter les erreurs TypeScript
+
+      console.log('🔄 Refresh token API response:', JSON.stringify(response, null, 2));
+
+      if (response.success) {
+        // Vérifier la structure de la réponse refresh token
+        const accessToken = response.accessToken || response.data?.accessToken;
+        const newRefreshToken = response.refreshToken || response.data?.refreshToken;
+        
+        console.log('🔄 Refresh response structure:', {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!newRefreshToken,
+          fullResponseKeys: Object.keys(response)
+        });
+        
+        if (accessToken && newRefreshToken) {
+          TokenManager.setTokens(accessToken, newRefreshToken);
+          console.log('✅ Tokens refreshed and saved successfully');
+          return { accessToken, refreshToken: newRefreshToken };
+        } else {
+          console.warn('❌ Invalid refresh response structure:', response);
+        }
+      }
+
+      console.warn('❌ Failed to refresh token:', response);
       return null;
     } catch (error) {
+      console.error('❌ Refresh token error:', error);
       TokenManager.clearTokens();
       return null;
     }

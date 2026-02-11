@@ -57,7 +57,8 @@ export default function ProtectedRoute({
     return null;
   }
 
-  if (requireAdmin && user?.role !== 'admin') {
+  // Vérifier l'autorisation par rôle
+  if (requireAuth && !isAuthorizedForRoute(user, requiredRole)) {
     return null;
   }
 

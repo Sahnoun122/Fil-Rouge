@@ -76,14 +76,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await AuthService.login(data);
       setUser(response.user);
       
-      // Redirection automatique selon le rôle
-      const dashboardUrl = redirectAfterLogin(response.user);
-      if (typeof window !== 'undefined') {
-        setTimeout(() => {
-          window.location.href = dashboardUrl;
-        }, 100);
-      }
-      
       return response.user;
       
     } catch (error) {
@@ -103,14 +95,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const response = await AuthService.register(data);
       setUser(response.user);
-      
-      // Redirection automatique vers dashboard utilisateur après inscription
-      const dashboardUrl = redirectAfterLogin(response.user);
-      if (typeof window !== 'undefined') {
-        setTimeout(() => {
-          window.location.href = dashboardUrl;
-        }, 100);
-      }
       
       return response.user;
       

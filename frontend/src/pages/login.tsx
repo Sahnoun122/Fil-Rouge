@@ -6,9 +6,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
+import { redirectAfterLogin } from '../utils/roleRedirect';
 
 export default function LoginPage() {
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { login, isAuthenticated, isLoading, error, clearError, user } = useAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -17,12 +18,13 @@ export default function LoginPage() {
   });
   const [formError, setFormError] = useState('');
 
-  // Rediriger si déjà connecté
+  // Rediriger si déjà connecté - selon le rôle
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && user) {
+      const dashboardUrl = redirectAfterLogin(user);
+      router.push(dashboardUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   // Nettoyer les erreurs quand le composant se monte
   useEffect(() => {
@@ -54,8 +56,10 @@ export default function LoginPage() {
     }
 
     try {
-      await login(formData);
-      // La redirection sera gérée par l'effet useEffect
+      const user = await login(formData);
+      // Redirection selon le rôle après login réussi
+      const dashboardUrl = redirectAfterLogin(user);
+      router.push(dashboardUrl);
     } catch (err) {
       // L'erreur sera affichée via le contexte
     }

@@ -19,24 +19,81 @@ class TokenManager {
 
   static getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    const token = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    console.log('Getting access token:', token ? `${token.substring(0, 20)}...` : 'null');
+    return token;
   }
 
   static getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    const token = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    console.log('Getting refresh token:', token ? `${token.substring(0, 20)}...` : 'null');
+    return token;
   }
 
   static setTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    if (typeof window === 'undefined') {
+      console.log('Cannot save tokens: window is undefined (SSR)');
+      return;
+    }
+    
+    try {
+      console.log('Attempting to save tokens to localStorage...');
+      console.log('AccessToken length:', accessToken?.length || 0);
+      console.log('RefreshToken length:', refreshToken?.length || 0);
+      
+      localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+      
+      // Vérifier que c'est bien sauvé
+      const savedAccess = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+      const savedRefresh = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+      
+      if (savedAccess && savedRefresh) {
+        console.log('✅ Tokens successfully saved to localStorage');
+        console.log('Saved AccessToken preview:', savedAccess.substring(0, 20) + '...');
+        console.log('Saved RefreshToken preview:', savedRefresh.substring(0, 20) + '...');
+      } else {
+        console.error('❌ Failed to save tokens to localStorage');
+      }
+    } catch (error) {
+      console.error('❌ Error saving tokens to localStorage:', error);
+    }
   }
 
   static clearTokens(): void {
     if (typeof window === 'undefined') return;
+    console.log('🧹 Clearing tokens from localStorage...');
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    console.log('✅ Tokens cleared');
+  }
+
+  // Fonction de diagnostic
+  static diagnose(): void {
+    if (typeof window === 'undefined') {
+      console.log('🔍 Token Diagnostic: Running on server-side (SSR)');
+      return;
+    }
+
+    console.log('🔍 === TOKEN DIAGNOSTIC ===');
+    console.log('localStorage available:', typeof Storage !== 'undefined');
+    console.log('window available:', typeof window !== 'undefined');
+    
+    const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    
+    console.log('Access Token stored:', !!accessToken, accessToken ? `(${accessToken.length} chars)` : '');
+    console.log('Refresh Token stored:', !!refreshToken, refreshToken ? `(${refreshToken.length} chars)` : '');
+    
+    // Vérifier tous les items du localStorage
+    console.log('All localStorage items:');
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const value = localStorage.getItem(key || '');
+      console.log(`  ${key}: ${value ? `${value.substring(0, 30)}...` : 'null'}`);
+    }
+    console.log('🔍 === END DIAGNOSTIC ===');
   }
 }
 
@@ -171,3 +228,9 @@ export const api = {
 
 // Export des utilitaires token pour usage direct
 export { TokenManager };
+
+// Pour debugging global - accessible depuis la console
+if (typeof window !== 'undefined') {
+  (window as any).TokenManager = TokenManager;
+  (window as any).diagnoseTokens = () => TokenManager.diagnose();
+}
