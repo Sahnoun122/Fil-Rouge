@@ -17,13 +17,10 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
+import { RolesGuard, Roles } from './guards/roles.guard';
 
 // Décorateur pour marquer une route comme publique
 export const Public = () => SetMetadata('isPublic', true);
-
-// Décorateur pour définir les rôles requis  
-export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @Controller('auth')
 export class AuthController {

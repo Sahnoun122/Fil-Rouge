@@ -28,13 +28,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
       throw err || new UnauthorizedException('Token d\'accès requis');
     }
 
-    // Vérifier que l'utilisateur est actif et non banni
+    // Vérifier que l'utilisateur est actif
     if (!user.isActive) {
       throw new UnauthorizedException('Votre compte est désactivé');
-    }
-
-    if (user.isBanned) {
-      throw new UnauthorizedException('Votre compte est banni');
     }
 
     return user;

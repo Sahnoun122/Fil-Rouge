@@ -3,14 +3,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { UsersService } from '../../users/users.service';
-import { UserDocument } from '../../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { UserDocument } from '../users/entities/user.entity';
 
 export interface JwtPayload {
   sub: string; // user ID
   email: string;
   role: string;
-  plan: string;
   iat?: number;
   exp?: number;
 }
@@ -37,10 +36,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Compte désactivé');
-    }
-
-    if (user.isBanned) {
-      throw new UnauthorizedException('Compte banni');
     }
 
     return user;

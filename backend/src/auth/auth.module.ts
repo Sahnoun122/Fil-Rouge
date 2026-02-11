@@ -10,7 +10,6 @@ import { LocalStrategy } from './local.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 
-// Import du module Users
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -21,12 +20,14 @@ import { UsersModule } from '../users/users.module';
     // Configuration JWT avec variables d'environnement
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-secret',
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '15m',
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        return {
+          secret: configService.get<string>('JWT_SECRET') || 'default-secret',
+          signOptions: {
+            expiresIn: '15m',
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 

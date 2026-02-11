@@ -29,11 +29,11 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
         uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/marketplan-ia',
         retryWrites: true,
         w: 'majority',
-        // Options de connexion
+        // Options de connexion modernes
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
-        bufferMaxEntries: 0,
+        family: 4, // Forcer IPv4
       }),
     }),
 
