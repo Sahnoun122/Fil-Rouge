@@ -90,7 +90,7 @@ export default function RegisterPage() {
       // Préparer les données pour l'API (sans confirmPassword)
       const { confirmPassword, ...registerData } = formData;
       const user = await register(registerData);
-      // Redirection selon le rôle après inscription réussie
+      // Redirection selon le rôle après inscription réussie - utilisateur connecté automatiquement
       const dashboardUrl = redirectAfterLogin(user);
       router.push(dashboardUrl);
     } catch (err) {
