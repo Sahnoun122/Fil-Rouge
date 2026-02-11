@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 
 import { UsersService } from '../users/users.service';
-import { User, UserDocument, UserRole, PlanType } from '../users/entities/user.entity';
+import { User, UserDocument, UserRole } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -12,7 +12,6 @@ export interface JwtPayload {
   sub: string; // user ID
   email: string;
   role: UserRole;
-  plan: PlanType;
   iat?: number;
   exp?: number;
 }
@@ -28,11 +27,9 @@ export interface AuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    plan: PlanType;
-    subscriptionStatus: string;
-    limits: any;
-    team: any;
     isActive: boolean;
+    emailVerified: boolean;
+    lastLoginAt?: Date;
   };
   tokens: AuthTokens;
 }
@@ -48,96 +45,95 @@ export class AuthService {
   // 🔐 AUTHENTIFICATION
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
     try {
-      // Vérifier si l'utilisateur existe déjà
+      // Vérifier si l'email n'est pas déjà utilisé
       const existingUser = await this.usersService.findByEmail(registerDto.email);
-
       if (existingUser) {
-        throw new ConflictException('Un utilisateur avec cet email existe déjà');
+        throw new ConflictException('Cet email est déjà utilisé');
       }
 
-      // Hasher le mot de passe
-      const hashedPassword = await bcrypt.hash(registerDto.password, 12);
-
-      // Créer le nouvel utilisateur - nous devrons utiliser directement le model pour la création
-      const userData = {
-        ...registerDto,
-        password: hashedPassword,
-        role: 'user' as UserRole,
-        plan: 'free' as PlanType,
-        subscriptionStatus: 'active',
-        subscriptionStartDate: new Date(),
-        subscriptionEndDate: null,
-        isActive: true,
-        isBanned: false,
-      };
-
-      // TODO: Cette partie devra être adaptée pour utiliser le UserModel directement
-      // Pour l'instant, nous allons simuler la création
-      const mockUserId = '507f1f77bcf86cd799439011';  // Mock ID pour les tests
-
-      // Générer les tokens
-      const tokens = await this.generateTokens({
-        id: mockUserId,
+      // Créer le nouvel utilisateur
+      const user = await this.usersService.createUser({
+        fullName: registerDto.fullName,
         email: registerDto.email,
-        role: 'user',
-        plan: 'free',
-      } as any);
+        password: registerDto.password,
+        phone: registerDto.phone,
+        companyName: registerDto.companyName,
+        industry: registerDto.industry,
+      });
+
+      // Générer les tokens JWT
+      const tokens = await this.generateTokens(user);
 
       // Sauvegarder le refresh token
-      await this.usersService.updateRefreshToken(mockUserId, tokens.refreshToken);
+      // Sauvegarder le refresh token
+      await this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+
+      // Mettre à jour la date de dernière connexion
+      await this.usersService.updateLastLogin(user._id.toString());
 
       return {
         user: {
-          id: mockUserId,
-          fullName: registerDto.fullName,
-          email: registerDto.email,
-          role: 'user',
-          plan: 'free',
-          subscriptionStatus: 'active',
-          limits: {
-            maxStrategiesPerMonth: 3,
-            maxPublicationsPerMonth: 10,
-            maxSwotPerMonth: 3,
-            maxPdfExportsPerMonth: 3,
-          },
-          team: {
-            maxMembers: 1,
-            members: [],
-          },
-          isActive: true,
+          id: user._id.toString(),
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          emailVerified: user.emailVerified,
+          lastLoginAt: user.lastLoginAt,
         },
         tokens,
       };
+
     } catch (error) {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new BadRequestException('Erreur lors de l\'inscription');
+      throw new BadRequestException('Erreur lors de la création du compte');
     }
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     try {
-      // Valider l'utilisateur
-      const user = await this.validateUser(loginDto.email, loginDto.password);
-
+      // Récupérer l'utilisateur avec le mot de passe
+      const user = await this.usersService.findByEmailWithPassword(loginDto.email);
+      
       if (!user) {
         throw new UnauthorizedException('Email ou mot de passe incorrect');
       }
 
-      // Mettre à jour la dernière connexion
-      await this.usersService.updateLastLogin(user._id.toString());
+      // Vérifier que le compte est actif
+      if (!user.isActive) {
+        throw new UnauthorizedException('Votre compte a été désactivé');
+      }
 
-      // Générer les tokens
+      // Vérifier le mot de passe
+      const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Email ou mot de passe incorrect');
+      }
+
+      // Générer les nouveaux tokens
       const tokens = await this.generateTokens(user);
 
-      // Sauvegarder le refresh token
-      await this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+      // Sauvegarder le refresh token et mettre à jour la dernière connexion
+      await Promise.all([
+        this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken),
+        this.usersService.updateLastLogin(user._id.toString())
+      ]);
 
       return {
-        user: this.sanitizeUser(user),
+        user: {
+          id: user._id.toString(),
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          emailVerified: user.emailVerified,
+          lastLoginAt: new Date(),
+        },
         tokens,
       };
+
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -146,115 +142,89 @@ export class AuthService {
     }
   }
 
-  async validateUser(email: string, password: string): Promise<UserDocument | null> {
-    const user = await this.usersService.findByEmailWithPassword(email);
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return null;
-    }
-
-    // Vérifications de sécurité
-    if (!user.isActive) {
-      throw new UnauthorizedException('Compte désactivé');
-    }
-
-    if (user.isBanned) {
-      throw new UnauthorizedException('Compte banni');
-    }
-
-    return user;
-  }
-
-  async refreshToken(refreshToken: string): Promise<AuthTokens> {
+  async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     try {
-      const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      }) as JwtPayload;
-
-      const user = await this.usersService.findById(payload.sub);
-      
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Token invalide');
-      }
-
       // Vérifier le refresh token
-      const isTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      });
 
-      if (!isTokenValid) {
-        throw new UnauthorizedException('Token invalide');
+      // Récupérer l'utilisateur
+      const user = await this.usersService.findById(payload.sub);
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException('Token de rafraîchissement invalide');
       }
 
-      // Vérifications de sécurité
-      if (!user.isActive || user.isBanned) {
-        throw new UnauthorizedException('Compte non autorisé');
+      // Vérifier que le refresh token correspond
+      const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Token de rafraîchissement invalide');
       }
 
       // Générer de nouveaux tokens
-      const tokens = await this.generateTokens(user);
+      const newTokens = await this.generateTokens(user);
 
-      // Sauvegarder le nouveau refresh token
-      await this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+      // Mettre à jour le refresh token
+      await this.usersService.updateRefreshToken(user._id.toString(), newTokens.refreshToken);
 
-      return tokens;
+      return newTokens;
+
     } catch (error) {
-      throw new UnauthorizedException('Token invalide ou expiré');
+      throw new UnauthorizedException('Token de rafraîchissement invalide');
     }
   }
 
-  async logout(userId: string): Promise<void> {
-    await this.usersService.updateRefreshToken(userId, null);
+  async logout(userId: string): Promise<{ message: string }> {
+    try {
+      // Supprimer le refresh token
+      await this.usersService.removeRefreshToken(userId);
+      
+      return { message: 'Déconnexion réussie' };
+    } catch (error) {
+      throw new BadRequestException('Erreur lors de la déconnexion');
+    }
   }
 
-  // 🔧 MÉTHODES UTILITAIRES
+  // 🔐 VALIDATION
+  async validateUserByEmail(email: string): Promise<UserDocument | null> {
+    try {
+      return await this.usersService.findByEmail(email);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async validateUserById(userId: string): Promise<UserDocument | null> {
+    try {
+      const user = await this.usersService.findById(userId);
+      return user?.isActive ? user : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // 🛠️ UTILITAIRES PRIVÉES
   private async generateTokens(user: UserDocument): Promise<AuthTokens> {
     const payload: JwtPayload = {
       sub: user._id.toString(),
       email: user.email,
       role: user.role,
-      plan: user.plan,
     };
 
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
-    });
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET') || 'default-secret',
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'default-refresh-secret',
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
+      }),
+    ]);
 
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
-    });
-
-    return { accessToken, refreshToken };
-  }
-
-  private sanitizeUser(user: UserDocument): any {
     return {
-      id: user._id.toString(),
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      plan: user.plan,
-      subscriptionStatus: user.subscriptionStatus,
-      limits: user.limits,
-      team: user.team,
-      isActive: user.isActive,
-    };
-  }
-
-  // 📊 INFORMATIONS UTILISATEUR
-  async getMe(userId: string): Promise<any> {
-    const user = await this.usersService.getProfile(userId);
-    return this.sanitizeUser(user);
-  }
-
-  async getUserPermissions(user: UserDocument): Promise<any> {
-    return {
-      canManageTeam: ['pro', 'business'].includes(user.plan),
-      canAccessProFeatures: ['pro', 'business'].includes(user.plan),
-      canAccessBusinessFeatures: user.plan === 'business',
-      isAdmin: user.role === 'admin',
-      maxTeamMembers: user.team.maxMembers,
-      limits: user.limits,
+      accessToken,
+      refreshToken,
     };
   }
 }

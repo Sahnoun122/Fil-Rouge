@@ -2,171 +2,140 @@ import {
   Controller, 
   Get, 
   Put, 
-  Post,
-  Delete,
   Body, 
-  Param, 
+  Request, 
+  UseGuards,
   Query,
-  UseGuards, 
-  Request,
-  HttpCode, 
-  HttpStatus,
-  ValidationPipe 
+  Param,
+  ValidationPipe,
+  UsePipes
 } from '@nestjs/common';
 
-import { UsersService, UpdateUserDto, UpdatePlanDto, AddTeamMemberDto, AdminUpdateUserDto, UserFilterDto } from './users.service';
-
-// Guards et Décorateurs d'Auth
+import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';  
-import { Public, Roles } from '../auth/auth.controller';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UpdateUserDto, ChangePasswordDto } from './dto/user.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // 👤 === GESTION DU PROFIL ===
+  // 📋 GESTION PROFIL UTILISATEUR
 
   @Get('profile')
   async getProfile(@Request() req) {
-    return this.usersService.getProfile(req.user._id.toString());
-  }
-
-  @Put('profile')
-  async updateProfile(
-    @Request() req,
-    @Body(ValidationPipe) updateUserDto: UpdateUserDto
-  ) {
-    return this.usersService.updateProfile(req.user._id.toString(), updateUserDto);
-  }
-
-  @Put('password')
-  @HttpCode(HttpStatus.OK)
-  async changePassword(
-    @Request() req,
-    @Body() body: { currentPassword: string; newPassword: string }
-  ) {
-    await this.usersService.changePassword(
-      req.user._id.toString(), 
-      body.currentPassword, 
-      body.newPassword
-    );
-    return { message: 'Mot de passe modifié avec succès' };
-  }
-
-  // 👥 === GESTION D'ÉQUIPE ===
-
-  @Post('team/members')
-  // TODO: Ajouter guard pour vérifier le plan Pro/Business
-  async addTeamMember(
-    @Request() req,
-    @Body(ValidationPipe) addTeamMemberDto: AddTeamMemberDto
-  ) {
-    return this.usersService.addTeamMember(req.user._id.toString(), addTeamMemberDto);
-  }
-
-  @Put('team/members/:memberId')
-  async updateTeamMember(
-    @Request() req,
-    @Param('memberId') memberId: string,
-    @Body() body: { role: 'editor' | 'viewer' | 'manager' }
-  ) {
-    return this.usersService.updateTeamMember(req.user._id.toString(), memberId, body.role);
-  }
-
-  @Delete('team/members/:memberId')
-  async removeTeamMember(
-    @Request() req,
-    @Param('memberId') memberId: string
-  ) {
-    return this.usersService.removeTeamMember(req.user._id.toString(), memberId);
-  }
-
-  // 💳 === GESTION DES ABONNEMENTS ===
-
-  @Put('plan')
-  @HttpCode(HttpStatus.OK)
-  async updatePlan(
-    @Request() req,
-    @Body(ValidationPipe) updatePlanDto: UpdatePlanDto
-  ) {
-    return this.usersService.updatePlan(req.user._id.toString(), updatePlanDto);
-  }
-
-  @Get('subscription-status')
-  async getSubscriptionStatus(@Request() req) {
-    const user = await this.usersService.findById(req.user._id.toString());
+    const user = await this.usersService.findById(req.user.sub);
     return {
-      plan: user?.plan,
-      subscriptionStatus: user?.subscriptionStatus,
-      limits: user?.limits,
-      isSubscriptionActive: user?.isSubscriptionActive()
+      success: true,
+      message: 'Profil récupéré avec succès',
+      data: user
     };
   }
 
-  // 🛡️ === ADMINISTRATION (ADMIN SEULEMENT) ===
-
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  @Get('admin/all')
-  async getAllUsers(@Query() filterDto: UserFilterDto) {
-    return this.usersService.getAllUsers(filterDto);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  @Get('admin/stats')
-  async getUserStats() {
-    return this.usersService.getUserStats();
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  @Get('admin/:userId')
-  async getUserById(@Param('userId') userId: string) {
-    return this.usersService.getProfile(userId);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  @Put('admin/:userId')
-  async adminUpdateUser(
-    @Param('userId') userId: string,
-    @Body(ValidationPipe) adminUpdateDto: AdminUpdateUserDto
+  @Put('profile')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async updateProfile(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto
   ) {
-    return this.usersService.adminUpdateUser(userId, adminUpdateDto);
+    const updatedUser = await this.usersService.updateProfile(req.user.sub, updateUserDto);
+    
+    return {
+      success: true,
+      message: 'Profil mis à jour avec succès',
+      data: updatedUser
+    };
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  @Post('admin/:userId/ban')
-  @HttpCode(HttpStatus.OK)
-  async banUser(@Param('userId') userId: string) {
-    return this.usersService.adminUpdateUser(userId, { isBanned: true });
+  @Put('password')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async changePassword(
+    @Request() req,
+    @Body() changePasswordDto: ChangePasswordDto
+  ) {
+    const result = await this.usersService.changePassword(req.user.sub, changePasswordDto);
+    
+    return {
+      success: true,
+      message: result.message
+    };
   }
 
+  // 🔒 ROUTES ADMIN UNIQUEMENT
+
+  @Get('admin/all')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @Post('admin/:userId/unban')
-  @HttpCode(HttpStatus.OK)
-  async unbanUser(@Param('userId') userId: string) {
-    return this.usersService.adminUpdateUser(userId, { isBanned: false });
+  async getAllUsers(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10'
+  ) {
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    
+    const result = await this.usersService.getAllUsers(pageNum, limitNum);
+    
+    return {
+      success: true,
+      message: 'Liste des utilisateurs récupérée avec succès',
+      data: result
+    };
   }
 
+  @Get('admin/stats')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @Post('admin/:userId/activate')
-  @HttpCode(HttpStatus.OK)
-  async activateUser(@Param('userId') userId: string) {
-    return this.usersService.adminUpdateUser(userId, { isActive: true });
+  async getUserStats() {
+    const stats = await this.usersService.getUserStats();
+    
+    return {
+      success: true,
+      message: 'Statistiques récupérées avec succès',
+      data: stats
+    };
   }
 
+  @Put('admin/:userId/toggle-status')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @Post('admin/:userId/deactivate')
-  @HttpCode(HttpStatus.OK)
-  async deactivateUser(@Param('userId') userId: string) {
-    return this.usersService.adminUpdateUser(userId, { isActive: false });
+  async toggleUserStatus(@Param('userId') userId: string) {
+    const updatedUser = await this.usersService.toggleUserStatus(userId);
+    
+    return {
+      success: true,
+      message: `Statut de l'utilisateur ${updatedUser.isActive ? 'activé' : 'désactivé'} avec succès`,
+      data: updatedUser
+    };
+  }
+
+  @Put('admin/:userId/role')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async updateUserRole(
+    @Param('userId') userId: string,
+    @Body('role') role: 'admin' | 'user'
+  ) {
+    const updatedUser = await this.usersService.updateUserRole(userId, role);
+    
+    return {
+      success: true,
+      message: `Rôle de l'utilisateur mis à jour avec succès`,
+      data: updatedUser
+    };
+  }
+
+  @Get('admin/:userId')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async getUserById(@Param('userId') userId: string) {
+    const user = await this.usersService.findById(userId);
+    
+    return {
+      success: true,
+      message: 'Utilisateur récupéré avec succès',
+      data: user
+    };
   }
 }

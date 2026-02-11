@@ -8,9 +8,10 @@ import {
   HttpCode, 
   HttpStatus,
   ValidationPipe,
-  SetMetadata
+  SetMetadata,
+  UsePipes,
+  UnauthorizedException
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -21,113 +22,140 @@ import { RolesGuard } from './guards/roles.guard';
 // Décorateur pour marquer une route comme publique
 export const Public = () => SetMetadata('isPublic', true);
 
-// Décorateur pour définir les rôles requis
+// Décorateur pour définir les rôles requis  
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // 🔐 === AUTHENTIFICATION PUBLIQUE ===
-  
+  // 🔐 AUTHENTIFICATION PUBLIQUE
+
+  @Public()
+  @Get('health')
+  @HttpCode(HttpStatus.OK)
+  async healthCheck() {
+    return {
+      success: true,
+      message: 'API d\'authentification en ligne',
+      timestamp: new Date().toISOString()
+    };
+  }
+
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body(ValidationPipe) registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async register(@Body() registerDto: RegisterDto) {
+    const result = await this.authService.register(registerDto);
+    
+    return {
+      success: true,
+      message: 'Compte créé avec succès',
+      user: result.user,
+      tokens: result.tokens
+    };
   }
 
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body(ValidationPipe) loginDto: LoginDto) {
-    return this.authService.login(loginDto);
-  }
-
-  @Public()
-  @UseGuards(AuthGuard('local'))
-  @Post('login-passport')
-  @HttpCode(HttpStatus.OK)
-  async loginWithPassport(@Request() req) {
-    // L'utilisateur est déjà validé par LocalStrategy
-    const user = req.user;
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async login(@Body() loginDto: LoginDto) {
+    const result = await this.authService.login(loginDto);
     
-    // Générer les tokens
-    const tokens = await this.authService['generateTokens'](user);
-    
-    // Sauvegarder le refresh token
-    await this.authService['usersService'].updateRefreshToken(
-      user._id.toString(), 
-      tokens.refreshToken
-    );
-
     return {
-      user: this.authService['sanitizeUser'](user),
-      tokens,
+      success: true,
+      message: 'Connexion réussie',
+      user: result.user,
+      tokens: result.tokens
     };
   }
 
   @Public()
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Body() body: { refreshToken: string }) {
-    return this.authService.refreshToken(body.refreshToken);
+  async refreshToken(@Body('refreshToken') refreshToken: string) {
+    const tokens = await this.authService.refreshTokens(refreshToken);
+    
+    return {
+      success: true,
+      message: 'Tokens renouvelés avec succès',
+      ...tokens
+    };
   }
 
-  // 🔒 === ROUTES PROTÉGÉES ===
-
-  @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  async logout(@Request() req) {
-    await this.authService.logout(req.user._id.toString());
-    return { message: 'Déconnexion réussie' };
-  }
+  // 🔒 AUTHENTIFICATION PROTÉGÉE
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getMe(@Request() req) {
-    return this.authService.getMe(req.user._id.toString());
+  async getCurrentUser(@Request() req) {
+    const user = await this.authService.validateUserById(req.user.sub);
+    
+    return {
+      success: true,
+      message: 'Utilisateur récupéré avec succès',
+      data: user
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('permissions')
   async getUserPermissions(@Request() req) {
-    return this.authService.getUserPermissions(req.user);
-  }
-
-  // 🛡️ === TESTS DE PROTECTION PAR RÔLE ===
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @Get('admin-only')
-  async adminOnlyRoute() {
-    return { message: 'Cette route est réservée aux administrateurs' };
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'user')
-  @Get('authenticated-only')
-  async authenticatedOnlyRoute(@Request() req) {
-    return { 
-      message: 'Route pour utilisateurs authentifiés',
-      user: {
-        id: req.user._id,
-        email: req.user.email,
-        role: req.user.role
+    const user = await this.authService.validateUserById(req.user.sub);
+    
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur non trouvé');
+    }
+    
+    const permissions = {
+      canManageUsers: user.role === 'admin',
+      canViewAdminPanel: user.role === 'admin',
+      canEditProfile: true,
+      canChangePassword: true,
+    };
+    
+    return {
+      success: true,
+      message: 'Permissions récupérées avec succès',
+      data: {
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          role: user.role
+        },
+        permissions
       }
     };
   }
 
-  // 📊 === INFORMATIONS SYSTÈME ===
-
-  @Public()
-  @Get('health')
-  async healthCheck() {
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Request() req) {
+    const result = await this.authService.logout(req.user.sub);
+    
     return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'auth-service'
+      success: true,
+      message: result.message
+    };
+  }
+
+  // 🛡️ ROUTE ADMIN UNIQUEMENT
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin-only')
+  async adminOnlyRoute(@Request() req) {
+    return {
+      success: true,
+      message: 'Accès autorisé - Route admin',
+      data: {
+        userId: req.user.sub,
+        email: req.user.email,
+        role: req.user.role,
+        accessTime: new Date().toISOString()
+      }
     };
   }
 }

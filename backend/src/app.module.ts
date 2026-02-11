@@ -9,7 +9,6 @@ import { AppService } from './app.service';
 // Import des modules
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { PlansModule } from './plans/plans.module';
 
 // Guards globaux
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -41,7 +40,6 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     // Modules de l'application
     AuthModule,
     UsersModule,
-    PlansModule,
   ],
 
   controllers: [AppController],

@@ -1,34 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
 
 export type UserDocument = User & Document;
 
-// 📌 Types pour les rôles et plans
+// 📌 Types pour les rôles
 export type UserRole = 'admin' | 'user';
-export type PlanType = 'free' | 'pro' | 'business';
-export type SubscriptionStatus = 'active' | 'expired' | 'canceled';
-export type TeamMemberRole = 'editor' | 'viewer' | 'manager';
-
-// 📌 Interface pour les membres de l'équipe
-export interface TeamMember {
-  userId: Types.ObjectId;
-  role: TeamMemberRole;
-  addedAt: Date;
-}
-
-// 📌 Interface pour les limites
-export interface UserLimits {
-  maxStrategiesPerMonth: number;
-  maxPublicationsPerMonth: number;
-  maxSwotPerMonth: number;
-  maxPdfExportsPerMonth: number;
-}
-
-// 📌 Interface pour l'équipe
-export interface UserTeam {
-  maxMembers: number;
-  members: TeamMember[];
-}
 
 @Schema({
   timestamps: true,
@@ -48,39 +25,42 @@ export class User {
     unique: true,
     lowercase: true,
     trim: true,
-    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    validate: {
+      validator: function(v: string) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Email format invalide'
+    }
   })
   email: string;
 
   @Prop({
     required: true,
-    minlength: 6
+    minlength: 8,
+    select: false
   })
-  password: string; // hashed
+  password: string;
 
   @Prop({
-    required: true,
     trim: true,
-    match: /^[+]?[0-9\s\-\(\)]{10,15}$/
+    maxlength: 20
   })
-  phone: string;
+  phone?: string;
 
-  // 🏢 Informations business
+  // 🏢 Informations professionnelles
   @Prop({
-    required: true,
-    trim: true,
-    maxlength: 150
-  })
-  companyName: string;
-
-  @Prop({
-    required: true,
     trim: true,
     maxlength: 100
   })
-  industry: string;
+  companyName?: string;
 
-  // 🔐 Auth & Role
+  @Prop({
+    trim: true,
+    maxlength: 50
+  })
+  industry?: string;
+
+  // 🔑 Rôle et statut
   @Prop({
     required: true,
     enum: ['admin', 'user'],
@@ -88,112 +68,6 @@ export class User {
   })
   role: UserRole;
 
-  @Prop({
-    required: false,
-    select: false // Ne pas inclure par défaut dans les requêtes
-  })
-  refreshToken?: string;
-
-  @Prop({
-    type: Date,
-    default: null
-  })
-  lastLoginAt?: Date;
-
-  // 💳 Subscription / Plans
-  @Prop({
-    required: true,
-    enum: ['free', 'pro', 'business'],
-    default: 'free'
-  })
-  plan: PlanType;
-
-  @Prop({
-    required: true,
-    enum: ['active', 'expired', 'canceled'],
-    default: 'active'
-  })
-  subscriptionStatus: SubscriptionStatus;
-
-  @Prop({
-    type: Date,
-    default: Date.now
-  })
-  subscriptionStartDate: Date;
-
-  @Prop({
-    type: Date,
-    default: null
-  })
-  subscriptionEndDate?: Date;
-
-  // 📌 Limits حسب plan
-  @Prop({
-    type: {
-      maxStrategiesPerMonth: { type: Number, required: true },
-      maxPublicationsPerMonth: { type: Number, required: true },
-      maxSwotPerMonth: { type: Number, required: true },
-      maxPdfExportsPerMonth: { type: Number, required: true }
-    },
-    required: true,
-    default: function() {
-      const planLimits = {
-        free: {
-          maxStrategiesPerMonth: 3,
-          maxPublicationsPerMonth: 10,
-          maxSwotPerMonth: 3,
-          maxPdfExportsPerMonth: 3
-        },
-        pro: {
-          maxStrategiesPerMonth: 25,
-          maxPublicationsPerMonth: 100,
-          maxSwotPerMonth: 25,
-          maxPdfExportsPerMonth: 25
-        },
-        business: {
-          maxStrategiesPerMonth: -1,
-          maxPublicationsPerMonth: -1,
-          maxSwotPerMonth: -1,
-          maxPdfExportsPerMonth: -1
-        }
-      };
-      const plan = (this as any).plan || 'free';
-      return planLimits[plan];
-    }
-  })
-  limits: UserLimits;
-
-  // 👥 Team
-  @Prop({
-    type: {
-      maxMembers: { type: Number, required: true, default: 1 },
-      members: [{
-        userId: { type: Types.ObjectId, ref: 'User', required: true },
-        role: { 
-          type: String, 
-          enum: ['editor', 'viewer', 'manager'],
-          required: true 
-        },
-        addedAt: { type: Date, default: Date.now }
-      }]
-    },
-    required: true,
-    default: function() {
-      const plan = (this as any).plan || 'free';
-      const maxMembers = {
-        free: 1,
-        pro: 5,
-        business: 50
-      };
-      return {
-        maxMembers: maxMembers[plan],
-        members: []
-      };
-    }
-  })
-  team: UserTeam;
-
-  // 🛡️ Security
   @Prop({
     required: true,
     default: true
@@ -204,41 +78,32 @@ export class User {
     required: true,
     default: false
   })
-  isBanned: boolean;
+  emailVerified: boolean;
 
-  // 📅 Timestamps
+  // 🔐 Authentification
+  @Prop({
+    select: false
+  })
+  refreshToken?: string;
+
+  // 🕒 Horodatages
+  @Prop()
+  lastLoginAt?: Date;
+
+  // 📅 Timestamps automatiques
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-// 📌 Indexs 
-UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ role: 1 });
-UserSchema.index({ plan: 1 });
-UserSchema.index({ subscriptionStatus: 1 });
-UserSchema.index({ isActive: 1, isBanned: 1 });
-
-// 📌 Middleware pré-save
-UserSchema.pre('save', function(next) {
-  if (this.isModified('plan')) {
-    const planLimits = {
-      free: { maxStrategiesPerMonth: 3, maxPublicationsPerMonth: 10, maxSwotPerMonth: 3, maxPdfExportsPerMonth: 3, maxMembers: 1 },
-      pro: { maxStrategiesPerMonth: 25, maxPublicationsPerMonth: 100, maxSwotPerMonth: 25, maxPdfExportsPerMonth: 25, maxMembers: 5 },
-      business: { maxStrategiesPerMonth: -1, maxPublicationsPerMonth: -1, maxSwotPerMonth: -1, maxPdfExportsPerMonth: -1, maxMembers: 50 }
-    };
-
-    const planConfig = planLimits[this.plan];
-    this.limits = {
-      maxStrategiesPerMonth: planConfig.maxStrategiesPerMonth,
-      maxPublicationsPerMonth: planConfig.maxPublicationsPerMonth,
-      maxSwotPerMonth: planConfig.maxSwotPerMonth,
-      maxPdfExportsPerMonth: planConfig.maxPdfExportsPerMonth
-    };
-    this.team.maxMembers = planConfig.maxMembers;
+// 🔒 Middleware de hachage du mot de passe avant sauvegarde
+UserSchema.pre('save', async function(this: UserDocument) {
+  // Hasher le mot de passe uniquement s'il a été modifié
+  if (this.isModified('password')) {
+    const saltRounds = 12;
+    this.password = await bcrypt.hash(this.password, saltRounds);
   }
-  next();
 });
 
 // 📌 Méthodes d'instance
@@ -249,16 +114,17 @@ UserSchema.methods.toJSON = function() {
   return userObject;
 };
 
-UserSchema.methods.isSubscriptionActive = function(): boolean {
-  if (this.plan === 'free') return true;
-  return this.subscriptionStatus === 'active' && (!this.subscriptionEndDate || this.subscriptionEndDate > new Date());
+UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-UserSchema.methods.canAddTeamMember = function(): boolean {
-  return this.team.members.length < this.team.maxMembers;
+UserSchema.methods.updateLastLogin = function() {
+  this.lastLoginAt = new Date();
+  return this.save();
 };
 
-UserSchema.methods.hasReachedLimit = function(limitType: keyof UserLimits, currentUsage: number): boolean {
-  const limit = this.limits[limitType];
-  return limit !== -1 && currentUsage >= limit;
-};
+// 📌 Index pour optimiser les requêtes
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ role: 1 });
+UserSchema.index({ isActive: 1 });
+UserSchema.index({ createdAt: -1 });
