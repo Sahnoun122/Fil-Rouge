@@ -6,12 +6,13 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-// Import du module d'authentification
-import { AuthModule } from '../modules/auth.module';
+// Import des modules
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { PlansModule } from './plans/plans.module';
 
 // Guards globaux
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { AccountActiveGuard } from '../guards/plan.guard';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -37,8 +38,10 @@ import { AccountActiveGuard } from '../guards/plan.guard';
       }),
     }),
 
-    // Module d'authentification
+    // Modules de l'application
     AuthModule,
+    UsersModule,
+    PlansModule,
   ],
 
   controllers: [AppController],
@@ -50,12 +53,6 @@ import { AccountActiveGuard } from '../guards/plan.guard';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
-    },
-
-    // Appliquer AccountActiveGuard globalement
-    {
-      provide: APP_GUARD,
-      useClass: AccountActiveGuard,
     },
   ],
 })

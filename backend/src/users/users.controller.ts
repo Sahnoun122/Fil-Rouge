@@ -8,6 +8,7 @@ import {
   Param, 
   Query,
   UseGuards, 
+  Request,
   HttpCode, 
   HttpStatus,
   ValidationPipe 
@@ -15,76 +16,71 @@ import {
 
 import { UsersService, UpdateUserDto, UpdatePlanDto, AddTeamMemberDto, AdminUpdateUserDto, UserFilterDto } from './users.service';
 
-// TODO: Ces imports seront créés dans le module auth
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-// import { RolesGuard } from '../auth/guards/roles.guard';  
-// import { CurrentUser, UserId, Roles } from '../auth/auth.decorators';
+// Guards et Décorateurs d'Auth
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';  
+import { Public, Roles } from '../auth/auth.controller';
 
 @Controller('users')
-// @UseGuards(JwtAuthGuard) // TODO: Décommenter quand le guard sera créé
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   // 👤 === GESTION DU PROFIL ===
 
   @Get('profile')
-  async getProfile(/* @UserId() userId: string */) {
-    // TODO: Utiliser le vrai userId du token JWT
-    const mockUserId = '507f1f77bcf86cd799439011';
-    return this.usersService.getProfile(mockUserId);
+  async getProfile(@Request() req) {
+    return this.usersService.getProfile(req.user._id.toString());
   }
 
   @Put('profile')
   async updateProfile(
-    /* @UserId() userId: string, */
+    @Request() req,
     @Body(ValidationPipe) updateUserDto: UpdateUserDto
   ) {
-    // TODO: Utiliser le vrai userId du token JWT
-    const mockUserId = '507f1f77bcf86cd799439011';
-    return this.usersService.updateProfile(mockUserId, updateUserDto);
+    return this.usersService.updateProfile(req.user._id.toString(), updateUserDto);
   }
 
   @Put('password')
   @HttpCode(HttpStatus.OK)
   async changePassword(
-    /* @UserId() userId: string, */
+    @Request() req,
     @Body() body: { currentPassword: string; newPassword: string }
   ) {
-    // TODO: Utiliser le vrai userId du token JWT
-    const mockUserId = '507f1f77bcf86cd799439011';
-    await this.usersService.changePassword(mockUserId, body.currentPassword, body.newPassword);
+    await this.usersService.changePassword(
+      req.user._id.toString(), 
+      body.currentPassword, 
+      body.newPassword
+    );
     return { message: 'Mot de passe modifié avec succès' };
   }
 
   // 👥 === GESTION D'ÉQUIPE ===
 
   @Post('team/members')
-  // @RequirePlans('pro', 'business') // TODO: Ajouter quand le guard sera créé
+  // TODO: Ajouter guard pour vérifier le plan Pro/Business
   async addTeamMember(
-    /* @UserId() userId: string, */
+    @Request() req,
     @Body(ValidationPipe) addTeamMemberDto: AddTeamMemberDto
   ) {
-    const mockUserId = '507f1f77bcf86cd799439011';
-    return this.usersService.addTeamMember(mockUserId, addTeamMemberDto);
+    return this.usersService.addTeamMember(req.user._id.toString(), addTeamMemberDto);
   }
 
   @Put('team/members/:memberId')
   async updateTeamMember(
-    /* @UserId() userId: string, */
+    @Request() req,
     @Param('memberId') memberId: string,
     @Body() body: { role: 'editor' | 'viewer' | 'manager' }
   ) {
-    const mockUserId = '507f1f77bcf86cd799439011';
-    return this.usersService.updateTeamMember(mockUserId, memberId, body.role);
+    return this.usersService.updateTeamMember(req.user._id.toString(), memberId, body.role);
   }
 
   @Delete('team/members/:memberId')
   async removeTeamMember(
-    /* @UserId() userId: string, */
+    @Request() req,
     @Param('memberId') memberId: string
   ) {
-    const mockUserId = '507f1f77bcf86cd799439011';
-    return this.usersService.removeTeamMember(mockUserId, memberId);
+    return this.usersService.removeTeamMember(req.user._id.toString(), memberId);
   }
 
   // 💳 === GESTION DES ABONNEMENTS ===
@@ -92,17 +88,15 @@ export class UsersController {
   @Put('plan')
   @HttpCode(HttpStatus.OK)
   async updatePlan(
-    /* @UserId() userId: string, */
+    @Request() req,
     @Body(ValidationPipe) updatePlanDto: UpdatePlanDto
   ) {
-    const mockUserId = '507f1f77bcf86cd799439011';
-    return this.usersService.updatePlan(mockUserId, updatePlanDto);
+    return this.usersService.updatePlan(req.user._id.toString(), updatePlanDto);
   }
 
   @Get('subscription-status')
-  async getSubscriptionStatus(/* @CurrentUser() user: any */) {
-    const mockUserId = '507f1f77bcf86cd799439011';
-    const user = await this.usersService.findById(mockUserId);
+  async getSubscriptionStatus(@Request() req) {
+    const user = await this.usersService.findById(req.user._id.toString());
     return {
       plan: user?.plan,
       subscriptionStatus: user?.subscriptionStatus,
@@ -113,30 +107,30 @@ export class UsersController {
 
   // 🛡️ === ADMINISTRATION (ADMIN SEULEMENT) ===
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Get('admin/all')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   async getAllUsers(@Query() filterDto: UserFilterDto) {
     return this.usersService.getAllUsers(filterDto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Get('admin/stats')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   async getUserStats() {
     return this.usersService.getUserStats();
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Get('admin/:userId')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   async getUserById(@Param('userId') userId: string) {
     return this.usersService.getProfile(userId);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Put('admin/:userId')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   async adminUpdateUser(
     @Param('userId') userId: string,
     @Body(ValidationPipe) adminUpdateDto: AdminUpdateUserDto
@@ -144,33 +138,33 @@ export class UsersController {
     return this.usersService.adminUpdateUser(userId, adminUpdateDto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Post('admin/:userId/ban')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   @HttpCode(HttpStatus.OK)
   async banUser(@Param('userId') userId: string) {
     return this.usersService.adminUpdateUser(userId, { isBanned: true });
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Post('admin/:userId/unban')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   @HttpCode(HttpStatus.OK)
   async unbanUser(@Param('userId') userId: string) {
     return this.usersService.adminUpdateUser(userId, { isBanned: false });
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Post('admin/:userId/activate')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   @HttpCode(HttpStatus.OK)
   async activateUser(@Param('userId') userId: string) {
     return this.usersService.adminUpdateUser(userId, { isActive: true });
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Post('admin/:userId/deactivate')
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
   @HttpCode(HttpStatus.OK)
   async deactivateUser(@Param('userId') userId: string) {
     return this.usersService.adminUpdateUser(userId, { isActive: false });
