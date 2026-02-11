@@ -197,13 +197,20 @@ export class AuthService {
     user: { id: string; email: string; role: string };
     permissions: Record<string, boolean>;
   }> {
-    const response = await api.get('/auth/permissions', true);
+    const response = await api.get<{
+      user: { id: string; email: string; role: string };
+      permissions: Record<string, boolean>;
+    }>('/auth/permissions', true);
     
     if (response.success && response.data) {
       return response.data;
     }
     
-    throw new Error(response.message || 'Erreur lors de la récupération des permissions');
+    // Valeurs par défaut si les données ne sont pas disponibles
+    return {
+      user: { id: '', email: '', role: 'user' },
+      permissions: {},
+    };
   }
 }
 

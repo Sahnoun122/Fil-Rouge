@@ -48,14 +48,14 @@ export async function fetcher<T = any>(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<ApiResponse<T>> {
-  const { requireAuth = false, headers, ...restOptions } = options;
+  const { requireAuth = false, headers = {}, ...restOptions } = options;
   
   const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
   
   // Préparation des headers
-  const requestHeaders: HeadersInit = {
+  const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...headers,
+    ...(headers as Record<string, string>),
   };
 
   // Ajouter le token d'authentification si nécessaire
@@ -80,9 +80,13 @@ export async function fetcher<T = any>(
         // Retry avec le nouveau token
         const newAccessToken = TokenManager.getAccessToken();
         if (newAccessToken) {
-          requestHeaders.Authorization = `Bearer ${newAccessToken}`;
+          const retryHeaders: Record<string, string> = {
+            ...requestHeaders,
+            Authorization: `Bearer ${newAccessToken}`,
+          };
+          
           const retryResponse = await fetch(url, {
-            headers: requestHeaders,
+            headers: retryHeaders,
             ...restOptions,
           });
           return await retryResponse.json();
@@ -91,7 +95,9 @@ export async function fetcher<T = any>(
       
       // Échec du refresh, rediriger vers login
       TokenManager.clearTokens();
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
       throw new Error('Session expirée, veuillez vous reconnecter');
     }
 
