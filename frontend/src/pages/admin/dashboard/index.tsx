@@ -1,6 +1,6 @@
 'use client';
 
-// pages/admin/dashboard/page.tsx - Dashboard Administrateur
+// pages/admin/dashboard/index.tsx - Dashboard Administrateur
 
 import AdminLayout from '../../../components/layout/AdminLayout';
 

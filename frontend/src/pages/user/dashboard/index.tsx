@@ -1,6 +1,6 @@
 'use client';
 
-// pages/user/dashboard/page.tsx - Dashboard utilisateur
+// pages/user/dashboard/index.tsx - Dashboard utilisateur
 
 import { useAuth } from '../../../hooks/useAuth';
 import UserLayout from '../../../components/layout/UserLayout';

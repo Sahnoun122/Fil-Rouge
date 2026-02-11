@@ -150,10 +150,10 @@ export async function fetcher<T = any>(
         }
       }
       
-      // Échec du refresh, rediriger vers login
+      // Échec du refresh, rediriger vers la page d'accueil
       TokenManager.clearTokens();
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        window.location.href = '/';
       }
       throw new Error('Session expirée, veuillez vous reconnecter');
     }
@@ -174,7 +174,7 @@ export async function fetcher<T = any>(
         if (!isAuthCheck) {
           TokenManager.clearTokens();
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            window.location.href = '/';
           }
         }
         

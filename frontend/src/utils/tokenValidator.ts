@@ -1,6 +1,6 @@
 // utils/tokenValidator.ts - Validation et nettoyage des tokens
 
-import { TokenManager } from './tokenManager';
+import { TokenManager } from './fetcher';
 
 export class TokenValidator {
   /**

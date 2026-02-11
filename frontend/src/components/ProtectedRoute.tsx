@@ -18,7 +18,7 @@ export default function ProtectedRoute({
   children,
   requireAuth = true,
   requiredRole,
-  redirectTo = '/login'
+  redirectTo = '/'
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -35,8 +35,8 @@ export default function ProtectedRoute({
 
     // Vérifier l'autorisation par rôle
     if (requireAuth && !isAuthorizedForRoute(user, requiredRole)) {
-      // Rediriger vers le dashboard approprié selon le rôle actuel
-      const fallbackUrl = user ? getDashboardUrl(user.role as UserRole) : '/login';
+      // Rediriger vers le dashboard approprié selon le rôle actuel ou page d'accueil
+      const fallbackUrl = user ? getDashboardUrl(user.role as UserRole) : '/';
       router.push(fallbackUrl);
       return;
     }
