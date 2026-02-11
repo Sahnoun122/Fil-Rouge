@@ -4,6 +4,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
+import { getDashboardUrl, getRoleDisplayName } from '../utils/roleRedirect';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -38,19 +39,16 @@ export default function Navbar() {
               <>
                 {/* Menu utilisateur connecté */}
                 <Link
-                  href="/dashboard"
+                  href={user ? getDashboardUrl(user.role as 'user' | 'admin') : '/dashboard'}
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md"
                 >
                   Dashboard
                 </Link>
 
                 {user?.role === 'admin' && (
-                  <Link
-                    href="/admin"
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md"
-                  >
-                    Administration
-                  </Link>
+                  <span className="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
+                    {getRoleDisplayName(user.role as 'admin')}
+                  </span>
                 )}
 
                 {/* Menu utilisateur */}

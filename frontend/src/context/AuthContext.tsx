@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { AuthService, User, LoginData, RegisterData } from '../services/authService';
+import { redirectAfterLogin } from '../utils/roleRedirect';
 
 // Types pour le contexte
 interface AuthContextType {
@@ -14,8 +15,8 @@ interface AuthContextType {
   error: string | null;
 
   // Actions
-  login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (data: LoginData) => Promise<User>;
+  register: (data: RegisterData) => Promise<User>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   clearError: () => void;
@@ -67,13 +68,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   // 🔐 Connexion
-  const login = async (data: LoginData) => {
+  const login = async (data: LoginData): Promise<User> => {
     try {
       setIsLoading(true);
       setError(null);
 
       const response = await AuthService.login(data);
       setUser(response.user);
+      
+      // Redirection automatique selon le rôle
+      const dashboardUrl = redirectAfterLogin(response.user);
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          window.location.href = dashboardUrl;
+        }, 100);
+      }
+      
+      return response.user;
       
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erreur lors de la connexion';
@@ -84,14 +95,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // 📝 Inscription
-  const register = async (data: RegisterData) => {
+  // 📝 Inscription  
+  const register = async (data: RegisterData): Promise<User> => {
     try {
       setIsLoading(true);
       setError(null);
 
       const response = await AuthService.register(data);
       setUser(response.user);
+      
+      // Redirection automatique vers dashboard utilisateur après inscription
+      const dashboardUrl = redirectAfterLogin(response.user);
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          window.location.href = dashboardUrl;
+        }, 100);
+      }
+      
+      return response.user;
       
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erreur lors de l\'inscription';

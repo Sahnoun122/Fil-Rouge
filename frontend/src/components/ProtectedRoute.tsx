@@ -5,18 +5,19 @@
 import { useAuth } from '../hooks/useAuth';
 import { useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/router';
+import { isAuthorizedForRoute, getDashboardUrl, UserRole } from '../utils/roleRedirect';
 
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAuth?: boolean;
-  requireAdmin?: boolean;
+  requiredRole?: UserRole;
   redirectTo?: string;
 }
 
 export default function ProtectedRoute({
   children,
   requireAuth = true,
-  requireAdmin = false,
+  requiredRole,
   redirectTo = '/login'
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -32,13 +33,15 @@ export default function ProtectedRoute({
       return;
     }
 
-    // Vérifier le rôle admin
-    if (requireAdmin && user?.role !== 'admin') {
-      router.push('/dashboard'); // Rediriger vers dashboard si pas admin
+    // Vérifier l'autorisation par rôle
+    if (requireAuth && !isAuthorizedForRoute(user, requiredRole)) {
+      // Rediriger vers le dashboard approprié selon le rôle actuel
+      const fallbackUrl = user ? getDashboardUrl(user.role as UserRole) : '/login';
+      router.push(fallbackUrl);
       return;
     }
 
-  }, [isAuthenticated, isLoading, user, requireAuth, requireAdmin, redirectTo, router]);
+  }, [isAuthenticated, isLoading, user, requireAuth, requiredRole, redirectTo, router]);
 
   // Afficher un loading pendant la vérification
   if (isLoading) {
