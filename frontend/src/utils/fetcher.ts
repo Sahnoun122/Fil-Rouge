@@ -162,6 +162,25 @@ export async function fetcher<T = any>(
     const data = await response.json();
 
     if (!response.ok) {
+      // Gestion spéciale des erreurs de token
+      if (response.status === 401 && 
+          (data.message?.includes('token') || 
+           data.message?.includes('refresh') ||
+           data.message?.includes('invalide') ||
+           data.message?.includes('expiré'))) {
+        
+        // Ne faire de redirection que si ce n'est pas une vérification d'auth
+        const isAuthCheck = url.includes('/auth/me') || url.includes('/auth/check');
+        if (!isAuthCheck) {
+          TokenManager.clearTokens();
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
+        
+        throw new Error('Session expirée');
+      }
+      
       throw new Error(data.message || `HTTP ${response.status}`);
     }
 
@@ -177,7 +196,11 @@ export async function fetcher<T = any>(
 async function refreshAccessToken(): Promise<boolean> {
   try {
     const refreshToken = TokenManager.getRefreshToken();
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+      console.warn('No refresh token available for refresh');
+      TokenManager.clearTokens();
+      return false;
+    }
 
     const response = await fetch(`${BASE_URL}/auth/refresh-token`, {
       method: 'POST',
@@ -187,7 +210,11 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
-    if (!response.ok) return false;
+    if (!response.ok) {
+      console.warn('Refresh token request failed:', response.status);
+      TokenManager.clearTokens();
+      return false;
+    }
 
     const data = await response.json();
     
@@ -196,9 +223,12 @@ async function refreshAccessToken(): Promise<boolean> {
       return true;
     }
 
+    console.warn('Invalid refresh token response structure');
+    TokenManager.clearTokens();
     return false;
   } catch (error) {
-    console.error('Token refresh error:', error);
+    console.warn('Token refresh failed silently:', error);
+    TokenManager.clearTokens();
     return false;
   }
 }

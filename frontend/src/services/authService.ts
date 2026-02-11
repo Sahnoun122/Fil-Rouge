@@ -1,6 +1,7 @@
 // services/authService.ts - Service d'authentification avec appels API
 
 import { api, TokenManager } from '../utils/fetcher';
+import { TokenValidator } from '../utils/tokenValidator';
 
 // Types pour l'authentification
 export interface User {
@@ -168,6 +169,7 @@ export class AuthService {
       const refreshToken = TokenManager.getRefreshToken();
       if (!refreshToken) {
         console.warn('No refresh token available');
+        TokenManager.clearTokens();
         return null;
       }
 
@@ -195,13 +197,17 @@ export class AuthService {
           return { accessToken, refreshToken: newRefreshToken };
         } else {
           console.warn('❌ Invalid refresh response structure:', response);
+          TokenManager.clearTokens();
         }
+      } else {
+        console.warn('❌ Failed refresh response:', response);
+        TokenManager.clearTokens();
       }
 
-      console.warn('❌ Failed to refresh token:', response);
       return null;
-    } catch (error) {
-      console.error('❌ Refresh token error:', error);
+    } catch (error: any) {
+      console.warn('🔄 Refresh token failed (silently handled):', error.message);
+      // Nettoyer les tokens invalides en silence
       TokenManager.clearTokens();
       return null;
     }
@@ -252,25 +258,37 @@ export class AuthService {
   }
 
   static async checkAuth(): Promise<boolean> {
+    // Validation préalable des tokens stockés
+    const validation = TokenValidator.validateStoredTokens();
+    if (!validation.valid) {
+      console.log('Tokens stockés invalides:', validation.reason);
+      TokenManager.clearTokens();
+      return false;
+    }
+
     const accessToken = TokenManager.getAccessToken();
-    if (!accessToken) return false;
+    if (!accessToken) {
+      TokenManager.clearTokens();
+      return false;
+    }
 
     try {
       await this.getCurrentUser();
       return true;
     } catch (error) {
-      // Essayer de rafraîchir le token
-      const newTokens = await this.refreshToken();
-      if (newTokens) {
-        try {
+      // Essayer de rafraîchir le token silencieusement
+      try {
+        const newTokens = await this.refreshToken();
+        if (newTokens) {
+          // Vérifier que le nouveau token fonctionne
           await this.getCurrentUser();
           return true;
-        } catch (error) {
-          TokenManager.clearTokens();
-          return false;
         }
+      } catch (refreshError) {
+        console.warn('Refresh failed during checkAuth:', refreshError);
       }
       
+      // Nettoyer les tokens et retourner false silencieusement
       TokenManager.clearTokens();
       return false;
     }

@@ -5,6 +5,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { AuthService, User, LoginData, RegisterData } from '../services/authService';
 import { redirectAfterLogin } from '../utils/roleRedirect';
+import { TokenValidator } from '../utils/tokenValidator';
 
 // Types pour le contexte
 interface AuthContextType {
@@ -41,6 +42,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Vérifier le statut d'authentification au chargement
   useEffect(() => {
+    // Nettoyer les tokens invalides au démarrage
+    TokenValidator.cleanupInvalidTokens();
+    
+    // Vérifier l'état d'authentification
     checkAuthStatus();
   }, []);
 
@@ -58,8 +63,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setUser(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth check failed:', error);
+      
+      // Nettoyer les tokens invalides/expirés
+      if (error.message?.includes('token') || 
+          error.message?.includes('refresh') ||
+          error.message?.includes('expiré') ||
+          error.message?.includes('invalide')) {
+        // Nettoyer silencieusement les tokens invalides
+        AuthService.logout();
+      }
+      
       setUser(null);
       setError(null); // Ne pas afficher d'erreur pour la vérification initiale
     } finally {

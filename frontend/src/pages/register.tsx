@@ -22,14 +22,25 @@ export default function RegisterPage() {
     industry: ''
   });
   const [formError, setFormError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Rediriger si déjà connecté - selon le rôle
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !isRedirecting) {
+      setIsRedirecting(true);
       const dashboardUrl = redirectAfterLogin(user);
-      router.push(dashboardUrl);
+      
+      // Délai court pour améliorer l'UX
+      setTimeout(() => {
+        try {
+          router.push(dashboardUrl);
+        } catch (error) {
+          console.error('Erreur de redirection automatique:', error);
+          router.push('/user/dashboard'); // Fallback sécurisé
+        }
+      }, 500);
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, isRedirecting]);
 
   // Nettoyer les erreurs quand le composant se monte
   useEffect(() => {
@@ -90,15 +101,40 @@ export default function RegisterPage() {
       // Préparer les données pour l'API (sans confirmPassword)
       const { confirmPassword, ...registerData } = formData;
       const user = await register(registerData);
-      // Redirection selon le rôle après inscription réussie - utilisateur connecté automatiquement
+      
+      // Message de succès et redirection
+      setIsRedirecting(true);
       const dashboardUrl = redirectAfterLogin(user);
-      router.push(dashboardUrl);
+      
+      // Notification de succès pour l'inscription
+      setTimeout(() => {
+        try {
+          router.push(dashboardUrl);
+        } catch (redirectError) {
+          console.error('Erreur lors de la redirection:', redirectError);
+          // Fallback vers dashboard utilisateur
+          router.push('/user/dashboard');
+        }
+      }, 800); // Délai plus long pour l'inscription
     } catch (err) {
       // L'erreur sera affichée via le contexte
     }
   };
 
   const displayError = formError || error;
+
+  // Affichage pendant la redirection
+  if (isRedirecting) {
+    return (
+      <div className="max-w-md mx-auto mt-8 px-4">
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Inscription réussie !</h2>
+          <p className="text-gray-600">Bienvenue ! Redirection en cours...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto mt-8 px-4">

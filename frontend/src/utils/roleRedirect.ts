@@ -12,7 +12,7 @@ export function getDashboardUrl(role: UserRole): string {
       return '/admin/dashboard';
     case 'user':
     default:
-      return '/dashboard';
+      return '/user/dashboard';
   }
 }
 
@@ -29,7 +29,28 @@ export function hasRole(user: User | null, requiredRole: UserRole): boolean {
 
 // Fonction pour rediriger automatiquement après login
 export function redirectAfterLogin(user: User): string {
-  return getDashboardUrl(user.role as UserRole);
+  // Validation de sécurité
+  if (!user || !user.role) {
+    console.warn('Utilisateur ou rôle manquant lors de la redirection');
+    return '/user/dashboard'; // Fallback sécurisé
+  }
+
+  // Redirection selon le rôle avec validation
+  switch (user.role) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'user':
+      return '/user/dashboard';
+    default:
+      console.warn(`Rôle non reconnu: ${user.role}, redirection verso dashboard user`);
+      return '/user/dashboard';
+  }
+}
+
+// Fonction pour obtenir l'URL de redirection avec fallback
+export function getRedirectUrl(user: User | null, fallback: string = '/'): string {
+  if (!user) return fallback;
+  return redirectAfterLogin(user);
 }
 
 // Fonction pour vérifier l'autorisation d'accès à une route
