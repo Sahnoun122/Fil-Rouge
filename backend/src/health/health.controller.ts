@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('health')
 export class HealthController {
+  @Public()
   @Get()
   check() {
     return {
@@ -13,6 +15,7 @@ export class HealthController {
     };
   }
 
+  @Public()
   @Get('detailed')
   detailedCheck() {
     const uptime = process.uptime();

@@ -13,6 +13,7 @@ import { AuthService, AuthResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Public } from './decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -20,8 +21,7 @@ export class AuthController {
 
   /**
    * 🚪 Inscription d'un nouvel utilisateur
-   */
-  @Post('register')
+   */  @Public()  @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto): Promise<{
     success: boolean;
@@ -44,6 +44,7 @@ export class AuthController {
   /**
    * 🔑 Connexion utilisateur
    */
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<{
