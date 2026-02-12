@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MarketPlan IA - Générateur de Stratégie Marketing Hybride
 
-## Getting Started
+Une application SaaS moderne construite avec Next.js 14 et Tailwind CSS qui génère des stratégies marketing complètes personnalisées grâce à l'intelligence artificielle.
 
-First, run the development server:
+## 🚀 Fonctionnalités
+
+### ✨ Génération de Stratégie IA
+- Formulaire intelligent qui collecte les informations business
+- Génération automatique d'un "One Page Marketing Plan" complet
+- Animation de progression avec étapes détaillées
+- Stratégie structurée en 3 phases : **AVANT** (Prospect) → **PENDANT** (Lead) → **APRÈS** (Client)
+
+### 📊 Dashboard Interactif
+- Vue d'ensemble avec cartes de résumé (secteur, objectif, ton, budget)
+- Navigation par onglets entre les 3 phases de la stratégie
+- Visualisation claire de chaque section avec icônes et couleurs
+
+### 🛠️ Outils d'Amélioration
+- **Édition manuelle** de chaque section
+- **Régénération IA** avec instructions personnalisées
+- **Amélioration IA** du contenu existant
+- Modal interactif pour donner des instructions précises à l'IA
+
+### 💾 Gestion des Données
+- Sauvegarde automatique en localStorage
+- Export de stratégie en format JSON
+- Partage via API native ou copie de lien
+- Historique des modifications
+
+## 🏃 Démarrage Rapide
 
 ```bash
+# Installation des dépendances
+npm install
+
+# Lancement du serveur de développement
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000) pour voir l'application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Pages principales :**
+- `/strategies/create` - Créer une nouvelle stratégie
+- `/strategies/[id]` - Voir une stratégie existante
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 Structure du Projet
 
-## Learn More
+```
+frontend/src/
+├── app/
+│   └── strategies/
+│       ├── create/
+│       │   └── page.tsx          # Page de création de stratégie
+│       └── [id]/
+│           └── page.tsx          # Page d'affichage de stratégie
+├── components/
+│   ├── strategy/
+│   │   ├── StrategyForm.tsx      # Formulaire de création
+│   │   ├── StrategyTabs.tsx      # Navigation par onglets
+│   │   ├── SectionCard.tsx       # Card pour chaque section
+│   │   ├── RegenerateModal.tsx   # Modal de régénération IA
+│   │   └── LoadingSkeleton.tsx   # États de chargement
+│   └── ui/
+│       └── Toast.tsx             # Système de notifications
+└── types/
+    └── strategy.ts               # Types TypeScript
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🎨 Design System
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Couleurs
+- **Primary**: Violet (#8B5CF6) to Purple (#A855F7)
+- **Success**: Green (#10B981)
+- **Error**: Red (#EF4444)
+- **Info**: Blue (#3B82F6)
+- **Neutral**: Gray palette
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Composants
+- **Cards**: `rounded-2xl` avec soft shadows
+- **Buttons**: Gradients violet/purple avec hover effects
+- **Icons**: Lucide React pour cohérence
+- **Layout**: Responsive grid avec breakpoints Tailwind
 
-## Deploy on Vercel
+## 🔧 Technologies Utilisées
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **TypeScript**: Full type safety
+- **State Management**: React hooks + Context (Toast)
+- **Storage**: localStorage (démo) / API ready
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚦 Pages Principales
+
+### `/strategies/create`
+Page de création avec :
+- Formulaire complet (8 champs)
+- Validation en temps réel
+- États de chargement animés
+- Progression step-by-step
+- Redirection automatique vers résultat
+
+### `/strategies/[id]`
+Dashboard de stratégie avec :
+- Header avec actions (partage, export, retour)
+- Cartes de résumé business
+- Navigation 3 phases (Avant/Pendant/Après)
+- Sections interactives avec boutons d'action
+- Modal de régénération/amélioration
+
+## 📋 Sections de Stratégie
+
+### Phase AVANT (Prospects)
+1. **Marché Cible** - Persona, besoins, problèmes, comportement digital
+2. **Message Marketing** - Proposition de valeur, message principal, ton
+3. **Canaux de Communication** - Plateformes et types de contenu
+
+### Phase PENDANT (Leads)
+1. **Capture Prospects** - Landing page, formulaires, offres incitatives
+2. **Nurturing** - Séquences d'emails, contenus éducatifs, relances
+3. **Conversion** - CTAs, offres commerciales, argumentaires
+
+### Phase APRÈS (Clients)
+1. **Expérience Client** - Recommandations d'amélioration
+2. **Augmentation Valeur Client** - Upsell, cross-sell, fidélité
+3. **Recommandation** - Parrainage, avis clients, récompenses
+
+## 🎯 Utilisation
+
+1. **Créer une stratégie** → Aller sur `/strategies/create` → Remplir le formulaire → Générer
+2. **Consulter une stratégie** → Accéder via `/strategies/[id]` → Explorer les 3 phases
+3. **Améliorer une section** → Cliquer "Régénérer/Améliorer" → Donner instructions → Confirmer
+
+## 🚀 Prochaines Étapes Production
+
+1. **Backend API** pour génération IA réelle
+2. **Base de données** pour persistance
+3. **Authentification** utilisateur
+4. **Export PDF** formaté
+5. **Intégrations** CRM/Marketing tools
+
+---
+
+**MarketPlan IA** - Transformez votre approche marketing avec l'intelligence artificielle 🚀
