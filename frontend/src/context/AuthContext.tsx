@@ -55,6 +55,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       setError(null);
 
+      // 🎭 Mode Demo - Simuler un utilisateur connecté
+      if (process.env.NODE_ENV === 'development') {
+        // Créer un utilisateur demo
+        const demoUser: User = {
+          id: 'demo-user-id',
+          email: 'user@demo.com', 
+          name: 'Utilisateur Demo',
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          isVerified: true
+        };
+        
+        setUser(demoUser);
+        setIsLoading(false);
+        return;
+      }
+
       const isAuth = await AuthService.checkAuth();
       
       if (isAuth) {
@@ -65,6 +82,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error: any) {
       console.error('Auth check failed:', error);
+      
+      // En mode développement, utiliser le mode demo même en cas d'erreur
+      if (process.env.NODE_ENV === 'development') {
+        const demoUser: User = {
+          id: 'demo-user-id',
+          email: 'user@demo.com', 
+          name: 'Utilisateur Demo',
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          isVerified: true
+        };
+        
+        setUser(demoUser);
+        setIsLoading(false);
+        return;
+      }
       
       // Nettoyer les tokens invalides/expirés
       if (error.message?.includes('token') || 
@@ -88,12 +121,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       setError(null);
 
+      // 🎭 Mode Demo
+      if (process.env.NODE_ENV === 'development') {
+        // Simuler une connexion réussie
+        const demoUser: User = {
+          id: 'demo-user-id',
+          email: data.email,
+          name: 'Utilisateur Demo',
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          isVerified: true
+        };
+        
+        setUser(demoUser);
+        return demoUser;
+      }
+
       const response = await AuthService.login(data);
       setUser(response.user);
       
       return response.user;
       
     } catch (error) {
+      // En mode développement, toujours réussir la connexion
+      if (process.env.NODE_ENV === 'development') {
+        const demoUser: User = {
+          id: 'demo-user-id',
+          email: data.email,
+          name: 'Utilisateur Demo',
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          isVerified: true
+        };
+        
+        setUser(demoUser);
+        return demoUser;
+      }
+      
       const message = error instanceof Error ? error.message : 'Erreur lors de la connexion';
       setError(message);
       throw error;
@@ -108,12 +172,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       setError(null);
 
+      // 🎭 Mode Demo
+      if (process.env.NODE_ENV === 'development') {
+        // Simuler une inscription réussie
+        const demoUser: User = {
+          id: 'demo-user-id',
+          email: data.email,
+          name: data.name,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          isVerified: true
+        };
+        
+        setUser(demoUser);
+        return demoUser;
+      }
+
       const response = await AuthService.register(data);
       setUser(response.user);
       
       return response.user;
       
     } catch (error) {
+      // En mode développement, toujours réussir l'inscription
+      if (process.env.NODE_ENV === 'development') {
+        const demoUser: User = {
+          id: 'demo-user-id',
+          email: data.email,
+          name: data.name,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          isVerified: true
+        };
+        
+        setUser(demoUser);
+        return demoUser;
+      }
+      
       const message = error instanceof Error ? error.message : 'Erreur lors de l\'inscription';
       setError(message);
       throw error;
@@ -127,6 +222,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setIsLoading(true);
       setError(null);
+
+      // 🎭 Mode Demo - Juste déconnecter localement
+      if (process.env.NODE_ENV === 'development') {
+        setUser(null);
+        setIsLoading(false);
+        window.location.href = '/';
+        return;
+      }
 
       await AuthService.logout();
       setUser(null);
@@ -150,10 +253,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       setError(null);
 
+      // 🎭 Mode Demo - Mettre à jour localement
+      if (process.env.NODE_ENV === 'development' && user) {
+        const updatedUser = { ...user, ...data };
+        setUser(updatedUser);
+        setIsLoading(false);
+        return;
+      }
+
       const updatedUser = await AuthService.updateProfile(data);
       setUser(updatedUser);
       
     } catch (error) {
+      // En mode développement, toujours réussir la mise à jour
+      if (process.env.NODE_ENV === 'development' && user) {
+        const updatedUser = { ...user, ...data };
+        setUser(updatedUser);
+        setIsLoading(false);
+        return;
+      }
+      
       const message = error instanceof Error ? error.message : 'Erreur lors de la mise à jour';
       setError(message);
       throw error;

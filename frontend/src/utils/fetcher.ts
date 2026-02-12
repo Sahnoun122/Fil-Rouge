@@ -12,6 +12,21 @@ export interface FetchOptions extends RequestInit {
   requireAuth?: boolean;
 }
 
+// Fonction utilitaire pour logs en mode demo
+const demoLog = (message: string, ...args: any[]) => {
+  // Désactiver les logs en mode développement (demo mode)
+  if (process.env.NODE_ENV === 'production') {
+    console.log(message, ...args);
+  }
+};
+
+const demoError = (message: string, ...args: any[]) => {
+  // Garder les erreurs importantes même en mode demo
+  if (process.env.NODE_ENV === 'production') {
+    console.error(message, ...args);
+  }
+};
+
 // Fonction utilitaire pour gérer les tokens
 class TokenManager {
   private static ACCESS_TOKEN_KEY = 'accessToken';
@@ -20,27 +35,27 @@ class TokenManager {
   static getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
     const token = localStorage.getItem(this.ACCESS_TOKEN_KEY);
-    console.log('Getting access token:', token ? `${token.substring(0, 20)}...` : 'null');
+    demoLog('Getting access token:', token ? `${token.substring(0, 20)}...` : 'null');
     return token;
   }
 
   static getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
     const token = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    console.log('Getting refresh token:', token ? `${token.substring(0, 20)}...` : 'null');
+    demoLog('Getting refresh token:', token ? `${token.substring(0, 20)}...` : 'null');
     return token;
   }
 
   static setTokens(accessToken: string, refreshToken: string): void {
     if (typeof window === 'undefined') {
-      console.log('Cannot save tokens: window is undefined (SSR)');
+      demoLog('Cannot save tokens: window is undefined (SSR)');
       return;
     }
     
     try {
-      console.log('Attempting to save tokens to localStorage...');
-      console.log('AccessToken length:', accessToken?.length || 0);
-      console.log('RefreshToken length:', refreshToken?.length || 0);
+      demoLog('Attempting to save tokens to localStorage...');
+      demoLog('AccessToken length:', accessToken?.length || 0);
+      demoLog('RefreshToken length:', refreshToken?.length || 0);
       
       localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
       localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
@@ -50,50 +65,50 @@ class TokenManager {
       const savedRefresh = localStorage.getItem(this.REFRESH_TOKEN_KEY);
       
       if (savedAccess && savedRefresh) {
-        console.log('✅ Tokens successfully saved to localStorage');
-        console.log('Saved AccessToken preview:', savedAccess.substring(0, 20) + '...');
-        console.log('Saved RefreshToken preview:', savedRefresh.substring(0, 20) + '...');
+        demoLog('✅ Tokens successfully saved to localStorage');
+        demoLog('Saved AccessToken preview:', savedAccess.substring(0, 20) + '...');
+        demoLog('Saved RefreshToken preview:', savedRefresh.substring(0, 20) + '...');
       } else {
-        console.error('❌ Failed to save tokens to localStorage');
+        demoError('❌ Failed to save tokens to localStorage');
       }
     } catch (error) {
-      console.error('❌ Error saving tokens to localStorage:', error);
+      demoError('❌ Error saving tokens to localStorage:', error);
     }
   }
 
   static clearTokens(): void {
     if (typeof window === 'undefined') return;
-    console.log('🧹 Clearing tokens from localStorage...');
+      demoLog('🧙 Clearing tokens from localStorage...');
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    console.log('✅ Tokens cleared');
+    demoLog('✅ Tokens cleared');
   }
 
   // Fonction de diagnostic
   static diagnose(): void {
     if (typeof window === 'undefined') {
-      console.log('🔍 Token Diagnostic: Running on server-side (SSR)');
+      demoLog('🔍 Token Diagnostic: Running on server-side (SSR)');
       return;
     }
 
-    console.log('🔍 === TOKEN DIAGNOSTIC ===');
-    console.log('localStorage available:', typeof Storage !== 'undefined');
-    console.log('window available:', typeof window !== 'undefined');
+    demoLog('🔍 === TOKEN DIAGNOSTIC ===');
+    demoLog('localStorage available:', typeof Storage !== 'undefined');
+    demoLog('window available:', typeof window !== 'undefined');
     
     const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
     
-    console.log('Access Token stored:', !!accessToken, accessToken ? `(${accessToken.length} chars)` : '');
-    console.log('Refresh Token stored:', !!refreshToken, refreshToken ? `(${refreshToken.length} chars)` : '');
+    demoLog('Access Token stored:', !!accessToken, accessToken ? `(${accessToken.length} chars)` : '');
+    demoLog('Refresh Token stored:', !!refreshToken, refreshToken ? `(${refreshToken.length} chars)` : '');
     
     // Vérifier tous les items du localStorage
-    console.log('All localStorage items:');
+    demoLog('All localStorage items:');
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       const value = localStorage.getItem(key || '');
-      console.log(`  ${key}: ${value ? `${value.substring(0, 30)}...` : 'null'}`);
+      demoLog(`  ${key}: ${value ? `${value.substring(0, 30)}...` : 'null'}`);
     }
-    console.log('🔍 === END DIAGNOSTIC ===');
+    demoLog('🔍 === END DIAGNOSTIC ===');
   }
 }
 

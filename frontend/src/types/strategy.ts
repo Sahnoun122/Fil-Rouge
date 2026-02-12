@@ -1,9 +1,9 @@
 export interface BusinessForm {
-  businessName: string;
+  companyName: string;
   industry: string;
   productOrService: string;
   targetAudience: string;
-  mainObjective: 'leads' | 'sales' | 'awareness' | 'engagement';
+  objective: 'leads' | 'sales' | 'awareness' | 'engagement';
   location: string;
   tone: 'friendly' | 'professional' | 'luxury' | 'young';
   budget?: number;
@@ -63,28 +63,38 @@ export interface RecommandationSection {
   recompenses: string[];
 }
 
+export interface StrategyContentSection {
+  title: string;
+  content: string;
+  isGenerated: boolean;
+}
+
 export interface AvantPhase {
-  marcheTarget: MarcheTargetSection;
-  messageMarketing: MessageMarketingSection;
-  canauxCommunication: CanauxCommunicationSection;
+  analyseBusiness: StrategyContentSection;
+  analysePublic: StrategyContentSection;
+  analyseConcurrence: StrategyContentSection;
+  analyseSwot: StrategyContentSection;
 }
 
 export interface PendantPhase {
-  captureProspects: CaptureProspectsSection;
-  nurturing: NurturingSection;
-  conversion: ConversionSection;
+  strategyCreative: StrategyContentSection;
+  planMedia: StrategyContentSection;
+  planContenu: StrategyContentSection;
+  kpiMetriques: StrategyContentSection;
 }
 
 export interface ApresPhase {
-  experienceClient: ExperienceClientSection;
-  augmentationValeurClient: AugmentationValeurClientSection;
-  recommandation: RecommandationSection;
+  planSuivi: StrategyContentSection;
+  optimisations: StrategyContentSection;
+  evolutionStrategy: StrategyContentSection;
+  reportingAnalyse: StrategyContentSection;
 }
 
 export interface MarketingStrategy {
   id: string;
   businessForm: BusinessForm;
-  createdAt: Date;
+  createdAt: string;
+  status?: 'draft' | 'in-progress' | 'completed';
   avant: AvantPhase;
   pendant: PendantPhase;
   apres: ApresPhase;

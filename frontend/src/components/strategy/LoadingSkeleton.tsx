@@ -2,9 +2,10 @@ import React from 'react';
 
 interface LoadingSkeletonProps {
   type?: 'form' | 'strategy' | 'card' | 'progress';
+  currentStep?: string;
 }
 
-export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card' }) => {
+export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card', currentStep }) => {
   if (type === 'form') {
     return (
       <div className="space-y-6 animate-pulse">
@@ -27,15 +28,66 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card' 
 
   if (type === 'progress') {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center space-x-3">
-              <div className="h-4 w-4 bg-gray-300 rounded-full"></div>
-              <div className="h-4 bg-gray-200 rounded flex-1"></div>
+      <div className="max-w-2xl mx-auto text-center">
+        <div className="bg-white rounded-2xl shadow-lg border p-8">
+          {/* Progress Animation */}
+          <div className="relative mb-8">
+            <div className="w-20 h-20 mx-auto mb-6">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-4 border-violet-100"></div>
+                <div className="absolute top-0 left-0 w-20 h-20 rounded-full border-4 border-violet-600 border-t-transparent animate-spin"></div>
+              </div>
             </div>
-          ))}
+            
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                IA MarketPlan en action
+              </h3>
+              
+              {currentStep && (
+                <p className="text-violet-600 font-medium mb-4">
+                  {currentStep}
+                </p>
+              )}
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-violet-600 rounded-full animate-pulse"></div>
+                  <span>Analyse en cours...</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 text-xs text-gray-500">
+                  <div className="flex flex-col items-center space-y-1">
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span>Données</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center space-y-1">
+                    <div className="w-6 h-6 bg-violet-100 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-violet-600 rounded-full animate-pulse"></div>
+                    </div>
+                    <span>Analyse</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center space-y-1">
+                    <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    </div>
+                    <span>Stratégie</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-sm text-gray-500">
+            <p>⚡ Génération personnalisée en cours...</p>
+            <p className="mt-1">Cela prend généralement 30-60 secondes</p>
+          </div>
         </div>
       </div>
     );

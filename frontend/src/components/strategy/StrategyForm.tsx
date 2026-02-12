@@ -11,11 +11,11 @@ interface StrategyFormProps {
 
 export const StrategyForm: React.FC<StrategyFormProps> = ({ onSubmit, isLoading = false }) => {
   const [formData, setFormData] = useState<BusinessForm>({
-    businessName: '',
+    companyName: '',
     industry: '',
     productOrService: '',
     targetAudience: '',
-    mainObjective: 'leads',
+    objective: 'leads',
     location: '',
     tone: 'professional',
     budget: undefined
@@ -86,8 +86,8 @@ export const StrategyForm: React.FC<StrategyFormProps> = ({ onSubmit, isLoading 
             <input
               type="text"
               required
-              value={formData.businessName}
-              onChange={(e) => handleInputChange('businessName', e.target.value)}
+              value={formData.companyName}
+              onChange={(e) => handleInputChange('companyName', e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors"
               placeholder="Ex: TechSolutions"
             />
@@ -118,8 +118,8 @@ export const StrategyForm: React.FC<StrategyFormProps> = ({ onSubmit, isLoading 
               Objectif principal
             </label>
             <select
-              value={formData.mainObjective}
-              onChange={(e) => handleInputChange('mainObjective', e.target.value as BusinessForm['mainObjective'])}
+              value={formData.objective}
+              onChange={(e) => handleInputChange('objective', e.target.value as BusinessForm['objective'])}
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors"
             >
               {objectives.map(obj => (
