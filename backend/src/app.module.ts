@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { HealthController } from './health/health.controller';
 
 // Import des modules
 import { AuthModule } from './auth/auth.module';
@@ -42,7 +43,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     UsersModule,
   ],
 
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   
   providers: [
     AppService,

@@ -1,0 +1,50 @@
+# Dépendances
+node_modules
+npm-debug.log*
+
+# Next.js
+.next/
+out/
+build
+
+# Logs
+logs
+*.log
+
+# Fichiers de développement
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+README.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*
+
+# Tests
+coverage
+*.test.ts
+*.test.tsx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Next.js specific
+.next
+out
+build
+*.tsbuildinfo
+next-env.d.ts

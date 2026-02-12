@@ -1,0 +1,76 @@
+# Docker Compose pour MarketPlan IA
+version: '3.8'
+
+services:
+  # Service MongoDB
+  mongodb:
+    image: mongo:7-jammy
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: marketplan
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/mongodb-init:/docker-entrypoint-initdb.d
+    networks:
+      - marketplan-network
+
+  # Service Backend (NestJS)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mongodb://admin:password123@mongodb:27017/marketplan?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRES_IN=1h
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - CORS_ORIGIN=http://localhost:3001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+    networks:
+      - marketplan-network
+    command: ["npm", "run", "start:dev"]
+
+  # Service Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - marketplan-network
+
+# Volumes pour la persistance des données
+volumes:
+  mongodb_data:
+    driver: local
+
+# Réseau pour la communication entre services
+networks:
+  marketplan-network:
+    driver: bridge

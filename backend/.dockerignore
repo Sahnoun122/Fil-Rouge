@@ -1,0 +1,46 @@
+# Dépendances
+node_modules
+npm-debug.log*
+
+# Distribution
+dist
+build
+
+# Logs
+logs
+*.log
+
+# Fichiers de développement
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+README.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*
+
+# Tests
+coverage
+*.test.ts
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NestJS specific
+/dist
+/node_modules
+/.env
