@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Strategy, StrategyDocument, MainObjective, Tone } from './schemas/strategy.schema';
 import { AiService } from '../ai/ai.service';
-import { GenerateStrategyDto, RegenerateSectionDto, ImproveSectionDto } from './dto';
+import { GenerateStrategyDto, RegenerateSectionDto, ImproveSectionDto, UpdateSectionDto } from './dto';
 import { buildFullStrategyPrompt, buildRegenerateSectionPrompt, buildImproveSectionPrompt } from '../ai/prompts/strategy.prompts';
 
 @Injectable()
@@ -425,20 +425,20 @@ export class StrategiesService {
   /**
    * Met à jour directement une section sans passer par l'IA
    */
-  async updateSectionDirectly(userId: string, strategyId: string, sectionKey: string, data: any): Promise<StrategyDocument> {
+  async updateSection(userId: string, strategyId: string, dto: UpdateSectionDto): Promise<StrategyDocument> {
     try {
       // Vérifier que la stratégie appartient à l'utilisateur
       const strategy = await this.findOne(userId, strategyId);
 
       // Vérifier que la section existe
-      const existingSection = this.getNestedValue(strategy.generatedStrategy, sectionKey);
+      const existingSection = this.getNestedValue(strategy.generatedStrategy, dto.sectionKey);
       if (existingSection === null) {
-        throw new NotFoundException(`Section "${sectionKey}" non trouvée`);
+        throw new NotFoundException(`Section "${dto.sectionKey}" non trouvée`);
       }
 
       // Mettre à jour la section dans la stratégie
       const updatedStrategy = strategy.toObject();
-      this.setNestedValue(updatedStrategy.generatedStrategy, sectionKey, data);
+      this.setNestedValue(updatedStrategy.generatedStrategy, dto.sectionKey, dto.data);
 
       // Sauvegarder les modifications
       const result = await this.strategyModel

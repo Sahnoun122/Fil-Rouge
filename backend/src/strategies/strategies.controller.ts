@@ -178,16 +178,10 @@ export class StrategiesController {
   ) {
     const userId = req.user.id;
     
-    // D'abord récupérer la stratégie pour vérifier qu'elle appartient à l'utilisateur
-    const strategy = await this.strategiesService.findOne(userId, strategyId);
-    
-    // Mettre à jour la section directement via le service
-    // Note: Cette logique pourrait être déplacée dans une méthode dédiée du service
-    const updatedStrategy = await this.strategiesService.updateSectionDirectly(
+    const updatedStrategy = await this.strategiesService.updateSection(
       userId,
       strategyId,
-      updateSectionDto.sectionKey,
-      updateSectionDto.data
+      updateSectionDto
     );
     
     return {
