@@ -22,8 +22,7 @@ export class User {
     required: true,
     unique: true,
     lowercase: true,
-    trim: true,
-    index: true
+    trim: true
   })
   email: string;
 
@@ -114,7 +113,7 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 };
 
 // 📊 Index pour optimiser les requêtes
-UserSchema.index({ email: 1 });
+// Note: email a déjà un index unique via "unique: true" dans le @Prop
 UserSchema.index({ role: 1 });
 UserSchema.index({ isActive: 1 });
 UserSchema.index({ createdAt: -1 });
