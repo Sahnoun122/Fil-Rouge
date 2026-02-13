@@ -3,8 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Strategy, StrategyDocument, MainObjective, Tone } from './schemas/strategy.schema';
 import { AiService } from '../ai/ai.service';
-import { GenerateStrategyDto } from './dto/generate-strategy.dto';
-import { buildFullStrategyPrompt } from '../ai/prompts/strategy.prompts';
+import { GenerateStrategyDto, RegenerateSectionDto, ImproveSectionDto } from './dto';
+import { buildFullStrategyPrompt, buildRegenerateSectionPrompt, buildImproveSectionPrompt } from '../ai/prompts/strategy.prompts';
 
 @Injectable()
 export class StrategiesService {
@@ -286,5 +286,169 @@ export class StrategiesService {
       avisClients: Array.isArray(data?.avisClients) ? data.avisClients : [],
       recompenses: Array.isArray(data?.recompenses) ? data.recompenses : [],
     };
+  }
+
+  /**
+   * Régénère une section spécifique de la stratégie
+   */
+  async regenerateSection(userId: string, strategyId: string, dto: RegenerateSectionDto): Promise<StrategyDocument> {
+    try {
+      // Vérifier que la stratégie appartient à l'utilisateur
+      const strategy = await this.findOne(userId, strategyId);
+
+      // Récupérer la section existante
+      const existingSection = this.getNestedValue(strategy.generatedStrategy, dto.sectionKey);
+      if (!existingSection) {
+        throw new NotFoundException(`Section "${dto.sectionKey}" non trouvée`);
+      }
+
+      // Construire les informations business pour le prompt
+      const businessInfoForPrompt = {
+        companyName: strategy.businessInfo.businessName,
+        industry: strategy.businessInfo.industry,
+        targetAudience: strategy.businessInfo.targetAudience,
+        products: strategy.businessInfo.productOrService,
+        objectives: this.getObjectiveDescription(strategy.businessInfo.mainObjective),
+        budget: strategy.businessInfo.budget ? `${strategy.businessInfo.budget}€` : 'Budget non spécifié',
+      };
+
+      // Construire le prompt de régénération
+      const prompt = buildRegenerateSectionPrompt(
+        businessInfoForPrompt,
+        dto.sectionKey,
+        dto.instruction || 'Régénérez cette section avec un contenu frais et innovant',
+        existingSection
+      );
+
+      // Appel à l'IA avec parsing JSON automatique
+      const newSectionData = await this.aiService.callNemotronAndParseJson(prompt);
+
+      // Mettre à jour la section dans la stratégie
+      const updatedStrategy = strategy.toObject();
+      this.setNestedValue(updatedStrategy.generatedStrategy, dto.sectionKey, newSectionData);
+
+      // Sauvegarder les modifications
+      const result = await this.strategyModel
+        .findOneAndUpdate(
+          {
+            _id: new Types.ObjectId(strategyId),
+            userId: new Types.ObjectId(userId),
+          },
+          { generatedStrategy: updatedStrategy.generatedStrategy },
+          { new: true }
+        )
+        .exec();
+
+      if (!result) {
+        throw new NotFoundException('Stratégie non trouvée lors de la mise à jour');
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Erreur lors de la régénération de la section: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Améliore une section spécifique de la stratégie
+   */
+  async improveSection(userId: string, strategyId: string, dto: ImproveSectionDto): Promise<StrategyDocument> {
+    try {
+      // Vérifier que la stratégie appartient à l'utilisateur
+      const strategy = await this.findOne(userId, strategyId);
+
+      // Récupérer la section existante
+      const existingSection = this.getNestedValue(strategy.generatedStrategy, dto.sectionKey);
+      if (!existingSection) {
+        throw new NotFoundException(`Section "${dto.sectionKey}" non trouvée`);
+      }
+
+      // Construire les informations business pour le prompt
+      const businessInfoForPrompt = {
+        companyName: strategy.businessInfo.businessName,
+        industry: strategy.businessInfo.industry,
+        targetAudience: strategy.businessInfo.targetAudience,
+        products: strategy.businessInfo.productOrService,
+        objectives: this.getObjectiveDescription(strategy.businessInfo.mainObjective),
+        budget: strategy.businessInfo.budget ? `${strategy.businessInfo.budget}€` : 'Budget non spécifié',
+      };
+
+      // Construire le prompt d'amélioration
+      const prompt = buildImproveSectionPrompt(
+        businessInfoForPrompt,
+        dto.sectionKey,
+        dto.instruction || 'Améliorez cette section en la rendant plus précise et actionnable',
+        existingSection
+      );
+
+      // Appel à l'IA avec parsing JSON automatique
+      const improvedSectionData = await this.aiService.callNemotronAndParseJson(prompt);
+
+      // Mettre à jour la section dans la stratégie
+      const updatedStrategy = strategy.toObject();
+      this.setNestedValue(updatedStrategy.generatedStrategy, dto.sectionKey, improvedSectionData);
+
+      // Sauvegarder les modifications
+      const result = await this.strategyModel
+        .findOneAndUpdate(
+          {
+            _id: new Types.ObjectId(strategyId),
+            userId: new Types.ObjectId(userId),
+          },
+          { generatedStrategy: updatedStrategy.generatedStrategy },
+          { new: true }
+        )
+        .exec();
+
+      if (!result) {
+        throw new NotFoundException('Stratégie non trouvée lors de la mise à jour');
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Erreur lors de l'amélioration de la section: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Récupère une valeur nested dans un objet via une clé en notation dot
+   */
+  private getNestedValue(obj: any, sectionKey: string): any {
+    return sectionKey.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : null;
+    }, obj);
+  }
+
+  /**
+   * Définit une valeur nested dans un objet via une clé en notation dot
+   */
+  private setNestedValue(obj: any, sectionKey: string, value: any): void {
+    const keys = sectionKey.split('.');
+    const lastKey = keys.pop();
+    
+    if (!lastKey) {
+      throw new Error('Section key invalide');
+    }
+
+    const target = keys.reduce((current, key) => {
+      if (!current[key] || typeof current[key] !== 'object') {
+        current[key] = {};
+      }
+      return current[key];
+    }, obj);
+
+    target[lastKey] = value;
   }
 }
