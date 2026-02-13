@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { StrategyTabs } from '@/components/strategy/StrategyTabs';
-import { LoadingSkeleton } from '@/components/strategy/LoadingSkeleton';
-import { MarketingStrategy, TabKey } from '@/types/strategy';
+import { StrategyTabs } from '../../../components/strategy/StrategyTabs';
+import { LoadingSkeleton } from '../../../components/strategy/LoadingSkeleton';
+import { MarketingStrategy, TabKey } from '../../../types/strategy';
 import { 
   ArrowLeft, 
   Download, 
@@ -29,6 +29,10 @@ export default function StrategyDetailPage() {
   useEffect(() => {
     const loadStrategy = async () => {
       try {
+        if (!params?.id) {
+          setError('ID de stratégie manquant');
+          return;
+        }
         const strategyId = params.id as string;
         
         // Simulate loading delay
@@ -52,10 +56,10 @@ export default function StrategyDetailPage() {
       }
     };
 
-    if (params.id) {
+    if (params?.id) {
       loadStrategy();
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const handleRegenerateSection = async (sectionKey: string, phaseKey: TabKey, instruction: string) => {
     if (!strategy) return;
@@ -67,12 +71,15 @@ export default function StrategyDetailPage() {
     console.log(`Regenerating ${phaseKey}.${sectionKey} with instruction: ${instruction}`);
     
     // For demo, just add a timestamp to show it updated
+    const currentPhase = strategy[phaseKey] as any;
+    const currentSection = currentPhase[sectionKey] as any;
+    
     const updatedStrategy = {
       ...strategy,
       [phaseKey]: {
-        ...strategy[phaseKey],
+        ...currentPhase,
         [sectionKey]: {
-          ...strategy[phaseKey][sectionKey],
+          ...currentSection,
           _lastUpdated: new Date().toLocaleString()
         }
       }
@@ -92,12 +99,15 @@ export default function StrategyDetailPage() {
     console.log(`Improving ${phaseKey}.${sectionKey} with instruction: ${instruction}`);
     
     // For demo, just add improvement marker
+    const currentPhase = strategy[phaseKey] as any;
+    const currentSection = currentPhase[sectionKey] as any;
+    
     const updatedStrategy = {
       ...strategy,
       [phaseKey]: {
-        ...strategy[phaseKey],
+        ...currentPhase,
         [sectionKey]: {
-          ...strategy[phaseKey][sectionKey],
+          ...currentSection,
           _improved: true,
           _lastImproved: new Date().toLocaleString()
         }
@@ -126,7 +136,7 @@ export default function StrategyDetailPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `strategie-${strategy.businessForm.businessName}-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `strategie-${strategy.businessForm.companyName}-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -137,7 +147,7 @@ export default function StrategyDetailPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Stratégie Marketing - ${strategy?.businessForm.businessName}`,
+          title: `Stratégie Marketing - ${strategy?.businessForm.companyName}`,
           text: 'Découvrez ma stratégie marketing générée par MarketPlan IA',
           url: window.location.href,
         });
@@ -216,7 +226,7 @@ export default function StrategyDetailPage() {
                 </button>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">
-                    {strategy.businessForm.businessName}
+                    {strategy.businessForm.companyName}
                   </h1>
                   <p className="text-gray-600 flex items-center mt-1">
                     <Calendar className="w-4 h-4 mr-2" />
@@ -270,7 +280,7 @@ export default function StrategyDetailPage() {
                   <span className="text-sm font-medium text-violet-900">Objectif</span>
                 </div>
                 <p className="text-violet-800 font-semibold">
-                  {objectiveLabels[strategy.businessForm.mainObjective]}
+                  {objectiveLabels[strategy.businessForm.objective]}
                 </p>
               </div>
               

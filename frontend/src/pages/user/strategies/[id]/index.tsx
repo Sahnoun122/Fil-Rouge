@@ -5,10 +5,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import UserLayout from '../../../../components/layout/UserLayout';
-import StrategyTabs from '../../../../components/strategy/StrategyTabs';
-import RegenerateModal from '../../../../components/strategy/RegenerateModal';
-import Toast from '../../../../components/ui/Toast';
-import { MarketingStrategy, StrategySection } from '../../../../types/strategy';
+import { StrategyTabs } from '../../../../components/strategy/StrategyTabs';
+import { RegenerateModal } from '../../../../components/strategy/RegenerateModal';
+import { SimpleToast } from '../../../../components/ui/SimpleToast';
+import { MarketingStrategy, StrategySection, TabKey } from '../../../../types/strategy';
 import { 
   ArrowLeft, 
   Download, 
@@ -29,7 +29,7 @@ export default function StrategyDetailPage() {
   const [strategy, setStrategy] = useState<MarketingStrategy | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
-  const [regenerateSection, setRegenerateSection] = useState<StrategySection | null>(null);
+  const [regenerateSection, setRegenerateSection] = useState<{sectionKey: string, phaseKey: TabKey, instruction: string} | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -64,12 +64,12 @@ export default function StrategyDetailPage() {
     router.push('/user/strategies');
   };
 
-  const handleRegenerateSection = (section: StrategySection) => {
-    setRegenerateSection(section);
+  const handleRegenerateSection = (sectionKey: string, phaseKey: TabKey, instruction: string) => {
+    setRegenerateSection({ sectionKey, phaseKey, instruction });
     setIsRegenerateModalOpen(true);
   };
 
-  const handleRegenerateConfirm = async (customPrompt?: string) => {
+  const handleRegenerateConfirm = async (instruction: string) => {
     if (!regenerateSection || !strategy) return;
 
     setIsRegenerateModalOpen(false);
@@ -83,11 +83,10 @@ export default function StrategyDetailPage() {
       
       // Mettre à jour la section
       const updatedStrategy = { ...strategy };
-      const sectionPath = regenerateSection.path;
-      const [phase, sectionKey] = sectionPath.split('.');
+      const { sectionKey, phaseKey } = regenerateSection;
       
-      if (phase && sectionKey && updatedStrategy[phase as keyof typeof updatedStrategy]) {
-        const phaseData = updatedStrategy[phase as keyof typeof updatedStrategy] as any;
+      if (phaseKey && sectionKey && updatedStrategy[phaseKey as keyof typeof updatedStrategy]) {
+        const phaseData = updatedStrategy[phaseKey as keyof typeof updatedStrategy] as any;
         if (phaseData[sectionKey]) {
           phaseData[sectionKey] = {
             ...phaseData[sectionKey],
@@ -293,13 +292,15 @@ export default function StrategyDetailPage() {
         <RegenerateModal
           isOpen={isRegenerateModalOpen}
           onClose={() => setIsRegenerateModalOpen(false)}
-          onConfirm={handleRegenerateConfirm}
-          section={regenerateSection}
+          onSubmit={handleRegenerateConfirm}
+          sectionTitle={regenerateSection?.sectionKey || ''}
+          actionType="regenerate"
+          isLoading={false}
         />
 
         {/* Toast */}
         {toast && (
-          <Toast
+          <SimpleToast
             type={toast.type}
             message={toast.message}
             onClose={() => setToast(null)}

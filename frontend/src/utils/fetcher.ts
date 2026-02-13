@@ -202,7 +202,7 @@ export async function fetcher<T = any>(
     return data;
 
   } catch (error) {
-    console.error('Fetch error:', error);
+    demoError('Fetch error:', error);
     throw error instanceof Error ? error : new Error('Erreur réseau');
   }
 }

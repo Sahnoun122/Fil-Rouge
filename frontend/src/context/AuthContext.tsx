@@ -61,10 +61,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const demoUser: User = {
           id: 'demo-user-id',
           email: 'user@demo.com', 
-          name: 'Utilisateur Demo',
+          fullName: 'Utilisateur Demo',
           role: 'user',
           createdAt: new Date().toISOString(),
-          isVerified: true
+          updatedAt: new Date().toISOString()
         };
         
         setUser(demoUser);
@@ -88,10 +88,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const demoUser: User = {
           id: 'demo-user-id',
           email: 'user@demo.com', 
-          name: 'Utilisateur Demo',
+          fullName: 'Utilisateur Demo',
           role: 'user',
           createdAt: new Date().toISOString(),
-          isVerified: true
+          updatedAt: new Date().toISOString()
         };
         
         setUser(demoUser);
@@ -127,10 +127,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const demoUser: User = {
           id: 'demo-user-id',
           email: data.email,
-          name: 'Utilisateur Demo',
+          fullName: 'Utilisateur Demo',
           role: 'user',
           createdAt: new Date().toISOString(),
-          isVerified: true
+          updatedAt: new Date().toISOString()
         };
         
         setUser(demoUser);

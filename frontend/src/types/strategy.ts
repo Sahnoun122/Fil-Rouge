@@ -69,6 +69,12 @@ export interface StrategyContentSection {
   isGenerated: boolean;
 }
 
+export interface StrategySection {
+  path: string;
+  title: string;
+  content: string;
+}
+
 export interface AvantPhase {
   analyseBusiness: StrategyContentSection;
   analysePublic: StrategyContentSection;
@@ -109,7 +115,6 @@ export interface RegenerateRequest {
 export type TabKey = 'avant' | 'pendant' | 'apres';
 
 export interface SectionCardProps {
-  title: string;
   data: any;
   sectionKey: string;
   phaseKey: TabKey;

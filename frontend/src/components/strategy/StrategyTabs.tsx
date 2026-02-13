@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MarketingStrategy, TabKey } from '@/types/strategy';
-import { SectionCard } from './SectionCard';
+import { MarketingStrategy, TabKey } from '../../types/strategy';
 import { RegenerateModal } from './RegenerateModal';
 import { CheckCircle, Users, Target, Heart } from 'lucide-react';
+import { SectionCard } from './SectionCard';
 
 interface StrategyTabsProps {
   strategy: MarketingStrategy;
@@ -52,20 +52,23 @@ export const StrategyTabs: React.FC<StrategyTabsProps> = ({
   onEditSection
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey>('avant');
-  const [modalState, setModalState] = useState<{
+  
+  interface ModalState {
     isOpen: boolean;
     sectionKey: string;
     phaseKey: TabKey;
     actionType: 'regenerate' | 'improve';
     sectionTitle: string;
-  }>({
+  }
+  
+  const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     sectionKey: '',
     phaseKey: 'avant',
     actionType: 'regenerate',
-    sectionTitle: ''
+    sectionTitle: 'Section'
   });
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
 
   const handleRegenerate = (sectionKey: string, phaseKey: TabKey) => {
     setModalState({
@@ -101,62 +104,52 @@ export const StrategyTabs: React.FC<StrategyTabsProps> = ({
       }
     } finally {
       setIsRegenerating(false);
-      setModalState(prev => ({ ...prev, isOpen: false }));
+      setModalState((prev: ModalState) => ({ ...prev, isOpen: false }));
     }
   };
 
-  const getSectionTitle = (sectionKey: string) => {
+  const getSectionTitle = (sectionKey: string): string => {
     const titles: Record<string, string> = {
-      marcheTarget: 'Marché Cible',
-      messageMarketing: 'Message Marketing',
-      canauxCommunication: 'Canaux de Communication',
-      captureProspects: 'Capture Prospects',
-      nurturing: 'Nurturing',
-      conversion: 'Conversion',
-      experienceClient: 'Expérience Client',
-      augmentationValeurClient: 'Augmentation Valeur Client',
-      recommandation: 'Recommandation'
+      analyseBusiness: 'Analyse Business',
+      analysePublic: 'Analyse du Public',
+      analyseConcurrence: 'Analyse de la Concurrence',
+      analyseSwot: 'Analyse SWOT',
+      strategyCreative: 'Stratégie Créative',
+      planMedia: 'Plan Média',
+      planContenu: 'Plan de Contenu',
+      kpiMetriques: 'KPI & Métriques',
+      planSuivi: 'Plan de Suivi',
+      optimisations: 'Optimisations',
+      evolutionStrategy: 'Évolution Stratégie',
+      reportingAnalyse: 'Reporting & Analyse'
     };
-    return titles[sectionKey] || sectionKey;
+    return titles[sectionKey] || `Section: ${sectionKey}`;
   };
 
   const renderTabContent = () => {
-    const phase = strategy[activeTab];
+    const phase = strategy[activeTab] as any;
     if (!phase) return null;
 
-    let sections: Array<{ key: string; data: any }> = [];
+    // Extraire dynamiquement les sections disponibles
+    const allSectionKeys = Object.keys(phase).filter(key => !key.startsWith('_'));
+    
+    // Définir l'ordre des sections pour chaque phase
+    const sectionOrder: Record<TabKey, string[]> = {
+      avant: ['analyseBusiness', 'analysePublic', 'analyseConcurrence', 'analyseSwot'],
+      pendant: ['strategyCreative', 'planMedia', 'planContenu', 'kpiMetriques'],
+      apres: ['planSuivi', 'optimisations', 'evolutionStrategy', 'reportingAnalyse']
+    };
 
-    switch (activeTab) {
-      case 'avant':
-        sections = [
-          { key: 'marcheTarget', data: phase.marcheTarget },
-          { key: 'messageMarketing', data: phase.messageMarketing },
-          { key: 'canauxCommunication', data: phase.canauxCommunication }
-        ];
-        break;
-      case 'pendant':
-        sections = [
-          { key: 'captureProspects', data: phase.captureProspects },
-          { key: 'nurturing', data: phase.nurturing },
-          { key: 'conversion', data: phase.conversion }
-        ];
-        break;
-      case 'apres':
-        sections = [
-          { key: 'experienceClient', data: phase.experienceClient },
-          { key: 'augmentationValeurClient', data: phase.augmentationValeurClient },
-          { key: 'recommandation', data: phase.recommandation }
-        ];
-        break;
-    }
+    const orderedSections = sectionOrder[activeTab] || allSectionKeys;
+    const sectionsToShow = orderedSections.filter(key => allSectionKeys.includes(key));
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sections.map(section => (
+        {sectionsToShow.map(sectionKey => (
           <SectionCard
-            key={section.key}
-            sectionKey={section.key}
-            data={section.data}
+            key={sectionKey}
+            sectionKey={sectionKey}
+            data={phase[sectionKey]}
             phaseKey={activeTab}
             onRegenerate={handleRegenerate}
             onImprove={handleImprove}
@@ -237,9 +230,9 @@ export const StrategyTabs: React.FC<StrategyTabsProps> = ({
       {/* Regenerate Modal */}
       <RegenerateModal
         isOpen={modalState.isOpen}
-        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => setModalState((prev: ModalState) => ({ ...prev, isOpen: false }))}
         onSubmit={handleModalSubmit}
-        sectionTitle={modalState.sectionTitle}
+        sectionTitle={modalState.sectionTitle || 'Section'}
         actionType={modalState.actionType}
         isLoading={isRegenerating}
       />

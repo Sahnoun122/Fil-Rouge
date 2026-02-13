@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { StrategyForm } from '@/components/strategy/StrategyForm';
-import { LoadingSkeleton } from '@/components/strategy/LoadingSkeleton';
-import { BusinessForm, GenerationState } from '@/types/strategy';
+import { StrategyForm } from '../../../components/strategy/StrategyForm';
+import { LoadingSkeleton } from '../../../components/strategy/LoadingSkeleton';
+import { BusinessForm, GenerationState } from '../../../types/strategy';
 import { CheckCircle, Sparkles, Clock, ArrowRight } from 'lucide-react';
 
 export default function CreateStrategyPage() {

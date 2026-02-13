@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BusinessForm } from '@/types/strategy';
+import { BusinessForm } from '../../types/strategy';
 import { Sparkles, Building2, Target, MapPin, DollarSign } from 'lucide-react';
 
 interface StrategyFormProps {
@@ -201,7 +201,7 @@ export const StrategyForm: React.FC<StrategyFormProps> = ({ onSubmit, isLoading 
             type="number"
             min="0"
             value={formData.budget || ''}
-            onChange={(e) => handleInputChange('budget', e.target.value ? Number(e.target.value) : undefined)}
+            onChange={(e) => handleInputChange('budget', e.target.value ? Number(e.target.value) : 0)}
             className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors"
             placeholder="Ex: 1000"
           />
