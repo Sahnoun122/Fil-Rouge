@@ -423,6 +423,52 @@ export class StrategiesService {
   }
 
   /**
+   * Met à jour directement une section sans passer par l'IA
+   */
+  async updateSectionDirectly(userId: string, strategyId: string, sectionKey: string, data: any): Promise<StrategyDocument> {
+    try {
+      // Vérifier que la stratégie appartient à l'utilisateur
+      const strategy = await this.findOne(userId, strategyId);
+
+      // Vérifier que la section existe
+      const existingSection = this.getNestedValue(strategy.generatedStrategy, sectionKey);
+      if (existingSection === null) {
+        throw new NotFoundException(`Section "${sectionKey}" non trouvée`);
+      }
+
+      // Mettre à jour la section dans la stratégie
+      const updatedStrategy = strategy.toObject();
+      this.setNestedValue(updatedStrategy.generatedStrategy, sectionKey, data);
+
+      // Sauvegarder les modifications
+      const result = await this.strategyModel
+        .findOneAndUpdate(
+          {
+            _id: new Types.ObjectId(strategyId),
+            userId: new Types.ObjectId(userId),
+          },
+          { generatedStrategy: updatedStrategy.generatedStrategy },
+          { new: true }
+        )
+        .exec();
+
+      if (!result) {
+        throw new NotFoundException('Stratégie non trouvée lors de la mise à jour');
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Erreur lors de la mise à jour manuelle de la section: ${error.message}`
+      );
+    }
+  }
+
+  /**
    * Récupère une valeur nested dans un objet via une clé en notation dot
    */
   private getNestedValue(obj: any, sectionKey: string): any {

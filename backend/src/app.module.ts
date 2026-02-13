@@ -11,6 +11,7 @@ import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AiModule } from './ai/ai.module';
+import { StrategiesModule } from './strategies/strategies.module';
 
 // Guards globaux
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -43,6 +44,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AuthModule,
     UsersModule,
     AiModule,
+    StrategiesModule,
   ],
 
   controllers: [AppController, HealthController],
