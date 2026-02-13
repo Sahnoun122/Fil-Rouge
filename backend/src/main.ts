@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Configuration du préfixe API
+  app.setGlobalPrefix('api');
   
   // Configuration CORS
   app.enableCors({
@@ -26,7 +30,12 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log('🚀 Backend server running on http://localhost:3000');
+  // Filtre d'exception global
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`🚀 Backend server running on http://localhost:${port}/api`);
 }
+
 bootstrap();
