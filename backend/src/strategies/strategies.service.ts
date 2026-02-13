@@ -48,9 +48,18 @@ export class StrategiesService {
 
       // Appel à l'IA avec parsing JSON automatique
       const generatedStrategy = await this.aiService.callNemotronAndParseJson(prompt);
+      
+      // Debug: Log de la réponse IA pour diagnostic
+      console.log('🤖 AI Response Structure:', JSON.stringify(generatedStrategy, null, 2));
 
       // Validation de la structure de réponse
       if (!generatedStrategy || !generatedStrategy.avant || !generatedStrategy.pendant || !generatedStrategy.apres) {
+        console.error('❌ Structure IA invalide:', { 
+          hasAvant: !!generatedStrategy?.avant,
+          hasPendant: !!generatedStrategy?.pendant,
+          hasApres: !!generatedStrategy?.apres,
+          actualStructure: Object.keys(generatedStrategy || {})
+        });
         throw new InternalServerErrorException('Format de réponse IA invalide');
       }
 
@@ -214,77 +223,104 @@ export class StrategiesService {
 
   // Méthodes de validation/transformation pour chaque section
   private ensureValidMarcheCible(data: any) {
+    if (!data || !data.persona || !data.besoins || !data.problemes || !data.comportementDigital) {
+      throw new InternalServerErrorException('Données marché cible incomplètes dans la réponse IA');
+    }
     return {
-      persona: data?.persona || '',
-      besoins: Array.isArray(data?.besoins) ? data.besoins : [],
-      problemes: Array.isArray(data?.problemes) ? data.problemes : [],
-      comportementDigital: Array.isArray(data?.comportementDigital) ? data.comportementDigital : [],
+      persona: data.persona,
+      besoins: Array.isArray(data.besoins) ? data.besoins : [],
+      problemes: Array.isArray(data.problemes) ? data.problemes : [],
+      comportementDigital: Array.isArray(data.comportementDigital) ? data.comportementDigital : [],
     };
   }
 
   private ensureValidMessageMarketing(data: any) {
+    if (!data || !data.propositionValeur || !data.messagePrincipal || !data.tonCommunication) {
+      throw new InternalServerErrorException('Données message marketing incomplètes dans la réponse IA');
+    }
     return {
-      propositionValeur: data?.propositionValeur || '',
-      messagePrincipal: data?.messagePrincipal || '',
-      tonCommunication: data?.tonCommunication || '',
+      propositionValeur: data.propositionValeur,
+      messagePrincipal: data.messagePrincipal,
+      tonCommunication: data.tonCommunication,
     };
   }
 
   private ensureValidCanauxCommunication(data: any) {
+    if (!data || !data.plateformes || !data.typesContenu) {
+      throw new InternalServerErrorException('Données canaux communication incomplètes dans la réponse IA');
+    }
     return {
-      plateformes: Array.isArray(data?.plateformes) ? data.plateformes : [],
+      plateformes: Array.isArray(data.plateformes) ? data.plateformes : [],
       typesContenu: {
-        instagram: Array.isArray(data?.typesContenu?.instagram) ? data.typesContenu.instagram : [],
-        tiktok: Array.isArray(data?.typesContenu?.tiktok) ? data.typesContenu.tiktok : [],
-        linkedin: Array.isArray(data?.typesContenu?.linkedin) ? data.typesContenu.linkedin : [],
-        facebook: Array.isArray(data?.typesContenu?.facebook) ? data.typesContenu.facebook : [],
+        instagram: Array.isArray(data.typesContenu?.instagram) ? data.typesContenu.instagram : [],
+        tiktok: Array.isArray(data.typesContenu?.tiktok) ? data.typesContenu.tiktok : [],
+        linkedin: Array.isArray(data.typesContenu?.linkedin) ? data.typesContenu.linkedin : [],
+        facebook: Array.isArray(data.typesContenu?.facebook) ? data.typesContenu.facebook : [],
       },
     };
   }
 
   private ensureValidCaptureProspects(data: any) {
+    if (!data || !data.landingPage || !data.formulaire || !data.offreIncitative) {
+      throw new InternalServerErrorException('Données capture prospects incomplètes dans la réponse IA');
+    }
     return {
-      landingPage: data?.landingPage || '',
-      formulaire: data?.formulaire || '',
-      offreIncitative: Array.isArray(data?.offreIncitative) ? data.offreIncitative : [],
+      landingPage: data.landingPage,
+      formulaire: data.formulaire,
+      offreIncitative: Array.isArray(data.offreIncitative) ? data.offreIncitative : [],
     };
   }
 
   private ensureValidNurturing(data: any) {
+    if (!data || !data.sequenceEmails || !data.contenusEducatifs || !data.relances) {
+      throw new InternalServerErrorException('Données nurturing incomplètes dans la réponse IA');
+    }
     return {
-      sequenceEmails: Array.isArray(data?.sequenceEmails) ? data.sequenceEmails : [],
-      contenusEducatifs: Array.isArray(data?.contenusEducatifs) ? data.contenusEducatifs : [],
-      relances: Array.isArray(data?.relances) ? data.relances : [],
+      sequenceEmails: Array.isArray(data.sequenceEmails) ? data.sequenceEmails : [],
+      contenusEducatifs: Array.isArray(data.contenusEducatifs) ? data.contenusEducatifs : [],
+      relances: Array.isArray(data.relances) ? data.relances : [],
     };
   }
 
   private ensureValidConversion(data: any) {
+    if (!data || !data.cta || !data.offres || !data.argumentaireVente) {
+      throw new InternalServerErrorException('Données conversion incomplètes dans la réponse IA');
+    }
     return {
-      cta: Array.isArray(data?.cta) ? data.cta : [],
-      offres: Array.isArray(data?.offres) ? data.offres : [],
-      argumentaireVente: Array.isArray(data?.argumentaireVente) ? data.argumentaireVente : [],
+      cta: Array.isArray(data.cta) ? data.cta : [],
+      offres: Array.isArray(data.offres) ? data.offres : [],
+      argumentaireVente: Array.isArray(data.argumentaireVente) ? data.argumentaireVente : [],
     };
   }
 
   private ensureValidExperienceClient(data: any) {
+    if (!data || !data.recommendations) {
+      throw new InternalServerErrorException('Données expérience client incomplètes dans la réponse IA');
+    }
     return {
-      recommendations: Array.isArray(data?.recommendations) ? data.recommendations : [],
+      recommendations: Array.isArray(data.recommendations) ? data.recommendations : [],
     };
   }
 
   private ensureValidAugmentationValeurClient(data: any) {
+    if (!data || !data.upsell || !data.crossSell || !data.fidelite) {
+      throw new InternalServerErrorException('Données augmentation valeur client incomplètes dans la réponse IA');
+    }
     return {
-      upsell: Array.isArray(data?.upsell) ? data.upsell : [],
-      crossSell: Array.isArray(data?.crossSell) ? data.crossSell : [],
-      fidelite: Array.isArray(data?.fidelite) ? data.fidelite : [],
+      upsell: Array.isArray(data.upsell) ? data.upsell : [],
+      crossSell: Array.isArray(data.crossSell) ? data.crossSell : [],
+      fidelite: Array.isArray(data.fidelite) ? data.fidelite : [],
     };
   }
 
   private ensureValidRecommandation(data: any) {
+    if (!data || !data.parrainage || !data.avisClients || !data.recompenses) {
+      throw new InternalServerErrorException('Données recommandation incomplètes dans la réponse IA');
+    }
     return {
-      parrainage: Array.isArray(data?.parrainage) ? data.parrainage : [],
-      avisClients: Array.isArray(data?.avisClients) ? data.avisClients : [],
-      recompenses: Array.isArray(data?.recompenses) ? data.recompenses : [],
+      parrainage: Array.isArray(data.parrainage) ? data.parrainage : [],
+      avisClients: Array.isArray(data.avisClients) ? data.avisClients : [],
+      recompenses: Array.isArray(data.recompenses) ? data.recompenses : [],
     };
   }
 

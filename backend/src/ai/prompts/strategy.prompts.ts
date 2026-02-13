@@ -47,40 +47,58 @@ CONSIGNES STRICTES :
 FORMAT JSON ATTENDU :
 {
   "avant": {
-    "title": "Préparation et Stratégie",
-    "description": "Phase de préparation et d'analyse stratégique",
-    "actions": [
-      "Action précise 1 avec méthodologie claire",
-      "Action précise 2 avec méthodologie claire",
-      "Action précise 3 avec méthodologie claire",
-      "Action précise 4 avec méthodologie claire",
-      "Action précise 5 avec méthodologie claire",
-      "Action précise 6 avec méthodologie claire"
-    ]
+    "marcheCible": {
+      "persona": "Description détaillée du persona type de ${companyName} (âge, profession, besoins, comportements)",
+      "besoins": ["Besoin principal 1", "Besoin principal 2", "Besoin principal 3"],
+      "problemes": ["Problème majeur 1", "Problème majeur 2", "Problème majeur 3"],
+      "comportementDigital": ["Habitude digitale 1", "Habitude digitale 2", "Habitude digitale 3"]
+    },
+    "messageMarketing": {
+      "propositionValeur": "Proposition de valeur unique claire et attractive pour ${companyName}",
+      "messagePrincipal": "Message marketing principal accrocheur et mémorable",
+      "tonCommunication": "Ton de communication adapté (professionnel, amical, luxe, moderne, etc.)"
+    },
+    "canauxCommunication": {
+      "plateformes": ["Plateforme 1", "Plateforme 2", "Plateforme 3"],
+      "typesContenu": {
+        "instagram": ["Type contenu Instagram 1", "Type contenu Instagram 2"],
+        "tiktok": ["Type contenu TikTok 1", "Type contenu TikTok 2"],
+        "linkedin": ["Type contenu LinkedIn 1", "Type contenu LinkedIn 2"],
+        "facebook": ["Type contenu Facebook 1", "Type contenu Facebook 2"]
+      }
+    }
   },
   "pendant": {
-    "title": "Exécution et Déploiement",
-    "description": "Phase d'exécution des tactiques marketing",
-    "actions": [
-      "Tactique d'exécution concrète 1",
-      "Tactique d'exécution concrète 2",
-      "Tactique d'exécution concrète 3",
-      "Tactique d'exécution concrète 4",
-      "Tactique d'exécution concrète 5",
-      "Tactique d'exécution concrète 6"
-    ]
+    "captureProspects": {
+      "landingPage": "Description détaillée de la landing page optimisée pour la conversion",
+      "formulaire": "Description du formulaire de capture avec les champs optimaux",
+      "offreIncitative": ["Lead magnet 1", "Lead magnet 2", "Lead magnet 3"]
+    },
+    "nurturing": {
+      "sequenceEmails": ["Email 1: Sujet et contenu", "Email 2: Sujet et contenu", "Email 3: Sujet et contenu"],
+      "contenusEducatifs": ["Contenu éducatif 1", "Contenu éducatif 2", "Contenu éducatif 3"],
+      "relances": ["Relance 1", "Relance 2", "Relance 3"]
+    },
+    "conversion": {
+      "cta": ["Call-to-action 1", "Call-to-action 2", "Call-to-action 3"],
+      "offres": ["Offre de conversion 1", "Offre de conversion 2", "Offre de conversion 3"],
+      "argumentaireVente": ["Argument de vente 1", "Argument de vente 2", "Argument de vente 3"]
+    }
   },
   "apres": {
-    "title": "Mesure et Optimisation",
-    "description": "Phase d'analyse des résultats et d'optimisation",
-    "actions": [
-      "Méthode de mesure et d'optimisation 1",
-      "Méthode de mesure et d'optimisation 2",
-      "Méthode de mesure et d'optimisation 3",
-      "Méthode de mesure et d'optimisation 4",
-      "Méthode de mesure et d'optimisation 5",
-      "Méthode de mesure et d'optimisation 6"
-    ]
+    "experienceClient": {
+      "recommendations": ["Amélioration expérience 1", "Amélioration expérience 2", "Amélioration expérience 3"]
+    },
+    "augmentationValeurClient": {
+      "upsell": ["Stratégie upsell 1", "Stratégie upsell 2", "Stratégie upsell 3"],
+      "crossSell": ["Stratégie cross-sell 1", "Stratégie cross-sell 2", "Stratégie cross-sell 3"],
+      "fidelite": ["Programme fidélité 1", "Programme fidélité 2", "Programme fidélité 3"]
+    },
+    "recommandation": {
+      "parrainage": ["Système parrainage 1", "Système parrainage 2", "Système parrainage 3"],
+      "avisClients": ["Stratégie avis 1", "Stratégie avis 2", "Stratégie avis 3"],
+      "recompenses": ["Récompense 1", "Récompense 2", "Récompense 3"]
+    }
   }
 }
 
@@ -102,15 +120,62 @@ export function buildRegenerateSectionPrompt(
     targetAudience = "la clientèle cible" 
   } = businessInfo;
 
-  const sectionTitles = {
-    avant: "Préparation et Stratégie",
-    pendant: "Exécution et Déploiement", 
-    apres: "Mesure et Optimisation"
+  const sectionExamples = {
+    'avant.marcheCible': `{
+  "persona": "Description détaillée du persona (âge, profession, besoins, comportements)",
+  "besoins": ["Besoin 1", "Besoin 2", "Besoin 3"],
+  "problemes": ["Problème 1", "Problème 2", "Problème 3"],
+  "comportementDigital": ["Habitude 1", "Habitude 2", "Habitude 3"]
+}`,
+    'avant.messageMarketing': `{
+  "propositionValeur": "Proposition de valeur unique",
+  "messagePrincipal": "Message marketing principal",
+  "tonCommunication": "Ton de communication adapté"
+}`,
+    'avant.canauxCommunication': `{
+  "plateformes": ["Plateforme 1", "Plateforme 2"],
+  "typesContenu": {
+    "instagram": ["Type 1", "Type 2"],
+    "tiktok": ["Type 1", "Type 2"],
+    "linkedin": ["Type 1", "Type 2"],
+    "facebook": ["Type 1", "Type 2"]
+  }
+}`,
+    'pendant.captureProspects': `{
+  "landingPage": "Description de la landing page",
+  "formulaire": "Description du formulaire",
+  "offreIncitative": ["Lead magnet 1", "Lead magnet 2"]
+}`,
+    'pendant.nurturing': `{
+  "sequenceEmails": ["Email 1", "Email 2", "Email 3"],
+  "contenusEducatifs": ["Contenu 1", "Contenu 2"],
+  "relances": ["Relance 1", "Relance 2"]
+}`,
+    'pendant.conversion': `{
+  "cta": ["CTA 1", "CTA 2"],
+  "offres": ["Offre 1", "Offre 2"],
+  "argumentaireVente": ["Argument 1", "Argument 2"]
+}`,
+    'apres.experienceClient': `{
+  "recommendations": ["Recommandation 1", "Recommandation 2"]
+}`,
+    'apres.augmentationValeurClient': `{
+  "upsell": ["Stratégie 1", "Stratégie 2"],
+  "crossSell": ["Stratégie 1", "Stratégie 2"],
+  "fidelite": ["Programme 1", "Programme 2"]
+}`,
+    'apres.recommandation': `{
+  "parrainage": ["Système 1", "Système 2"],
+  "avisClients": ["Stratégie 1", "Stratégie 2"],
+  "recompenses": ["Récompense 1", "Récompense 2"]
+}`
   };
 
-  const sectionTitle = sectionTitles[sectionKey as keyof typeof sectionTitles] || sectionKey;
+  const formatExample = sectionExamples[sectionKey as keyof typeof sectionExamples] || `{
+  // Structure adaptée à la section ${sectionKey}
+}`;
 
-  return `En tant qu'expert en stratégie marketing, régénérez complètement la section "${sectionTitle}" du plan marketing pour ${companyName} dans ${industry}.
+  return `En tant qu'expert en stratégie marketing, régénérez complètement la section "${sectionKey}" du plan marketing pour ${companyName} dans ${industry}.
 
 CONTEXTE ENTREPRISE :
 - Entreprise : ${companyName}
@@ -125,25 +190,13 @@ ${instruction}
 
 CONSIGNES STRICTES :
 1. Répondez UNIQUEMENT avec un JSON valide de la section demandée
-2. Gardez la structure exacte : title, description, actions
-3. Maximum 6 actions concrètes et professionnelles
-4. Contenu 100% en français
-5. Actions spécifiques au secteur et à l'entreprise
-6. Évitez de reproduire les actions existantes si l'instruction demande du changement
+2. Respectez EXACTEMENT la structure attendue pour ${sectionKey}
+3. Contenu 100% en français, concret et professionnel
+4. Évitez de reproduire le contenu existant si demandé
+5. Adaptez le contenu au secteur ${industry}
 
-FORMAT JSON ATTENDU (section "${sectionKey}") :
-{
-  "title": "Titre professionnel de la section",
-  "description": "Description claire de cette phase", 
-  "actions": [
-    "Action concrète et spécifique 1",
-    "Action concrète et spécifique 2", 
-    "Action concrète et spécifique 3",
-    "Action concrète et spécifique 4",
-    "Action concrète et spécifique 5",
-    "Action concrète et spécifique 6"
-  ]
-}
+FORMAT JSON ATTENDU pour ${sectionKey} :
+${formatExample}
 
 Générez la nouvelle section maintenant :`;
 }
@@ -163,15 +216,62 @@ export function buildImproveSectionPrompt(
     targetAudience = "la clientèle cible" 
   } = businessInfo;
 
-  const sectionTitles = {
-    avant: "Préparation et Stratégie",
-    pendant: "Exécution et Déploiement",
-    apres: "Mesure et Optimisation"  
+  const sectionExamples = {
+    'avant.marcheCible': `{
+  "persona": "Description détaillée du persona (âge, profession, besoins, comportements)",
+  "besoins": ["Besoin 1", "Besoin 2", "Besoin 3"],
+  "problemes": ["Problème 1", "Problème 2", "Problème 3"],
+  "comportementDigital": ["Habitude 1", "Habitude 2", "Habitude 3"]
+}`,
+    'avant.messageMarketing': `{
+  "propositionValeur": "Proposition de valeur unique",
+  "messagePrincipal": "Message marketing principal",
+  "tonCommunication": "Ton de communication adapté"
+}`,
+    'avant.canauxCommunication': `{
+  "plateformes": ["Plateforme 1", "Plateforme 2"],
+  "typesContenu": {
+    "instagram": ["Type 1", "Type 2"],
+    "tiktok": ["Type 1", "Type 2"],
+    "linkedin": ["Type 1", "Type 2"],
+    "facebook": ["Type 1", "Type 2"]
+  }
+}`,
+    'pendant.captureProspects': `{
+  "landingPage": "Description de la landing page",
+  "formulaire": "Description du formulaire",
+  "offreIncitative": ["Lead magnet 1", "Lead magnet 2"]
+}`,
+    'pendant.nurturing': `{
+  "sequenceEmails": ["Email 1", "Email 2", "Email 3"],
+  "contenusEducatifs": ["Contenu 1", "Contenu 2"],
+  "relances": ["Relance 1", "Relance 2"]
+}`,
+    'pendant.conversion': `{
+  "cta": ["CTA 1", "CTA 2"],
+  "offres": ["Offre 1", "Offre 2"],
+  "argumentaireVente": ["Argument 1", "Argument 2"]
+}`,
+    'apres.experienceClient': `{
+  "recommendations": ["Recommandation 1", "Recommandation 2"]
+}`,
+    'apres.augmentationValeurClient': `{
+  "upsell": ["Stratégie 1", "Stratégie 2"],
+  "crossSell": ["Stratégie 1", "Stratégie 2"],
+  "fidelite": ["Programme 1", "Programme 2"]
+}`,
+    'apres.recommandation': `{
+  "parrainage": ["Système 1", "Système 2"],
+  "avisClients": ["Stratégie 1", "Stratégie 2"],
+  "recompenses": ["Récompense 1", "Récompense 2"]
+}`
   };
 
-  const sectionTitle = sectionTitles[sectionKey as keyof typeof sectionTitles] || sectionKey;
+  const formatExample = sectionExamples[sectionKey as keyof typeof sectionExamples] || `{
+  // Structure adaptée à la section ${sectionKey}
+}`;
 
-  return `En tant qu'expert en stratégie marketing, améliorez la section "${sectionTitle}" du plan marketing pour ${companyName} dans ${industry}.
+  return `En tant qu'expert en stratégie marketing, améliorez la section "${sectionKey}" du plan marketing pour ${companyName} dans ${industry}.
 
 CONTEXTE ENTREPRISE :
 - Entreprise : ${companyName}
@@ -186,26 +286,14 @@ ${instruction}
 
 CONSIGNES STRICTES :
 1. Répondez UNIQUEMENT avec un JSON valide de la section améliorée
-2. CONSERVEZ la logique et l'orientation générale de la section existante
-3. Améliorez la précision, la clarté et l'impact des actions
-4. Gardez la même structure : title, description, actions
-5. Maximum 6 actions affinées et optimisées
-6. Contenu 100% en français, professionnel
-7. Rendez les actions plus spécifiques et actionnables
+2. CONSERVEZ la logique et l'orientation générale
+3. Respectez EXACTEMENT la structure attendue pour ${sectionKey}
+4. Améliorez la précision, la clarté et l'impact
+5. Contenu 100% en français, professionnel
+6. Rendez le contenu plus spécifique et actionnable
 
-FORMAT JSON ATTENDU (section "${sectionKey}" améliorée) :
-{
-  "title": "Titre optimisé de la section",
-  "description": "Description améliorée et plus précise",
-  "actions": [
-    "Action améliorée et plus précise 1",
-    "Action améliorée et plus précise 2",
-    "Action améliorée et plus précise 3", 
-    "Action améliorée et plus précise 4",
-    "Action améliorée et plus précise 5",
-    "Action améliorée et plus précise 6"
-  ]
-}
+FORMAT JSON ATTENDU pour ${sectionKey} améliorée :
+${formatExample}
 
 Générez la section améliorée maintenant :`;
 }
