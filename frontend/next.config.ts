@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Configuration optimisée pour Docker
   output: 'standalone',
-  
+
   // Configuration CORS pour Docker
   async rewrites() {
     return [
@@ -19,10 +19,7 @@ const nextConfig: NextConfig = {
     unoptimized: true
   },
 
-  // Experimental features
-  experimental: {
-    serverComponentsExternalPackages: []
-  }
+  serverExternalPackages: []
 };
 
 export default nextConfig;

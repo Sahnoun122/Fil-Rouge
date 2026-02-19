@@ -65,6 +65,39 @@ export interface ChangePasswordData {
   newPassword: string;
 }
 
+const normalizeBackendUser = (payload: any): User => {
+  const rawId = payload?.id || payload?._id;
+  const id =
+    typeof rawId === 'string'
+      ? rawId
+      : rawId?.toString?.() || '';
+
+  const createdAt = payload?.createdAt
+    ? new Date(payload.createdAt).toISOString()
+    : new Date().toISOString();
+
+  const updatedAt = payload?.updatedAt
+    ? new Date(payload.updatedAt).toISOString()
+    : createdAt;
+
+  return {
+    id,
+    fullName: payload?.fullName || payload?.name || '',
+    email: payload?.email || '',
+    role: payload?.role || 'user',
+    isActive: payload?.isActive ?? true,
+    emailVerified: payload?.emailVerified ?? false,
+    phone: payload?.phone,
+    companyName: payload?.companyName,
+    industry: payload?.industry,
+    lastLoginAt: payload?.lastLoginAt
+      ? new Date(payload.lastLoginAt).toISOString()
+      : undefined,
+    createdAt,
+    updatedAt,
+  };
+};
+
 // Service d'authentification
 export class AuthService {
   // 🔐 AUTHENTIFICATION
@@ -174,7 +207,7 @@ export class AuthService {
       }
 
       console.log('🔄 Starting token refresh...');
-      const response = await api.post('/auth/refresh-token', {
+      const response = await api.post('/auth/refresh', {
         refreshToken,
       }) as any; // Assertion de type temporaire pour éviter les erreurs TypeScript
 
@@ -215,20 +248,20 @@ export class AuthService {
 
   // 👤 GESTION UTILISATEUR
   static async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/auth/me', true);
+    const response = await api.get<any>('/users/profile', true);
     
     if (response.success && response.data) {
-      return response.data;
+      return normalizeBackendUser(response.data);
     }
     
     throw new Error(response.message || 'Erreur lors de la récupération du profil');
   }
 
   static async getProfile(): Promise<User> {
-    const response = await api.get<User>('/users/profile', true);
+    const response = await api.get<any>('/users/profile', true);
     
     if (response.success && response.data) {
-      return response.data;
+      return normalizeBackendUser(response.data);
     }
     
     throw new Error(response.message || 'Erreur lors de la récupération du profil');

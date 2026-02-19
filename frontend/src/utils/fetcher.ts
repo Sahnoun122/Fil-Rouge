@@ -217,7 +217,7 @@ async function refreshAccessToken(): Promise<boolean> {
       return false;
     }
 
-    const response = await fetch(`${BASE_URL}/auth/refresh-token`, {
+    const response = await fetch(`${BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

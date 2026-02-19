@@ -13,8 +13,10 @@ import {
   Play,
   Loader2,
 } from 'lucide-react';
-import { useStrategiesList, useStrategies } from '../../../hooks/useStrategies';
-import { strategiesService } from '../../../services/strategiesService';
+import useStrategiesList from '@/src/hooks/useStrategies';
+// import { useStrategiesList, useStrategies } from '../../../hooks/useStrategies';
+import strategiesService from '@/src/services/strategiesService';
+// import { strategiesService } from '../../../services/strategiesService';
 
 // Composant de test pour les services
 const ApiTestPanel = () => {
@@ -50,7 +52,7 @@ const ApiTestPanel = () => {
       name: 'auth-check',
       label: 'Vérification authentification',
       description: 'Teste si le token JWT est valide',
-      testFn: () => strategiesService.getAllStrategies({ page: 1, limit: 1 })
+      testFn: () => strategiesService.getAllStrategies(1, 1)
     },
     {
       name: 'types-validation',

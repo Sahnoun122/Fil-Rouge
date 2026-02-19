@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -85,21 +83,4 @@ body {
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: shimmer 3s linear infinite;
-}
-
-/* Glass effect */
-.glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Gradient borders */
-.gradient-border {
-    position: relative;
-    background: linear-gradient(#0d0d1e, #0d0d1e) padding-box,
-        linear-gradient(135deg, #7c3aed, #4f46e5) border-box;
-    border: 1px solid transparent;
 }

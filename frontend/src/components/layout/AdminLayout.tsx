@@ -3,9 +3,11 @@
 // components/layout/AdminLayout.tsx - Layout principal pour Admin
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import AdminSidebar from '../admin/AdminSidebar';
 import { useAuth } from '../../hooks/useAuth';
-import ProtectedRoute from '../ProtectedRoute';
+
+const ProtectedRoute = dynamic(() => import('../ProtectedRoute'), { ssr: false });
 
 interface AdminLayoutProps {
   children: React.ReactNode;

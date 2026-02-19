@@ -4,7 +4,7 @@
 
 import { useAuth } from '../hooks/useAuth';
 import { useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { isAuthorizedForRoute, getDashboardUrl, UserRole } from '../utils/roleRedirect';
 
 interface ProtectedRouteProps {

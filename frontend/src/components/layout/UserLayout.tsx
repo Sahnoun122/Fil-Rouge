@@ -3,9 +3,11 @@
 // components/layout/UserLayout.tsx - Layout principal pour User
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import UserSidebar from '../user/UserSidebar';
 import { useAuth } from '../../hooks/useAuth';
-import ProtectedRoute from '../ProtectedRoute';
+
+const ProtectedRoute = dynamic(() => import('../ProtectedRoute'), { ssr: false });
 
 interface UserLayoutProps {
   children: React.ReactNode;
