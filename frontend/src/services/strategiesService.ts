@@ -13,7 +13,7 @@ class StrategiesService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
   }
 
   // Utilitaire pour récupérer le token d'authentification

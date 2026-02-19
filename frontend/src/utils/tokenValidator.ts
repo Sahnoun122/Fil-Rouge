@@ -1,100 +1,49 @@
-// utils/tokenValidator.ts - Validation et nettoyage des tokens
-
-import { TokenManager } from './fetcher';
+import { TokenManager } from "./fetcher";
 
 export class TokenValidator {
-  /**
-   * Vérifie si un token semble valide (structure basique)
-   */
-  static isTokenValid(token: string | null): boolean {
-    if (!token) return false;
-    
+  private static normalizeToken(token: string): string {
+    return token.replace(/^Bearer\s+/i, "").trim();
+  }
+
+  private static decodePart(part: string): string | null {
     try {
-      // Vérification basique de la structure JWT
-      const parts = token.split('.');
-      if (parts.length !== 3) return false;
-      
-      // Vérifier que toutes les parties sont base64 valides
-      for (const part of parts) {
-        if (!part || part.length === 0) return false;
-      }
-      
-      return true;
-    } catch (error) {
-      return false;
+      const base64Url = part.replace(/-/g, "+").replace(/_/g, "/");
+      const pad = base64Url.length % 4;
+      const normalized = base64Url + (pad ? "=".repeat(4 - pad) : "");
+      if (typeof window === "undefined") return null;
+      return window.atob(normalized);
+    } catch {
+      return null;
     }
   }
 
-  /**
-   * Vérifie si un token JWT est expiré
-   */
-  static isTokenExpired(token: string): boolean {
+  private static payload(token: string): any | null {
+    const clean = this.normalizeToken(token);
+    const parts = clean.split(".");
+    if (parts.length !== 3) return null;
+    const decoded = this.decodePart(parts[1]);
+    if (!decoded) return null;
     try {
-      if (!this.isTokenValid(token)) return true;
-      
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
-      
-      return payload.exp && payload.exp < currentTime;
-    } catch (error) {
-      return true; // En cas d'erreur, considérer comme expiré
+      return JSON.parse(decoded);
+    } catch {
+      return null;
     }
   }
 
-  /**
-   * Nettoie les tokens invalides ou expirés
-   */
   static cleanupInvalidTokens(): void {
-    const accessToken = TokenManager.getAccessToken();
-    const refreshToken = TokenManager.getRefreshToken();
-    
-    let needsCleanup = false;
-    
-    // Vérifier l'access token
-    if (accessToken && (!this.isTokenValid(accessToken) || this.isTokenExpired(accessToken))) {
-      console.warn('Access token invalide ou expiré détecté');
-      needsCleanup = true;
-    }
-    
-    // Vérifier le refresh token
-    if (refreshToken && (!this.isTokenValid(refreshToken) || this.isTokenExpired(refreshToken))) {
-      console.warn('Refresh token invalide ou expiré détecté');
-      needsCleanup = true;
-    }
-    
-    if (needsCleanup) {
-      console.log('Nettoyage des tokens invalides...');
+    const access = TokenManager.getAccessToken();
+    const refresh = TokenManager.getRefreshToken();
+    if (!access && !refresh) return;
+
+    const looksJwt = (t: string | null) =>
+      t && this.normalizeToken(t).split(".").length === 3;
+
+    // ✅ غير إلا كان JWT فعلاً
+    if (
+      (access && looksJwt(access) && !this.payload(access)) ||
+      (refresh && looksJwt(refresh) && !this.payload(refresh))
+    ) {
       TokenManager.clearTokens();
     }
-  }
-
-  /**
-   * Validation complète des tokens stockés
-   */
-  static validateStoredTokens(): { valid: boolean; reason?: string } {
-    const accessToken = TokenManager.getAccessToken();
-    const refreshToken = TokenManager.getRefreshToken();
-    
-    if (!accessToken) {
-      return { valid: false, reason: 'Aucun access token' };
-    }
-    
-    if (!this.isTokenValid(accessToken)) {
-      return { valid: false, reason: 'Access token invalide' };
-    }
-    
-    if (!refreshToken) {
-      return { valid: false, reason: 'Aucun refresh token' };
-    }
-    
-    if (!this.isTokenValid(refreshToken)) {
-      return { valid: false, reason: 'Refresh token invalide' };
-    }
-    
-    if (this.isTokenExpired(accessToken) && this.isTokenExpired(refreshToken)) {
-      return { valid: false, reason: 'Tous les tokens sont expirés' };
-    }
-    
-    return { valid: true };
   }
 }

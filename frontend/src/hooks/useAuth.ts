@@ -1,11 +1,4 @@
-// hooks/useAuth.ts - Hook personnalisé pour utiliser AuthContext facilement
+"use client";
+import { useAuthContext } from "../context/AuthContext";
 
-import { useAuthContext } from '../context/AuthContext';
-
-// Export du hook personnalisé
-export function useAuth() {
-  return useAuthContext();
-}
-
-// Export par défaut
-export default useAuth;
+export const useAuth = () => useAuthContext();

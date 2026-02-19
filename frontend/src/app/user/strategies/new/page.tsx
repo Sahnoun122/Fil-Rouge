@@ -4,9 +4,9 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { Sparkles, AlertCircle } from 'lucide-react';
-import StrategyForm from '../../../components/strategy/StrategyForm';
-import { useStrategiesList } from '../../../hooks/useStrategies';
-import { GenerateStrategyDto } from '../../../types/strategy.types';
+import StrategyForm from '@/src/components/strategy/StrategyForm';
+import { useStrategiesList } from '@/src/hooks/useStrategies';
+import { GenerateStrategyDto } from '@/src/types/strategy.types';
 
 export default function NewStrategyPage() {
   const router = useRouter();

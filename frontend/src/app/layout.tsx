@@ -1,14 +1,5 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import { AuthProvider } from '../context/AuthContext';
-
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
-  title: 'Fill Rouge - Stratégies Marketing IA',
-  description: 'Plateforme de génération de stratégies marketing avec intelligence artificielle',
-};
+import "./globals.css";
+import { AuthProvider } from "@/src/context/AuthContext";
 
 export default function RootLayout({
   children,
@@ -17,7 +8,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={inter.className}>
+      <body>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

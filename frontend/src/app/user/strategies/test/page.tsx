@@ -221,7 +221,7 @@ export default function StrategyTestPage() {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                href="/strategies/new"
+                href="/user/strategies/new"
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
@@ -318,7 +318,7 @@ export default function StrategyTestPage() {
             </Link>
             
             <Link 
-              href="/strategies/new"
+              href="/user/strategies/new"
               className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-center"
             >
               <div>
