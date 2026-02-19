@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import DashboardNavbar from '@/src/components/layouts/DashboardNavbar';
 import UserPlan from '@/src/components/UserPlan';
 import { useAuth } from '@/src/hooks/useAuth';
 
@@ -19,6 +20,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-6 py-10 max-w-6xl mx-auto space-y-10">
+        <DashboardNavbar role="admin" />
         <header className="space-y-3">
           <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Administration</p>
           <h1 className="text-4xl font-black text-gray-900">Bienvenue, {firstName}</h1>

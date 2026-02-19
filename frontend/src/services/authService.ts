@@ -1,5 +1,5 @@
-import { api, TokenManager } from "../utils/fetcher";
-import { LoginData, RegisterData, LoginResponse, User } from "../types/auth";
+import { api, TokenManager, ApiError } from "../utils/fetcher";
+import { LoginData, RegisterData, User } from "../types/auth";
 
 const normalizeUser = (payload: any): User => {
   const rawId = payload?.id || payload?._id;
@@ -81,23 +81,37 @@ export class AuthService {
     return normalizeUser(res.data);
   }
 
-  static async checkAuth(): Promise<boolean> {
+  static async checkAuth(): Promise<{ ok: boolean; user?: User; shouldClearTokens: boolean }> {
     const token = TokenManager.getAccessToken();
     const refresh = TokenManager.getRefreshToken();
-    if (!token || !refresh) return false;
+    if (!token || !refresh) return { ok: false, shouldClearTokens: false };
 
     try {
-      await this.getCurrentUser();
-      return true;
-    } catch {
-      // fetcher غادي يحاول refresh وحدو
-      try {
-        await this.getCurrentUser();
-        return true;
-      } catch {
+      const me = await this.getCurrentUser();
+      return { ok: true, user: me, shouldClearTokens: false };
+    } catch (error) {
+      if (this.isUnauthorized(error)) {
         TokenManager.clearTokens();
-        return false;
+        return { ok: false, shouldClearTokens: true };
       }
+      return this.trySecondCheck();
+    }
+  }
+
+  private static isUnauthorized(error: unknown): boolean {
+    return error instanceof ApiError && error.status === 401;
+  }
+
+  private static async trySecondCheck(): Promise<{ ok: boolean; user?: User; shouldClearTokens: boolean }> {
+    try {
+      const me = await this.getCurrentUser();
+      return { ok: true, user: me, shouldClearTokens: false };
+    } catch (error) {
+      const shouldClear = this.isUnauthorized(error);
+      if (shouldClear) {
+        TokenManager.clearTokens();
+      }
+      return { ok: false, shouldClearTokens: shouldClear };
     }
   }
 }

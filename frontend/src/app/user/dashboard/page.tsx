@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import DashboardNavbar from '@/src/components/layouts/DashboardNavbar';
 import UserPlan from '@/src/components/UserPlan';
 import { useAuth } from '@/src/hooks/useAuth';
 
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-6 py-10 max-w-5xl mx-auto space-y-8">
+        <DashboardNavbar role="user" />
         <header className="space-y-3">
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">MarketPlan IA</p>
           <h1 className="text-4xl font-black text-gray-900">Bienvenue, {firstName}</h1>

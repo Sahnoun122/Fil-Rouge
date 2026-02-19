@@ -8,6 +8,13 @@ export interface FetchOptions extends RequestInit {
   requireAuth?: boolean;
 }
 
+export class ApiError extends Error {
+  constructor(public status: number, message: string, public data: any) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 class TokenManager {
   private static ACCESS_TOKEN_KEY = "accessToken";
   private static REFRESH_TOKEN_KEY = "refreshToken";
@@ -91,10 +98,10 @@ export async function fetcher<T = any>(
   // ✅ 401: حاول refresh و retry، بلا redirect هنا
   if (res.status === 401 && requireAuth) {
     const ok = await refreshAccessToken();
-    if (!ok) throw new Error("Session expirée");
+    if (!ok) throw new ApiError(401, "Session expirée", null);
 
     const token = TokenManager.getAccessToken();
-    if (!token) throw new Error("Session expirée");
+    if (!token) throw new ApiError(401, "Session expirée", null);
 
     const retryRes = await fetch(url, {
       headers: { ...requestHeaders, Authorization: `Bearer ${token}` },
@@ -104,16 +111,16 @@ export async function fetcher<T = any>(
     const retryData = await retryRes.json().catch(() => ({}));
 
     if (!retryRes.ok)
-      throw new Error(retryData?.message || `HTTP ${retryRes.status}`);
+      throw new ApiError(retryRes.status, retryData?.message || `HTTP ${retryRes.status}`, retryData);
     return retryData;
   }
 
-  const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({}));
 
-  if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+    if (!res.ok) throw new ApiError(res.status, data?.message || `HTTP ${res.status}`, data);
 
-  return data;
-}
+    return data;
+  }
 
 export const api = {
   get: <T>(endpoint: string, requireAuth = false) =>
