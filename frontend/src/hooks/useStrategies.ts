@@ -8,6 +8,7 @@ import {
   RegenerateSectionDto,
   ImproveSectionDto,
   UpdateSectionDto,
+  BusinessInfo,
 } from '../types/strategy.types';
 import strategiesService from '../services/strategiesService';
 
@@ -282,6 +283,71 @@ export const useStrategyActions = () => {
     ...state,
     quickDelete,
     quickGenerate,
+    clearError,
+  };
+};
+
+// Hook de compatibilité utilisé par les pages de détail/édition
+export const useStrategies = () => {
+  const [state, setState] = useState<StrategyLoadingState>({
+    isLoading: false,
+    isGenerating: false,
+    isRegenerating: false,
+    isImproving: false,
+    error: null,
+  });
+
+  const regenerateSection = useCallback(
+    async (strategyId: string, sectionKey: string, instruction?: string) => {
+      setState((prev) => ({ ...prev, isRegenerating: true, error: null }));
+      try {
+        return await strategiesService.regenerateSection(strategyId, {
+          sectionKey,
+          instruction,
+          additionalContext: instruction,
+        });
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          error: error instanceof Error ? error.message : 'Échec de la régénération',
+        }));
+        throw error;
+      } finally {
+        setState((prev) => ({ ...prev, isRegenerating: false }));
+      }
+    },
+    [],
+  );
+
+  const deleteStrategy = useCallback(async (id: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    try {
+      await strategiesService.deleteStrategy(id);
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Échec de la suppression',
+      }));
+      throw error;
+    } finally {
+      setState((prev) => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  // L'API backend actuelle n'expose pas de route pour modifier businessInfo.
+  const updateStrategy = useCallback(async (_id: string, _data: BusinessInfo) => {
+    throw new Error("La mise à jour globale de la stratégie n'est pas encore disponible côté API.");
+  }, []);
+
+  const clearError = useCallback(() => {
+    setState((prev) => ({ ...prev, error: null }));
+  }, []);
+
+  return {
+    ...state,
+    regenerateSection,
+    deleteStrategy,
+    updateStrategy,
     clearError,
   };
 };

@@ -3,8 +3,8 @@
 // pages/debug-tokens.tsx - Page de debugging des tokens (développement uniquement)
 
 import { useState, useEffect } from 'react';
-import { TokenManager } from '../utils/fetcher';
-import { AuthService } from '../services/authService';
+import { TokenManager } from '@/src/utils/fetcher';
+import { AuthService } from '@/src/services/authService';
 
 export default function DebugTokensPage() {
   const [accessToken, setAccessToken] = useState<string | null>(null);

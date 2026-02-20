@@ -156,6 +156,7 @@ export interface StrategiesResponse {
 // Types pour les DTOs de mise à jour
 export interface RegenerateSectionDto {
   sectionKey: string;
+  instruction?: string;
   additionalContext?: string;
 }
 

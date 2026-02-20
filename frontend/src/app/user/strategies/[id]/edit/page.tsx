@@ -12,9 +12,9 @@ import {
   Building,
   Clock,
 } from 'lucide-react';
-import { useStrategy, useStrategies } from '../../../../hooks/useStrategies';
-import { StrategyForm } from '../../../../components/strategy/StrategyForm';
-import { BusinessInfo } from '../../../../types/strategy.types';
+import { useStrategy, useStrategies } from '@/src/hooks/useStrategies';
+import StrategyForm from '@/src/components/strategy/StrategyForm';
+import { BusinessInfo } from '@/src/types/strategy.types';
 
 // Composant de chargement
 const LoadingSkeleton = () => (
