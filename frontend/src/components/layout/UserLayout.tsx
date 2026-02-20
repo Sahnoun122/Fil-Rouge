@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import UserSidebar from '../user/UserSidebar';
-import { useAuth } from '../../hooks/useAuth';
+import DashboardNavbar from '../layouts/DashboardNavbar';
 
 const ProtectedRoute = dynamic(() => import('../ProtectedRoute'), { ssr: false });
 
@@ -16,7 +16,6 @@ interface UserLayoutProps {
 
 export default function UserLayout({ children, title }: UserLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user } = useAuth();
 
   // Fermer la sidebar sur mobile lors du changement de route
   useEffect(() => {
@@ -49,6 +48,9 @@ export default function UserLayout({ children, title }: UserLayoutProps) {
           
           {/* Content area */}
           <main className="flex-1 overflow-auto">
+            <div className="px-6 py-6">
+              <DashboardNavbar role="user" />
+            </div>
             {children}
           </main>
         </div>

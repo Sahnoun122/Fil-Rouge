@@ -77,11 +77,27 @@ export class AuthService {
 
   static async getCurrentUser(): Promise<User> {
     const res: any = await api.get("/users/profile", true);
-    if (!res.success) throw new Error(res.message || "Erreur profil");
-    return normalizeUser(res.data);
+
+    const payload =
+      res?.data?.user ?? res?.user ?? res?.data ?? res?.profile ?? null;
+
+    if (!res?.success || !payload) {
+      throw new Error(res?.message || "Profil vide");
+    }
+
+    const normalized = normalizeUser(payload);
+    if (!normalized.id || !normalized.email) {
+      throw new Error("Profil invalide (données manquantes)");
+    }
+
+    return normalized;
   }
 
-  static async checkAuth(): Promise<{ ok: boolean; user?: User; shouldClearTokens: boolean }> {
+  static async checkAuth(): Promise<{
+    ok: boolean;
+    user?: User;
+    shouldClearTokens: boolean;
+  }> {
     const token = TokenManager.getAccessToken();
     const refresh = TokenManager.getRefreshToken();
     if (!token || !refresh) return { ok: false, shouldClearTokens: false };
@@ -102,7 +118,11 @@ export class AuthService {
     return error instanceof ApiError && error.status === 401;
   }
 
-  private static async trySecondCheck(): Promise<{ ok: boolean; user?: User; shouldClearTokens: boolean }> {
+  private static async trySecondCheck(): Promise<{
+    ok: boolean;
+    user?: User;
+    shouldClearTokens: boolean;
+  }> {
     try {
       const me = await this.getCurrentUser();
       return { ok: true, user: me, shouldClearTokens: false };

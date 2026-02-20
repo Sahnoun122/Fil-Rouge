@@ -6,7 +6,7 @@ import { adminNavigation, userNavigation } from '@/src/constants/navigation';
 import { useAuth } from '@/src/hooks/useAuth';
 
 type DashboardNavbarProps = {
-  role: 'admin' | 'user';
+  role?: 'admin' | 'user';
 };
 
 export default function DashboardNavbar({ role }: DashboardNavbarProps) {
@@ -14,9 +14,11 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const navigation = role === 'admin' ? adminNavigation : userNavigation;
+  const resolvedRole = role ?? user?.role ?? 'user';
+  const navigation =
+    resolvedRole === 'admin' ? adminNavigation : userNavigation;
   const quickAction =
-    role === 'admin'
+    resolvedRole === 'admin'
       ? { label: 'Gérer les utilisateurs', href: '/admin/users' }
       : { label: 'Créer une stratégie', href: '/user/strategies/new' };
 
@@ -35,11 +37,12 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
     <div className="sticky top-4 z-20 bg-white border border-gray-200 rounded-3xl shadow-sm px-6 py-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-          {role === 'admin' ? 'Administration' : 'Espace client'}
+          {resolvedRole === 'admin' ? 'Administration' : 'Espace client'}
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <h2 className="text-2xl font-semibold text-gray-900 leading-tight">
-            Tableau de bord {role === 'admin' ? 'administrateur' : 'utilisateur'}
+            Tableau de bord{' '}
+            {resolvedRole === 'admin' ? 'administrateur' : 'utilisateur'}
           </h2>
           {user && (
             <span className="text-sm text-gray-500">

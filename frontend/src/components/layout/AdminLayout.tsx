@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import AdminSidebar from '../admin/AdminSidebar';
-import { useAuth } from '../../hooks/useAuth';
+import DashboardNavbar from '../layouts/DashboardNavbar';
 
 const ProtectedRoute = dynamic(() => import('../ProtectedRoute'), { ssr: false });
 
@@ -16,7 +16,6 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user } = useAuth();
 
   // Fermer la sidebar sur mobile lors du changement de route
   useEffect(() => {
@@ -49,6 +48,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           
           {/* Content area */}
           <main className="flex-1 overflow-auto">
+            <div className="px-6 py-6">
+              <DashboardNavbar role="admin" />
+            </div>
             {children}
           </main>
         </div>
