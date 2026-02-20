@@ -23,7 +23,7 @@ export default function NewStrategyPage() {
       });
       
       // Rediriger vers la stratégie généré
-      router.push(`/strategies/${newStrategy._id}`);
+      router.push(`/user/strategies/${newStrategy._id}`);
     } catch (error) {
       // Afficher un message d'erreur
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la génération';

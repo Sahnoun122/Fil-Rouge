@@ -1,57 +1,49 @@
 'use client';
 
-// components/layout/UserLayout.tsx - Layout principal pour User
-
-import { useState, useEffect } from 'react';
+import { ReactNode, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import UserSidebar from '../user/UserSidebar';
 import DashboardNavbar from '../layouts/DashboardNavbar';
+import { getPageTitleFromPath } from '@/src/constants/navigation';
 
 const ProtectedRoute = dynamic(() => import('../ProtectedRoute'), { ssr: false });
 
 interface UserLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   title?: string;
 }
 
 export default function UserLayout({ children, title }: UserLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Fermer la sidebar sur mobile lors du changement de route
-  useEffect(() => {
-    setIsSidebarOpen(false);
-  }, []);
+  const pathname = usePathname();
+  const pageTitle = title ?? getPageTitleFromPath(pathname, 'user');
 
   return (
     <ProtectedRoute requiredRole="user">
-      <div className="flex h-screen bg-gray-50">
-        {/* Sidebar */}
+      <div className="flex min-h-screen bg-slate-50">
         <UserSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-        
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
-          {/* Mobile header */}
-          <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">
-              {title || 'MarketPlan IA'}
-            </h1>
-            
+
+        <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 lg:hidden">
+            <h1 className="text-lg font-semibold text-slate-900">{pageTitle}</h1>
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Open navigation"
+              type="button"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </header>
-          
-          {/* Content area */}
-          <main className="flex-1 overflow-auto">
-            <div className="px-6 py-6">
+
+          <main className="flex-1 overflow-y-auto">
+            <div className="px-4 py-4 sm:px-6">
               <DashboardNavbar role="user" />
             </div>
-            {children}
+            <div className="px-4 pb-8 sm:px-6">{children}</div>
           </main>
         </div>
       </div>

@@ -59,7 +59,7 @@ export default function EditStrategyPage() {
   // Rediriger si pas d'ID
   useEffect(() => {
     if (!strategyId) {
-      router.replace('/strategies');
+      router.replace('/user/strategies');
     }
   }, [strategyId, router]);
 
@@ -67,7 +67,7 @@ export default function EditStrategyPage() {
     try {
       await updateStrategy(strategyId, data);
       toast.success('Stratégie mise à jour avec succès !');
-      router.push(`/strategies/${strategyId}`);
+      router.push(`/user/strategies/${strategyId}`);
     } catch (error: any) {
       console.error('Erreur lors de la mise à jour:', error);
       toast.error(error.message || 'Erreur lors de la mise à jour de la stratégie');
@@ -101,7 +101,7 @@ export default function EditStrategyPage() {
               {error || 'Cette stratégie n\'existe pas ou a été supprimée.'}
             </p>
             <Link
-              href="/strategies"
+              href="/user/strategies"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -119,12 +119,12 @@ export default function EditStrategyPage() {
         
         {/* Navigation */}
         <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href="/strategies" className="hover:text-gray-700 transition-colors">
+          <Link href="/user/strategies" className="hover:text-gray-700 transition-colors">
             Stratégies
           </Link>
           <span>•</span>
           <Link 
-            href={`/strategies/${strategy._id}`} 
+            href={`/user/strategies/${strategy._id}`} 
             className="hover:text-gray-700 transition-colors truncate max-w-64"
           >
             {strategy.businessInfo.businessName}
@@ -160,7 +160,7 @@ export default function EditStrategyPage() {
             {/* Actions */}
             <div className="flex items-center gap-3">
               <Link
-                href={`/strategies/${strategy._id}`}
+                href={`/user/strategies/${strategy._id}`}
                 className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4 mr-2" />

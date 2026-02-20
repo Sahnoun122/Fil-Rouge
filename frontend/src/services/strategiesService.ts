@@ -8,6 +8,7 @@ import {
   ImproveSectionDto,
   UpdateSectionDto,
 } from '../types/strategy.types';
+import { TokenManager } from '../utils/fetcher';
 
 class StrategiesService {
   private baseURL: string;
@@ -16,10 +17,24 @@ class StrategiesService {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
   }
 
+  private normalizeToken(token: string): string {
+    return token.replace(/^Bearer\s+/i, '').trim();
+  }
+
   // Utilitaire pour récupérer le token d'authentification
   private getAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+
+    const accessToken = TokenManager.getAccessToken();
+    if (accessToken) return this.normalizeToken(accessToken);
+
+    // Compatibilité avec anciens builds qui stockaient "token".
+    const legacyToken = localStorage.getItem('token');
+    if (!legacyToken) return null;
+
+    const normalized = this.normalizeToken(legacyToken);
+    localStorage.setItem('accessToken', normalized);
+    return normalized;
   }
 
   // Utilitaire pour les headers avec authentification

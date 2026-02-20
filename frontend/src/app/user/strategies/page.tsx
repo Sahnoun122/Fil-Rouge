@@ -89,7 +89,7 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
   const router = useRouter();
 
   const handleView = () => {
-    router.push(`/strategies/${strategy._id}`);
+    router.push(`/user/strategies/${strategy._id}`);
   };
 
   const handleDelete = async () => {

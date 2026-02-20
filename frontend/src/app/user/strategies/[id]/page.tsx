@@ -189,7 +189,7 @@ export default function StrategyDetailPage() {
   // Rediriger si pas d'ID
   useEffect(() => {
     if (!strategyId) {
-      router.replace('/strategies');
+      router.replace('/user/strategies');
     }
   }, [strategyId, router]);
 
@@ -199,7 +199,7 @@ export default function StrategyDetailPage() {
       try {
         await deleteStrategy(strategyId);
         toast.success('Stratégie supprimée avec succès');
-        router.push('/strategies');
+        router.push('/user/strategies');
       } catch (error) {
         toast.error('Erreur lors de la suppression');
         setIsDeleting(false);
@@ -256,7 +256,7 @@ export default function StrategyDetailPage() {
               {error || 'Cette stratégie n\'existe pas ou a été supprimée.'}
             </p>
             <Link
-              href="/strategies"
+              href="/user/strategies"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -274,7 +274,7 @@ export default function StrategyDetailPage() {
         
         {/* Navigation */}
         <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href="/strategies" className="hover:text-gray-700 transition-colors">
+          <Link href="/user/strategies" className="hover:text-gray-700 transition-colors">
             Stratégies
           </Link>
           <span>•</span>
@@ -327,7 +327,7 @@ export default function StrategyDetailPage() {
               </button>
               
               <Link
-                href={`/strategies/${strategy._id}/edit`}
+                href={`/user/strategies/${strategy._id}/edit`}
                 className="flex items-center px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <Edit className="w-4 h-4 mr-2" />
