@@ -40,6 +40,19 @@ class TokenManager {
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
   }
+
+  static diagnose(): { accessToken: string | null; refreshToken: string | null; hasWindow: boolean } {
+    const hasWindow = typeof window !== "undefined";
+    const accessToken = this.getAccessToken();
+    const refreshToken = this.getRefreshToken();
+
+    const snapshot = { accessToken, refreshToken, hasWindow };
+    if (hasWindow) {
+      console.log("[TokenManager] diagnose", snapshot);
+    }
+
+    return snapshot;
+  }
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";

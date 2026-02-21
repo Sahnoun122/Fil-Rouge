@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Configuration optimisée pour Docker
   output: 'standalone',
+  turbopack: {
+    root: process.cwd(),
+  },
+  outputFileTracingRoot: process.cwd(),
 
-  // Configuration CORS pour Docker
   async rewrites() {
     return [
       {
@@ -14,12 +16,11 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Configuration des images pour Docker
   images: {
-    unoptimized: true
+    unoptimized: true,
   },
 
-  serverExternalPackages: []
+  serverExternalPackages: [],
 };
 
 export default nextConfig;
