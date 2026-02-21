@@ -16,6 +16,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { useStrategy, useStrategies } from '@/src/hooks/useStrategies';
@@ -322,6 +323,13 @@ export default function StrategyDetailPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href={`/user/swot/new?strategyId=${strategy._id}`}
+                className="flex items-center rounded-lg bg-cyan-600 px-4 py-2 text-white transition-colors hover:bg-cyan-700"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Creer SWOT
+              </Link>
               <button
                 type="button"
                 onClick={handleRefresh}
