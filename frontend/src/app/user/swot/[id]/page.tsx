@@ -1,20 +1,11 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Bot,
-  Loader2,
-  Save,
-  ShieldAlert,
-  Sparkles,
-  Trash2,
-} from 'lucide-react';
-import strategiesService from '@/src/services/strategiesService';
-import { Strategy } from '@/src/types/strategy.types';
-import { api, fetcher } from '@/src/utils/fetcher';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { ArrowLeft, CheckCircle2, Edit3, Loader2, PenSquare, Save, Sparkles, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { fetcher } from '@/src/utils/fetcher';
 
 interface SwotInputs {
   notesInternes?: string;
@@ -42,7 +33,43 @@ interface SwotDocument {
   updatedAt: string;
 }
 
-const stringifyList = (list?: string[]): string => (list?.length ? list.join('\n') : '');
+interface StrategyLinked {
+  _id: string;
+  businessInfo: {
+    businessName: string;
+    mainObjective: string;
+    tone: string;
+  };
+}
+
+interface SwotFormState {
+  title: string;
+  inputs: {
+    notesInternes: string;
+    notesExternes: string;
+    concurrents: string[];
+    ressources: string[];
+    objectifs: string;
+  };
+  swot: SwotMatrix;
+}
+
+const emptyFormState: SwotFormState = {
+  title: '',
+  inputs: {
+    notesInternes: '',
+    notesExternes: '',
+    concurrents: [],
+    ressources: [],
+    objectifs: '',
+  },
+  swot: {
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: [],
+  },
+};
 
 const parseList = (value: string, max = 6): string[] =>
   value
@@ -51,76 +78,98 @@ const parseList = (value: string, max = 6): string[] =>
     .filter(Boolean)
     .slice(0, max);
 
+const stringifyList = (list?: string[]): string => (list?.length ? list.join('\n') : '');
+
 const normalizeText = (value: string): string | undefined => {
   const normalized = value.trim();
   return normalized ? normalized : undefined;
 };
 
+const formatDate = (value: string): string =>
+  new Date(value).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+function SwotSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-16 animate-pulse rounded-2xl bg-slate-200" />
+      <div className="h-28 animate-pulse rounded-2xl bg-slate-200" />
+      <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-72 animate-pulse rounded-2xl bg-slate-200" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function UserSwotDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const swotId = params.id as string;
 
   const [swot, setSwot] = useState<SwotDocument | null>(null);
-  const [strategy, setStrategy] = useState<Strategy | null>(null);
-
-  const [title, setTitle] = useState('');
-  const [notesInternes, setNotesInternes] = useState('');
-  const [notesExternes, setNotesExternes] = useState('');
-  const [concurrents, setConcurrents] = useState('');
-  const [ressources, setRessources] = useState('');
-  const [objectifs, setObjectifs] = useState('');
-  const [strengths, setStrengths] = useState('');
-  const [weaknesses, setWeaknesses] = useState('');
-  const [opportunities, setOpportunities] = useState('');
-  const [threats, setThreats] = useState('');
-  const [improveInstruction, setImproveInstruction] = useState('');
+  const [strategy, setStrategy] = useState<StrategyLinked | null>(null);
+  const [form, setForm] = useState<SwotFormState>(emptyFormState);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const hydrateForm = (payload: SwotDocument) => {
-    setTitle(payload.title || '');
-    setNotesInternes(payload.inputs?.notesInternes || '');
-    setNotesExternes(payload.inputs?.notesExternes || '');
-    setConcurrents(stringifyList(payload.inputs?.concurrents));
-    setRessources(stringifyList(payload.inputs?.ressources));
-    setObjectifs(payload.inputs?.objectifs || '');
-    setStrengths(stringifyList(payload.swot?.strengths));
-    setWeaknesses(stringifyList(payload.swot?.weaknesses));
-    setOpportunities(stringifyList(payload.swot?.opportunities));
-    setThreats(stringifyList(payload.swot?.threats));
-  };
+  const [isImproveModalOpen, setIsImproveModalOpen] = useState(false);
+  const [improveInstruction, setImproveInstruction] = useState('');
+
+  const hydrateForm = (payload: SwotDocument): SwotFormState => ({
+    title: payload.title || '',
+    inputs: {
+      notesInternes: payload.inputs?.notesInternes || '',
+      notesExternes: payload.inputs?.notesExternes || '',
+      concurrents: payload.inputs?.concurrents || [],
+      ressources: payload.inputs?.ressources || [],
+      objectifs: payload.inputs?.objectifs || '',
+    },
+    swot: {
+      strengths: payload.swot?.strengths || [],
+      weaknesses: payload.swot?.weaknesses || [],
+      opportunities: payload.swot?.opportunities || [],
+      threats: payload.swot?.threats || [],
+    },
+  });
 
   const loadSwot = async () => {
     if (!swotId) return;
 
     setIsLoading(true);
-    setError(null);
-    setSuccessMessage(null);
 
     try {
-      const response = await api.get<SwotDocument>(`/swot/${swotId}`, true);
-      const payload = response.data;
-      if (!payload) {
+      const swotResponse = await fetcher<SwotDocument>(`/swot/${swotId}`, {
+        method: 'GET',
+        requireAuth: true,
+      });
+
+      const swotPayload = swotResponse.data;
+      if (!swotPayload) {
         throw new Error('SWOT introuvable');
       }
 
-      setSwot(payload);
-      hydrateForm(payload);
+      setSwot(swotPayload);
+      setForm(hydrateForm(swotPayload));
 
       try {
-        const linkedStrategy = await strategiesService.getStrategy(payload.strategyId);
-        setStrategy(linkedStrategy);
+        const strategyResponse = await fetcher<StrategyLinked>(`/strategies/${swotPayload.strategyId}`, {
+          method: 'GET',
+          requireAuth: true,
+        });
+        setStrategy(strategyResponse.data || null);
       } catch {
         setStrategy(null);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement du SWOT');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors du chargement du SWOT');
     } finally {
       setIsLoading(false);
     }
@@ -131,37 +180,42 @@ export default function UserSwotDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swotId]);
 
-  const parsedMatrix = useMemo<SwotMatrix>(
-    () => ({
-      strengths: parseList(strengths, 6),
-      weaknesses: parseList(weaknesses, 6),
-      opportunities: parseList(opportunities, 6),
-      threats: parseList(threats, 6),
-    }),
-    [opportunities, strengths, threats, weaknesses],
-  );
+  const updateSwotColumn = (key: keyof SwotMatrix, rawValue: string) => {
+    setForm((prev) => ({
+      ...prev,
+      swot: {
+        ...prev.swot,
+        [key]: parseList(rawValue, 6),
+      },
+    }));
+  };
+
+  const handleCancelEdit = () => {
+    if (!swot) return;
+    setForm(hydrateForm(swot));
+    setIsEditing(false);
+  };
 
   const handleSave = async () => {
-    if (!swotId) return;
+    if (!swotId || !swot) return;
+
     setIsSaving(true);
-    setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetcher<SwotDocument>(`/swot/${swotId}`, {
         method: 'PATCH',
-        body: JSON.stringify({
-          title: normalizeText(title),
-          inputs: {
-            notesInternes: normalizeText(notesInternes),
-            notesExternes: normalizeText(notesExternes),
-            concurrents: parseList(concurrents, 20),
-            ressources: parseList(ressources, 20),
-            objectifs: normalizeText(objectifs),
-          },
-          swot: parsedMatrix,
-        }),
         requireAuth: true,
+        body: JSON.stringify({
+          title: normalizeText(form.title) || swot.title,
+          inputs: {
+            notesInternes: normalizeText(form.inputs.notesInternes),
+            notesExternes: normalizeText(form.inputs.notesExternes),
+            concurrents: form.inputs.concurrents,
+            ressources: form.inputs.ressources,
+            objectifs: normalizeText(form.inputs.objectifs),
+          },
+          swot: form.swot,
+        }),
       });
 
       if (!response.data) {
@@ -169,10 +223,11 @@ export default function UserSwotDetailPage() {
       }
 
       setSwot(response.data);
-      hydrateForm(response.data);
-      setSuccessMessage('SWOT mis a jour avec succes');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la mise a jour');
+      setForm(hydrateForm(response.data));
+      setIsEditing(false);
+      toast.success('SWOT sauvegarde avec succes');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde');
     } finally {
       setIsSaving(false);
     }
@@ -180,17 +235,16 @@ export default function UserSwotDetailPage() {
 
   const handleImprove = async () => {
     if (!swotId) return;
+
     setIsImproving(true);
-    setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetcher<SwotDocument>(`/swot/${swotId}/improve`, {
         method: 'POST',
+        requireAuth: true,
         body: JSON.stringify({
           instruction: normalizeText(improveInstruction),
         }),
-        requireAuth: true,
       });
 
       if (!response.data) {
@@ -198,45 +252,26 @@ export default function UserSwotDetailPage() {
       }
 
       setSwot(response.data);
-      hydrateForm(response.data);
-      setSuccessMessage('SWOT ameliore par IA');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de l amelioration');
+      setForm(hydrateForm(response.data));
+      setImproveInstruction('');
+      setIsImproveModalOpen(false);
+      toast.success('SWOT ameliore avec IA');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l amelioration IA');
     } finally {
       setIsImproving(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!swotId) return;
-    if (!window.confirm('Confirmer la suppression de ce SWOT ?')) return;
-
-    setIsDeleting(true);
-    setError(null);
-
-    try {
-      await fetcher(`/swot/${swotId}`, {
-        method: 'DELETE',
-        requireAuth: true,
-      });
-      router.push('/user/swot');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression');
-      setIsDeleting(false);
-    }
-  };
-
   if (isLoading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
-        Chargement du SWOT...
-      </div>
-    );
+    return <SwotSkeleton />;
   }
 
   if (!swot) {
     return <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-red-700">SWOT introuvable.</div>;
   }
+
+  const isBusy = isSaving || isImproving;
 
   return (
     <div className="space-y-6">
@@ -249,201 +284,300 @@ export default function UserSwotDetailPage() {
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Retour aux SWOT
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900">{swot.title}</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{form.title || swot.title}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Strategie:{' '}
-            <Link
-              href={`/user/strategies/${swot.strategyId}`}
-              className="font-semibold text-cyan-700 hover:underline"
-            >
-              {strategy?.businessInfo.businessName || swot.strategyId}
-            </Link>
+            Cree le {formatDate(swot.createdAt)} - mis a jour le {formatDate(swot.updatedAt)}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {!isEditing ? (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              disabled={isBusy}
+              className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              <Edit3 className="mr-2 h-4 w-4" />
+              Editer
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isBusy}
+                className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Sauvegarder
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                disabled={isBusy}
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Annuler
+              </button>
+            </>
+          )}
           <button
             type="button"
-            onClick={handleSave}
-            disabled={isSaving || isImproving || isDeleting}
-            className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => setIsImproveModalOpen(true)}
+            disabled={isBusy}
+            className="inline-flex items-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Enregistrer
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isDeleting || isSaving || isImproving}
-            className="inline-flex items-center rounded-xl border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-            Supprimer
+            <Sparkles className="mr-2 h-4 w-4" />
+            Ameliorer avec IA
           </button>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Informations</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-slate-700">Titre</label>
-                <input
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Notes internes</label>
-                <textarea
-                  value={notesInternes}
-                  onChange={(event) => setNotesInternes(event.target.value)}
-                  rows={4}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Notes externes</label>
-                <textarea
-                  value={notesExternes}
-                  onChange={(event) => setNotesExternes(event.target.value)}
-                  rows={4}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Concurrents</label>
-                <textarea
-                  value={concurrents}
-                  onChange={(event) => setConcurrents(event.target.value)}
-                  rows={4}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Ressources</label>
-                <textarea
-                  value={ressources}
-                  onChange={(event) => setRessources(event.target.value)}
-                  rows={4}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-slate-700">Objectifs</label>
-                <textarea
-                  value={objectifs}
-                  onChange={(event) => setObjectifs(event.target.value)}
-                  rows={3}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-            </div>
+      <section className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5 shadow-sm">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">Strategie associee</p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-lg font-semibold text-slate-900">{strategy?.businessInfo.businessName || swot.strategyId}</p>
+            <p className="text-sm text-slate-600">
+              Objectif: {strategy?.businessInfo.mainObjective || '-'} | Tone: {strategy?.businessInfo.tone || '-'}
+            </p>
+          </div>
+          <Link
+            href={`/strategies/${swot.strategyId}`}
+            className="inline-flex items-center rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100"
+          >
+            <PenSquare className="mr-2 h-4 w-4" />
+            Voir la strategie
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Inputs</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Notes internes</label>
+            <textarea
+              value={form.inputs.notesInternes}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, inputs: { ...prev.inputs, notesInternes: event.target.value } }))
+              }
+              rows={4}
+              readOnly={!isEditing}
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition ${
+                isEditing ? 'border-slate-300 focus:border-cyan-500 focus:ring-2' : 'border-slate-200 bg-slate-50'
+              }`}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Notes externes</label>
+            <textarea
+              value={form.inputs.notesExternes}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, inputs: { ...prev.inputs, notesExternes: event.target.value } }))
+              }
+              rows={4}
+              readOnly={!isEditing}
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition ${
+                isEditing ? 'border-slate-300 focus:border-cyan-500 focus:ring-2' : 'border-slate-200 bg-slate-50'
+              }`}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Concurrents</label>
+            <textarea
+              value={stringifyList(form.inputs.concurrents)}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, inputs: { ...prev.inputs, concurrents: parseList(event.target.value, 20) } }))
+              }
+              rows={4}
+              readOnly={!isEditing}
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition ${
+                isEditing ? 'border-slate-300 focus:border-cyan-500 focus:ring-2' : 'border-slate-200 bg-slate-50'
+              }`}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Ressources</label>
+            <textarea
+              value={stringifyList(form.inputs.ressources)}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, inputs: { ...prev.inputs, ressources: parseList(event.target.value, 20) } }))
+              }
+              rows={4}
+              readOnly={!isEditing}
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition ${
+                isEditing ? 'border-slate-300 focus:border-cyan-500 focus:ring-2' : 'border-slate-200 bg-slate-50'
+              }`}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Objectifs</label>
+            <textarea
+              value={form.inputs.objectifs}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, inputs: { ...prev.inputs, objectifs: event.target.value } }))
+              }
+              rows={3}
+              readOnly={!isEditing}
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition ${
+                isEditing ? 'border-slate-300 focus:border-cyan-500 focus:ring-2' : 'border-slate-200 bg-slate-50'
+              }`}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Matrice SWOT</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-emerald-700">Strengths</h3>
+            {isEditing ? (
+              <textarea
+                value={stringifyList(form.swot.strengths)}
+                onChange={(event) => updateSwotColumn('strengths', event.target.value)}
+                rows={10}
+                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2"
+              />
+            ) : (
+              <ul className="space-y-2 text-sm text-slate-800">
+                {form.swot.strengths.length > 0 ? (
+                  form.swot.strengths.map((item, index) => (
+                    <li key={`${item}-${index}`} className="rounded-lg bg-white/70 px-2.5 py-2">
+                      {item}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-slate-500">Aucun point</li>
+                )}
+              </ul>
+            )}
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Matrice SWOT</h2>
-            <p className="mt-1 text-xs text-slate-500">1 point par ligne, maximum 6 lignes par bloc.</p>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-emerald-700">Strengths</label>
-                <textarea
-                  value={strengths}
-                  onChange={(event) => setStrengths(event.target.value)}
-                  rows={6}
-                  className="w-full rounded-xl border border-emerald-200 bg-emerald-50/40 px-3 py-2.5 text-sm text-slate-900 outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-rose-700">Weaknesses</label>
-                <textarea
-                  value={weaknesses}
-                  onChange={(event) => setWeaknesses(event.target.value)}
-                  rows={6}
-                  className="w-full rounded-xl border border-rose-200 bg-rose-50/40 px-3 py-2.5 text-sm text-slate-900 outline-none ring-rose-500 transition focus:border-rose-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-cyan-700">Opportunities</label>
-                <textarea
-                  value={opportunities}
-                  onChange={(event) => setOpportunities(event.target.value)}
-                  rows={6}
-                  className="w-full rounded-xl border border-cyan-200 bg-cyan-50/40 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-amber-700">Threats</label>
-                <textarea
-                  value={threats}
-                  onChange={(event) => setThreats(event.target.value)}
-                  rows={6}
-                  className="w-full rounded-xl border border-amber-200 bg-amber-50/40 px-3 py-2.5 text-sm text-slate-900 outline-none ring-amber-500 transition focus:border-amber-500 focus:ring-2"
-                />
-              </div>
-            </div>
+          <article className="rounded-2xl border border-rose-200 bg-rose-50/40 p-4">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-rose-700">Weaknesses</h3>
+            {isEditing ? (
+              <textarea
+                value={stringifyList(form.swot.weaknesses)}
+                onChange={(event) => updateSwotColumn('weaknesses', event.target.value)}
+                rows={10}
+                className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-rose-500 transition focus:border-rose-500 focus:ring-2"
+              />
+            ) : (
+              <ul className="space-y-2 text-sm text-slate-800">
+                {form.swot.weaknesses.length > 0 ? (
+                  form.swot.weaknesses.map((item, index) => (
+                    <li key={`${item}-${index}`} className="rounded-lg bg-white/70 px-2.5 py-2">
+                      {item}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-slate-500">Aucun point</li>
+                )}
+              </ul>
+            )}
+          </article>
+
+          <article className="rounded-2xl border border-cyan-200 bg-cyan-50/40 p-4">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-cyan-700">Opportunities</h3>
+            {isEditing ? (
+              <textarea
+                value={stringifyList(form.swot.opportunities)}
+                onChange={(event) => updateSwotColumn('opportunities', event.target.value)}
+                rows={10}
+                className="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
+              />
+            ) : (
+              <ul className="space-y-2 text-sm text-slate-800">
+                {form.swot.opportunities.length > 0 ? (
+                  form.swot.opportunities.map((item, index) => (
+                    <li key={`${item}-${index}`} className="rounded-lg bg-white/70 px-2.5 py-2">
+                      {item}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-slate-500">Aucun point</li>
+                )}
+              </ul>
+            )}
+          </article>
+
+          <article className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-amber-700">Threats</h3>
+            {isEditing ? (
+              <textarea
+                value={stringifyList(form.swot.threats)}
+                onChange={(event) => updateSwotColumn('threats', event.target.value)}
+                rows={10}
+                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-amber-500 transition focus:border-amber-500 focus:ring-2"
+              />
+            ) : (
+              <ul className="space-y-2 text-sm text-slate-800">
+                {form.swot.threats.length > 0 ? (
+                  form.swot.threats.map((item, index) => (
+                    <li key={`${item}-${index}`} className="rounded-lg bg-white/70 px-2.5 py-2">
+                      {item}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-slate-500">Aucun point</li>
+                )}
+              </ul>
+            )}
           </article>
         </div>
+      </section>
 
-        <aside className="space-y-4">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Statut</p>
-            <p className="mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset">
-              {swot.isAiGenerated ? (
-                <span className="inline-flex items-center text-emerald-700 ring-emerald-200">
-                  <Bot className="mr-1 h-3.5 w-3.5" />
-                  Genere / ameliore par IA
-                </span>
-              ) : (
-                <span className="inline-flex items-center text-amber-700 ring-amber-200">
-                  <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-                  Saisie manuelle
-                </span>
-              )}
-            </p>
-            <div className="mt-3 space-y-1 text-xs text-slate-500">
-              <p>Cree: {new Date(swot.createdAt).toLocaleDateString('fr-FR')}</p>
-              <p>Maj: {new Date(swot.updatedAt).toLocaleDateString('fr-FR')}</p>
+      {isImproveModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Ameliorer avec IA</h3>
+              <button
+                type="button"
+                onClick={() => setIsImproveModalOpen(false)}
+                disabled={isImproving}
+                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          </article>
-
-          <article className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5">
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-700">
-              <Sparkles className="h-4 w-4" />
-              Amelioration IA
+            <p className="mb-3 text-sm text-slate-600">
+              Ajoutez une instruction pour guider l&apos;IA vers une amelioration plus ciblee.
             </p>
             <textarea
               value={improveInstruction}
               onChange={(event) => setImproveInstruction(event.target.value)}
-              rows={4}
-              placeholder="Ex: Renforce la partie opportunites sur les canaux B2B."
-              className="mt-3 w-full rounded-xl border border-cyan-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
+              rows={5}
+              placeholder="Ex: Renforce les opportunites B2B et precise les menaces concurrentielles."
+              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
+              disabled={isImproving}
             />
-            <button
-              type="button"
-              onClick={handleImprove}
-              disabled={isImproving || isSaving || isDeleting}
-              className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-              Ameliorer
-            </button>
-          </article>
-
-          {successMessage ? (
-            <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-              {successMessage}
-            </article>
-          ) : null}
-
-          {error ? (
-            <article className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</article>
-          ) : null}
-        </aside>
-      </section>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImproveModalOpen(false)}
+                disabled={isImproving}
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleImprove}
+                disabled={isImproving}
+                className="inline-flex items-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                Lancer l&apos;amelioration
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
