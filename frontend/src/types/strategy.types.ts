@@ -157,7 +157,6 @@ export interface StrategiesResponse {
 export interface RegenerateSectionDto {
   sectionKey: string;
   instruction?: string;
-  additionalContext?: string;
 }
 
 export interface ImproveSectionDto {

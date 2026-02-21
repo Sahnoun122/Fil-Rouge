@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Strategy, StrategyDocument, MainObjective, Tone } from './schemas/strategy.schema';
 import { AiService } from '../ai/ai.service';
-import { GenerateStrategyDto, RegenerateSectionDto, ImproveSectionDto, UpdateSectionDto } from './dto';
+import { GenerateStrategyDto, UpdateStrategyDto, RegenerateSectionDto, ImproveSectionDto, UpdateSectionDto } from './dto';
 import { buildFullStrategyPrompt, buildRegenerateSectionPrompt, buildImproveSectionPrompt } from '../ai/prompts/strategy.prompts';
 
 @Injectable()
@@ -143,6 +143,46 @@ export class StrategiesService {
   /**
    * Supprime une stratégie spécifique
    */
+  async updateStrategy(userId: string, strategyId: string, dto: UpdateStrategyDto): Promise<StrategyDocument> {
+    try {
+      const updated = await this.strategyModel
+        .findOneAndUpdate(
+          {
+            _id: new Types.ObjectId(strategyId),
+            userId: new Types.ObjectId(userId),
+          },
+          {
+            businessInfo: {
+              businessName: dto.businessName,
+              industry: dto.industry,
+              productOrService: dto.productOrService,
+              targetAudience: dto.targetAudience,
+              location: dto.location,
+              mainObjective: dto.mainObjective,
+              tone: dto.tone,
+              budget: dto.budget,
+            },
+          },
+          { new: true, runValidators: true },
+        )
+        .exec();
+
+      if (!updated) {
+        throw new NotFoundException('Strategie non trouvee');
+      }
+
+      return updated;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Erreur lors de la mise a jour de la strategie: ${error.message}`,
+      );
+    }
+  }
+
   async deleteOne(userId: string, strategyId: string): Promise<void> {
     try {
       const result = await this.strategyModel

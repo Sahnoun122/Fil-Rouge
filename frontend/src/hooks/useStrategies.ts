@@ -304,7 +304,6 @@ export const useStrategies = () => {
         return await strategiesService.regenerateSection(strategyId, {
           sectionKey,
           instruction,
-          additionalContext: instruction,
         });
       } catch (error) {
         setState((prev) => ({
@@ -334,9 +333,19 @@ export const useStrategies = () => {
     }
   }, []);
 
-  // L'API backend actuelle n'expose pas de route pour modifier businessInfo.
-  const updateStrategy = useCallback(async (_id: string, _data: BusinessInfo) => {
-    throw new Error("La mise à jour globale de la stratégie n'est pas encore disponible côté API.");
+  const updateStrategy = useCallback(async (id: string, data: BusinessInfo) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    try {
+      return await strategiesService.updateStrategy(id, data);
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Échec de la mise à jour',
+      }));
+      throw error;
+    } finally {
+      setState((prev) => ({ ...prev, isLoading: false }));
+    }
   }, []);
 
   const clearError = useCallback(() => {

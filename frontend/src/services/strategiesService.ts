@@ -1,6 +1,7 @@
 ﻿// Service API pour les stratégies marketing
 import {
   Strategy,
+  BusinessInfo,
   GenerateStrategyDto,
   ApiResponse,
   StrategiesResponse,
@@ -127,6 +128,25 @@ class StrategiesService {
       await this.handleResponse<ApiResponse<void>>(response);
     } catch (error) {
       console.error('Erreur lors de la suppression de la stratégie:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Met à jour les informations business d'une stratégie
+   */
+  async updateStrategy(strategyId: string, data: BusinessInfo): Promise<Strategy> {
+    try {
+      const response = await fetch(`${this.baseURL}/strategies/${strategyId}`, {
+        method: 'PATCH',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+
+      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      return result.data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la stratégie:', error);
       throw error;
     }
   }

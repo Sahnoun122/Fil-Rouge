@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import {
   ArrowLeft,
-  Save,
   X,
   AlertCircle,
   Building,
@@ -54,7 +53,7 @@ export default function EditStrategyPage() {
   const strategyId = params.id as string;
   
   const { strategy, isLoading: isLoadingStrategy, error } = useStrategy(strategyId);
-  const { updateStrategy } = useStrategies();
+  const { updateStrategy, isLoading: isUpdating } = useStrategies();
 
   // Rediriger si pas d'ID
   useEffect(() => {
@@ -66,11 +65,11 @@ export default function EditStrategyPage() {
   const handleSubmit = async (data: BusinessInfo) => {
     try {
       await updateStrategy(strategyId, data);
-      toast.success('Stratégie mise à jour avec succès !');
+      toast.success('StratÃ©gie mise Ã  jour avec succÃ¨s !');
       router.push(`/user/strategies/${strategyId}`);
     } catch (error: any) {
-      console.error('Erreur lors de la mise à jour:', error);
-      toast.error(error.message || 'Erreur lors de la mise à jour de la stratégie');
+      console.error('Erreur lors de la mise Ã  jour:', error);
+      toast.error(error.message || 'Erreur lors de la mise Ã  jour de la stratÃ©gie');
     }
   };
 
@@ -95,17 +94,17 @@ export default function EditStrategyPage() {
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Stratégie introuvable
+              StratÃ©gie introuvable
             </h2>
             <p className="text-gray-600 mb-6">
-              {error || 'Cette stratégie n\'existe pas ou a été supprimée.'}
+              {error || 'Cette stratÃ©gie n\'existe pas ou a Ã©tÃ© supprimÃ©e.'}
             </p>
             <Link
               href="/user/strategies"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour aux stratégies
+              Retour aux stratÃ©gies
             </Link>
           </div>
         </div>
@@ -120,16 +119,16 @@ export default function EditStrategyPage() {
         {/* Navigation */}
         <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
           <Link href="/user/strategies" className="hover:text-gray-700 transition-colors">
-            Stratégies
+            StratÃ©gies
           </Link>
-          <span>•</span>
+          <span>â€¢</span>
           <Link 
             href={`/user/strategies/${strategy._id}`} 
             className="hover:text-gray-700 transition-colors truncate max-w-64"
           >
             {strategy.businessInfo.businessName}
           </Link>
-          <span>•</span>
+          <span>â€¢</span>
           <span className="text-gray-900 font-medium">Modifier</span>
         </nav>
 
@@ -143,15 +142,15 @@ export default function EditStrategyPage() {
                 </div>
                 <div className="flex-1">
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-                    Modifier la stratégie
+                    Modifier la stratÃ©gie
                   </h1>
                   <p className="text-gray-600 text-lg mb-4">
-                    {strategy.businessInfo.businessName} • {strategy.businessInfo.industry}
+                    {strategy.businessInfo.businessName} â€¢ {strategy.businessInfo.industry}
                   </p>
                   
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="w-4 h-4 mr-1" />
-                    Créée le {formatDate(strategy.createdAt)}
+                    CrÃ©Ã©e le {formatDate(strategy.createdAt)}
                   </div>
                 </div>
               </div>
@@ -177,16 +176,14 @@ export default function EditStrategyPage() {
               Informations Business
             </h2>
             <p className="text-gray-600">
-              Modifiez les informations de votre entreprise. Les sections de stratégie seront automatiquement régénérées si nécessaire.
+              Modifiez les informations de votre entreprise. Les sections de stratÃ©gie seront automatiquement rÃ©gÃ©nÃ©rÃ©es si nÃ©cessaire.
             </p>
           </div>
 
           <StrategyForm
             onSubmit={handleSubmit}
-            defaultValues={strategy.businessInfo}
-            isEditing={true}
-            submitButtonText="Mettre à jour la stratégie"
-            submitButtonIcon={Save}
+            initialData={strategy.businessInfo}
+            isLoading={isUpdating}
           />
         </div>
 
@@ -196,20 +193,20 @@ export default function EditStrategyPage() {
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-amber-900 font-semibold mb-2">
-                Important à savoir
+                Important Ã  savoir
               </h3>
               <div className="text-amber-800 text-sm space-y-2">
                 <p>
-                  • La modification des informations business peut nécessiter la régénération de certaines sections de votre stratégie.
+                  â€¢ La modification des informations business peut nÃ©cessiter la rÃ©gÃ©nÃ©ration de certaines sections de votre stratÃ©gie.
                 </p>
                 <p>
-                  • Les sections régénérées remplaceront le contenu existant.
+                  â€¢ Les sections rÃ©gÃ©nÃ©rÃ©es remplaceront le contenu existant.
                 </p>
                 <p>
-                  • Vous pourrez toujours régénérer individuellement chaque section depuis la page de détails.
+                  â€¢ Vous pourrez toujours rÃ©gÃ©nÃ©rer individuellement chaque section depuis la page de dÃ©tails.
                 </p>
                 <p>
-                  • L'historique des versions précédentes ne sera pas conservé.
+                  â€¢ L'historique des versions prÃ©cÃ©dentes ne sera pas conservÃ©.
                 </p>
               </div>
             </div>
@@ -219,4 +216,4 @@ export default function EditStrategyPage() {
       </div>
     </div>
   );
-} manually
+}

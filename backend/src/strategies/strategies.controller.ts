@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StrategiesService } from './strategies.service';
 import { 
   GenerateStrategyDto, 
+  UpdateStrategyDto,
   RegenerateSectionDto, 
   ImproveSectionDto, 
   UpdateSectionDto 
@@ -99,6 +100,25 @@ export class StrategiesController {
     
     return {
       success: true,
+      data: strategy,
+    };
+  }
+
+  /**
+   * Met à jour les informations business d'une stratégie
+   */
+  @Patch(':id')
+  async updateStrategy(
+    @Param('id') strategyId: string,
+    @Body() updateStrategyDto: UpdateStrategyDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user.id;
+    const strategy = await this.strategiesService.updateStrategy(userId, strategyId, updateStrategyDto);
+
+    return {
+      success: true,
+      message: 'Stratégie mise à jour avec succès',
       data: strategy,
     };
   }
