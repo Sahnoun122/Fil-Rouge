@@ -324,11 +324,18 @@ export default function StrategyDetailPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                href={`/user/swot/new?strategyId=${strategy._id}`}
+                href={`/swot/new?strategyId=${strategy._id}`}
                 className="flex items-center rounded-lg bg-cyan-600 px-4 py-2 text-white transition-colors hover:bg-cyan-700"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                Creer SWOT
+                Creer SWOT a partir de cette strategie
+              </Link>
+              <Link
+                href={`/swot?strategyId=${strategy._id}`}
+                className="flex items-center rounded-lg border border-cyan-300 px-4 py-2 text-cyan-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Voir SWOT lies
               </Link>
               <button
                 type="button"

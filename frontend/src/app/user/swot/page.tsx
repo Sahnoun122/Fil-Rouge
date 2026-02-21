@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, Eye, Loader2, Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { fetcher } from '@/src/utils/fetcher';
@@ -72,6 +73,9 @@ function SwotTableSkeleton() {
 }
 
 export default function UserSwotListPage() {
+  const searchParams = useSearchParams();
+  const strategyFilter = (searchParams.get('strategyId') || '').trim();
+
   const [swots, setSwots] = useState<SwotItem[]>([]);
   const [strategyNames, setStrategyNames] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
@@ -143,6 +147,10 @@ export default function UserSwotListPage() {
     return [...swots]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .filter((item) => {
+        if (strategyFilter && item.strategyId !== strategyFilter) {
+          return false;
+        }
+
         if (!normalized) return true;
 
         const strategyLabel = strategyNames[item.strategyId] || item.strategyId;
@@ -153,7 +161,7 @@ export default function UserSwotListPage() {
           item.strategyId.toLowerCase().includes(normalized)
         );
       });
-  }, [search, strategyNames, swots]);
+  }, [search, strategyFilter, strategyNames, swots]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -207,6 +215,19 @@ export default function UserSwotListPage() {
             className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:bg-white focus:ring-2"
           />
         </label>
+        {strategyFilter ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-200">
+              Filtre strategie: {strategyNames[strategyFilter] || strategyFilter}
+            </span>
+            <Link
+              href="/swot"
+              className="inline-flex rounded-full border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+            >
+              Retirer le filtre
+            </Link>
+          </div>
+        ) : null}
       </section>
 
       {error ? (
