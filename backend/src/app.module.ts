@@ -54,7 +54,6 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
   providers: [
     AppService,
 
-    // Appliquer JwtAuthGuard globalement (sauf routes @Public())
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
