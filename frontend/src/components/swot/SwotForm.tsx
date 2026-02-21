@@ -17,19 +17,20 @@ const swotFormSchema = z.object({
   inputs: z.object({
     notesInternes: z.string().max(1200, '1200 caracteres maximum').optional(),
     notesExternes: z.string().max(1200, '1200 caracteres maximum').optional(),
-    concurrents: z.array(z.string().max(120, '120 caracteres maximum')).default([]),
-    ressources: z.array(z.string().max(120, '120 caracteres maximum')).default([]),
+    concurrents: z.array(z.object({ value: z.string().max(120, '120 caracteres maximum') })),
+    ressources: z.array(z.object({ value: z.string().max(120, '120 caracteres maximum') })),
     objectifs: z.string().max(600, '600 caracteres maximum').optional(),
   }),
   swot: z.object({
-    strengths: z.array(z.string().max(180, '180 caracteres maximum')).default([]),
-    weaknesses: z.array(z.string().max(180, '180 caracteres maximum')).default([]),
-    opportunities: z.array(z.string().max(180, '180 caracteres maximum')).default([]),
-    threats: z.array(z.string().max(180, '180 caracteres maximum')).default([]),
+    strengths: z.array(z.object({ value: z.string().max(180, '180 caracteres maximum') })),
+    weaknesses: z.array(z.object({ value: z.string().max(180, '180 caracteres maximum') })),
+    opportunities: z.array(z.object({ value: z.string().max(180, '180 caracteres maximum') })),
+    threats: z.array(z.object({ value: z.string().max(180, '180 caracteres maximum') })),
   }),
 });
 
 type SwotFormValues = z.infer<typeof swotFormSchema>;
+type FormListItem = { value: string };
 
 interface SwotInputsPayload {
   notesInternes?: string;
@@ -70,9 +71,9 @@ const cleanString = (value?: string): string | undefined => {
   return normalized ? normalized : undefined;
 };
 
-const cleanStringArray = (values: string[]): string[] =>
+const cleanStringArray = (values: FormListItem[]): string[] =>
   values
-    .map((item) => item.trim())
+    .map((item) => item.value.trim())
     .filter((item) => item.length > 0);
 
 const getErrorMessage = (error: unknown): string => {
@@ -82,7 +83,7 @@ const getErrorMessage = (error: unknown): string => {
   return 'Une erreur est survenue';
 };
 
-const normalizeListForFieldArray = (values: string[]): { value: string }[] =>
+const normalizeListForFieldArray = (values: string[]): FormListItem[] =>
   (values.length > 0 ? values : ['']).map((value) => ({ value }));
 
 function DynamicListField({
@@ -169,15 +170,15 @@ export default function SwotForm({ strategyId, className = '', onSuccess }: Swot
       inputs: {
         notesInternes: '',
         notesExternes: '',
-        concurrents: [''],
-        ressources: [''],
+        concurrents: [{ value: '' }],
+        ressources: [{ value: '' }],
         objectifs: '',
       },
       swot: {
-        strengths: [''],
-        weaknesses: [''],
-        opportunities: [''],
-        threats: [''],
+        strengths: [{ value: '' }],
+        weaknesses: [{ value: '' }],
+        opportunities: [{ value: '' }],
+        threats: [{ value: '' }],
       },
     },
     mode: 'onChange',
@@ -538,18 +539,18 @@ export default function SwotForm({ strategyId, className = '', onSuccess }: Swot
               <DynamicListField
                 label="Concurrents"
                 fields={concurrentsFieldArray.fields}
-                onAdd={() => concurrentsFieldArray.append('')}
+                onAdd={() => concurrentsFieldArray.append({ value: '' })}
                 onRemove={(index) => concurrentsFieldArray.remove(index)}
-                registerPath={(index) => `inputs.concurrents.${index}`}
+                registerPath={(index) => `inputs.concurrents.${index}.value`}
                 registerField={register}
                 isLoading={isBusy}
               />
               <DynamicListField
                 label="Ressources"
                 fields={ressourcesFieldArray.fields}
-                onAdd={() => ressourcesFieldArray.append('')}
+                onAdd={() => ressourcesFieldArray.append({ value: '' })}
                 onRemove={(index) => ressourcesFieldArray.remove(index)}
-                registerPath={(index) => `inputs.ressources.${index}`}
+                registerPath={(index) => `inputs.ressources.${index}.value`}
                 registerField={register}
                 isLoading={isBusy}
               />
@@ -577,36 +578,36 @@ export default function SwotForm({ strategyId, className = '', onSuccess }: Swot
               <DynamicListField
                 label="Strengths"
                 fields={strengthsFieldArray.fields}
-                onAdd={() => strengthsFieldArray.append('')}
+                onAdd={() => strengthsFieldArray.append({ value: '' })}
                 onRemove={(index) => strengthsFieldArray.remove(index)}
-                registerPath={(index) => `swot.strengths.${index}`}
+                registerPath={(index) => `swot.strengths.${index}.value`}
                 registerField={register}
                 isLoading={isBusy}
               />
               <DynamicListField
                 label="Weaknesses"
                 fields={weaknessesFieldArray.fields}
-                onAdd={() => weaknessesFieldArray.append('')}
+                onAdd={() => weaknessesFieldArray.append({ value: '' })}
                 onRemove={(index) => weaknessesFieldArray.remove(index)}
-                registerPath={(index) => `swot.weaknesses.${index}`}
+                registerPath={(index) => `swot.weaknesses.${index}.value`}
                 registerField={register}
                 isLoading={isBusy}
               />
               <DynamicListField
                 label="Opportunities"
                 fields={opportunitiesFieldArray.fields}
-                onAdd={() => opportunitiesFieldArray.append('')}
+                onAdd={() => opportunitiesFieldArray.append({ value: '' })}
                 onRemove={(index) => opportunitiesFieldArray.remove(index)}
-                registerPath={(index) => `swot.opportunities.${index}`}
+                registerPath={(index) => `swot.opportunities.${index}.value`}
                 registerField={register}
                 isLoading={isBusy}
               />
               <DynamicListField
                 label="Threats"
                 fields={threatsFieldArray.fields}
-                onAdd={() => threatsFieldArray.append('')}
+                onAdd={() => threatsFieldArray.append({ value: '' })}
                 onRemove={(index) => threatsFieldArray.remove(index)}
-                registerPath={(index) => `swot.threats.${index}`}
+                registerPath={(index) => `swot.threats.${index}.value`}
                 registerField={register}
                 isLoading={isBusy}
               />
