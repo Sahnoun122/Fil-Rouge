@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AiModule } from './ai/ai.module';
 import { StrategiesModule } from './strategies/strategies.module';
+import { SwotModule } from './swot/swot.module';
 
 // Guards globaux
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -45,6 +46,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     UsersModule,
     AiModule,
     StrategiesModule,
+    SwotModule,
   ],
 
   controllers: [AppController, HealthController],
