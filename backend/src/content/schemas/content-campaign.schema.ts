@@ -46,6 +46,9 @@ export class ContentCampaignInputs {
 
   @Prop()
   endDate?: Date;
+
+  @Prop({ type: [String], default: [] })
+  platforms?: string[];
 }
 
 @Schema({ _id: false })
@@ -87,10 +90,31 @@ export class GeneratedPost {
   adCopyVariantB?: string;
 
   @Prop()
+  adCopyVariantC?: string;
+
+  @Prop()
   suggestedVisual?: string;
 
   @Prop({ type: PostSchedule })
   schedule?: PostSchedule;
+}
+
+@Schema({ _id: false })
+export class PostingPlan {
+  @Prop()
+  frequencyPerWeek?: number;
+
+  @Prop()
+  durationWeeks?: number;
+}
+
+@Schema({ _id: false })
+export class CampaignSummary {
+  @Prop({ type: [String], default: [] })
+  contentPillars?: string[];
+
+  @Prop({ type: PostingPlan, default: {} })
+  postingPlan?: PostingPlan;
 }
 
 @Schema({
@@ -118,6 +142,9 @@ export class ContentCampaign {
 
   @Prop({ type: ContentCampaignInputs, default: {} })
   inputs?: ContentCampaignInputs;
+
+  @Prop({ type: CampaignSummary, default: {} })
+  campaignSummary?: CampaignSummary;
 
   @Prop({ type: [GeneratedPost], default: [] })
   generatedPosts: GeneratedPost[];

@@ -61,4 +61,10 @@ export class ContentCampaignInputsDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  platforms?: string[];
 }

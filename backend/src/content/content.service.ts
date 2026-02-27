@@ -18,12 +18,10 @@ import { Strategy, StrategyDocument } from '../strategies/schemas/strategy.schem
 import {
   ContentCampaignInputsDto,
   CreateContentCampaignDto,
-  GenerateContentDto,
-  RegeneratePlatformDto,
-  RegeneratePostDto,
   UpdateCampaignDto,
 } from './dto';
 import {
+  CampaignSummary,
   ContentCampaign,
   ContentCampaignDocument,
   ContentCampaignInputs,
@@ -35,6 +33,11 @@ import {
 interface SchedulePayload {
   date: string;
   time: string;
+}
+
+interface PostSelector {
+  postId?: string;
+  index?: number;
 }
 
 @Injectable()
@@ -54,11 +57,12 @@ export class ContentService {
     dto: CreateContentCampaignDto,
   ): Promise<ContentCampaignDocument> {
     const strategy = await this.getOwnedStrategyByIdOrThrow(userId, dto.strategyId);
-    const platforms = this.extractPlatformsFromStrategy(strategy);
+    const normalizedInputs = this.normalizeInputs(dto.inputs, dto.mode);
+    const platforms = this.resolvePlatformsForCreation(strategy, normalizedInputs);
 
     if (platforms.length === 0) {
       throw new BadRequestException(
-        'Aucune plateforme trouvee dans la strategie (avant.canauxCommunication.plateformes)',
+        'Aucune plateforme trouvee: strategy.avant.canauxCommunication.plateformes est vide et inputs.platforms non fourni',
       );
     }
 
@@ -69,7 +73,13 @@ export class ContentService {
       name: this.resolveCampaignName(dto.name, strategy, dto.mode),
       objective: this.resolveObjective(strategy),
       platforms,
-      inputs: this.normalizeInputs(dto.inputs, dto.mode),
+      inputs: normalizedInputs,
+      campaignSummary: {
+        contentPillars: normalizedInputs.contentPillars ?? [],
+        postingPlan: {
+          frequencyPerWeek: normalizedInputs.frequencyPerWeek,
+        },
+      },
       generatedPosts: [],
     });
 
@@ -82,27 +92,40 @@ export class ContentService {
   async generateCampaign(
     userId: string,
     campaignId: string,
-    dto: GenerateContentDto,
+    instruction?: string,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
     const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
+    const generationPlatforms = this.resolvePlatformsForGeneration(strategy, campaign);
+
+    if (generationPlatforms.length === 0) {
+      throw new BadRequestException(
+        'Aucune plateforme trouvee pour la generation: strategy.avant.canauxCommunication.plateformes puis fallback inputs.platforms',
+      );
+    }
 
     try {
       const prompt = buildGenerateContentCampaignPrompt(
         strategy.generatedStrategy as unknown as Record<string, unknown>,
         strategy.businessInfo as unknown as Record<string, unknown>,
         campaign.mode,
-        campaign.platforms,
+        generationPlatforms,
         (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-        dto?.instruction,
+        instruction,
       );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const generatedPosts = this.normalizeGeneratedPosts(aiResponse, campaign.platforms, {
+      const generatedPosts = this.normalizeGeneratedPosts(aiResponse, generationPlatforms, {
         requireAllPlatforms: true,
       });
+      const campaignSummary = this.normalizeCampaignSummary(
+        aiResponse,
+        (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
+      );
 
+      campaign.platforms = generationPlatforms;
       campaign.generatedPosts = generatedPosts as GeneratedPost[];
+      campaign.campaignSummary = campaignSummary;
       const savedCampaign = await campaign.save();
 
       this.logger.log(
@@ -163,6 +186,8 @@ export class ContentService {
 
     if (dto.inputs !== undefined) {
       campaign.inputs = this.normalizeInputs(dto.inputs, campaign.mode);
+      const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
+      campaign.platforms = this.resolvePlatformsForGeneration(strategy, campaign);
     }
 
     const savedCampaign = await campaign.save();
@@ -173,20 +198,29 @@ export class ContentService {
   async regeneratePlatform(
     userId: string,
     campaignId: string,
-    dto: RegeneratePlatformDto,
+    platform: string,
+    instruction?: string,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
     const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
-    const platform = this.resolveAllowedPlatform(dto.platform, campaign.platforms);
+    const generationPlatforms = this.resolvePlatformsForGeneration(strategy, campaign);
 
-    if (!platform) {
+    if (generationPlatforms.length === 0) {
       throw new BadRequestException(
-        `Plateforme non autorisee pour cette campagne: ${dto.platform}`,
+        'Aucune plateforme trouvee pour la regeneration: strategy.avant.canauxCommunication.plateformes puis fallback inputs.platforms',
+      );
+    }
+
+    const resolvedPlatform = this.resolveAllowedPlatform(platform, generationPlatforms);
+
+    if (!resolvedPlatform) {
+      throw new BadRequestException(
+        `Plateforme non autorisee: ${platform}. Plateformes valides: ${generationPlatforms.join(', ')}`,
       );
     }
 
     const existingPlatformPosts = campaign.generatedPosts.filter(
-      (post) => post.platform.toLowerCase() === platform.toLowerCase(),
+      (post) => post.platform.toLowerCase() === resolvedPlatform.toLowerCase(),
     );
 
     try {
@@ -194,22 +228,23 @@ export class ContentService {
         strategy.generatedStrategy as unknown as Record<string, unknown>,
         strategy.businessInfo as unknown as Record<string, unknown>,
         campaign.mode,
-        platform,
+        resolvedPlatform,
         existingPlatformPosts as unknown as Record<string, unknown>[],
         (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-        dto.instruction,
+        instruction,
       );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const regeneratedPlatformPosts = this.normalizeGeneratedPosts(aiResponse, campaign.platforms, {
-        forcedPlatform: platform,
+      const regeneratedPlatformPosts = this.normalizeGeneratedPosts(aiResponse, generationPlatforms, {
+        forcedPlatform: resolvedPlatform,
         requireAllPlatforms: true,
       });
 
       const untouchedPosts = campaign.generatedPosts.filter(
-        (post) => post.platform.toLowerCase() !== platform.toLowerCase(),
+        (post) => post.platform.toLowerCase() !== resolvedPlatform.toLowerCase(),
       );
 
+      campaign.platforms = generationPlatforms;
       campaign.generatedPosts = [
         ...(untouchedPosts as GeneratedPost[]),
         ...(regeneratedPlatformPosts as GeneratedPost[]),
@@ -217,13 +252,13 @@ export class ContentService {
 
       const savedCampaign = await campaign.save();
       this.logger.log(
-        `Regenerated ${regeneratedPlatformPosts.length} posts for platform ${platform} in campaign ${campaignId}`,
+        `Regenerated ${regeneratedPlatformPosts.length} posts for platform ${resolvedPlatform} in campaign ${campaignId}`,
       );
 
       return savedCampaign;
     } catch (error) {
       this.logger.error(
-        `Failed to regenerate platform ${platform} for campaign ${campaignId}: ${error.message}`,
+        `Failed to regenerate platform ${resolvedPlatform} for campaign ${campaignId}: ${error.message}`,
         error.stack,
       );
       throw this.wrapUnexpectedError(error, 'Erreur lors de la regeneration de la plateforme');
@@ -233,7 +268,8 @@ export class ContentService {
   async regeneratePost(
     userId: string,
     campaignId: string,
-    dto: RegeneratePostDto,
+    selector: PostSelector,
+    instruction?: string,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
     const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
@@ -242,25 +278,29 @@ export class ContentService {
       throw new BadRequestException('Aucun post disponible a regenerer pour cette campagne');
     }
 
-    const targetIndex = this.resolvePostIndex(campaign, dto);
+    const targetIndex = this.resolvePostIndex(campaign, selector);
     const existingPost = campaign.generatedPosts[targetIndex];
+    const generationPlatforms = this.resolvePlatformsForGeneration(strategy, campaign);
+    const forcedPlatform =
+      this.resolveAllowedPlatform(existingPost.platform, generationPlatforms) ?? existingPost.platform;
+    const singlePostPlatforms = this.mergeUniquePlatforms(generationPlatforms, [forcedPlatform]);
 
     try {
       const prompt = buildRegenerateSinglePostPrompt(
         strategy.generatedStrategy as unknown as Record<string, unknown>,
         strategy.businessInfo as unknown as Record<string, unknown>,
         campaign.mode,
-        existingPost.platform,
+        forcedPlatform,
         existingPost as unknown as Record<string, unknown>,
         (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-        dto.instruction,
+        instruction,
       );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
       const regeneratedPost = this.normalizeSinglePost(
         aiResponse,
-        campaign.platforms,
-        existingPost.platform,
+        singlePostPlatforms,
+        forcedPlatform,
       );
 
       const previousPostId = (existingPost as unknown as { _id?: Types.ObjectId })._id;
@@ -274,6 +314,7 @@ export class ContentService {
 
       (campaign.generatedPosts as unknown as Array<Record<string, unknown>>)[targetIndex] =
         replacement;
+      campaign.platforms = this.mergeUniquePlatforms(campaign.platforms, generationPlatforms);
 
       const savedCampaign = await campaign.save();
       this.logger.log(`Regenerated post #${targetIndex} for campaign ${campaignId}`);
@@ -351,8 +392,48 @@ export class ContentService {
       return [];
     }
 
-    const deduped = new Map<string, string>();
+    return this.normalizePlatforms(rawPlatforms);
+  }
 
+  private resolvePlatformsForCreation(
+    strategy: StrategyDocument,
+    inputs: ContentCampaignInputs,
+  ): string[] {
+    const strategyPlatforms = this.extractPlatformsFromStrategy(strategy);
+    if (strategyPlatforms.length > 0) {
+      return strategyPlatforms;
+    }
+
+    return this.extractPlatformsFromInputs(inputs);
+  }
+
+  private resolvePlatformsForGeneration(
+    strategy: StrategyDocument,
+    campaign: ContentCampaignDocument,
+  ): string[] {
+    const strategyPlatforms = this.extractPlatformsFromStrategy(strategy);
+    if (strategyPlatforms.length > 0) {
+      return strategyPlatforms;
+    }
+
+    const inputsPlatforms = this.extractPlatformsFromInputs(campaign.inputs);
+    if (inputsPlatforms.length > 0) {
+      return inputsPlatforms;
+    }
+
+    return this.normalizePlatforms(campaign.platforms ?? []);
+  }
+
+  private extractPlatformsFromInputs(inputs?: ContentCampaignInputs): string[] {
+    if (!inputs) {
+      return [];
+    }
+
+    return this.normalizePlatforms(inputs.platforms ?? []);
+  }
+
+  private normalizePlatforms(rawPlatforms: unknown[]): string[] {
+    const deduped = new Map<string, string>();
     for (const rawPlatform of rawPlatforms) {
       if (typeof rawPlatform !== 'string') {
         continue;
@@ -365,6 +446,10 @@ export class ContentService {
     }
 
     return Array.from(deduped.values());
+  }
+
+  private mergeUniquePlatforms(base: string[], extra: string[]): string[] {
+    return this.normalizePlatforms([...(base ?? []), ...(extra ?? [])]);
   }
 
   private normalizePlatform(platform: string): string {
@@ -451,6 +536,7 @@ export class ContentService {
       targetAudience: this.normalizeOptionalString(inputsObject.targetAudience),
       tone: this.normalizeOptionalString(inputsObject.tone),
       callToAction: this.normalizeOptionalString(inputsObject.callToAction),
+      platforms: this.normalizePlatformsArray(inputsObject.platforms, 'platforms'),
     };
 
     const hasAdsFields =
@@ -562,6 +648,21 @@ export class ContentService {
     return date;
   }
 
+  private normalizePlatformsArray(
+    value: unknown,
+    fieldName: string,
+  ): string[] | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (!Array.isArray(value)) {
+      throw new BadRequestException(`Champ "${fieldName}" invalide: tableau attendu`);
+    }
+
+    return this.normalizePlatforms(value);
+  }
+
   private normalizeStringArray(
     value: unknown,
     maxItems: number,
@@ -636,6 +737,53 @@ export class ContentService {
       payload;
 
     return this.normalizeGeneratedPost(sourcePayload, 0, allowedPlatforms, forcedPlatform);
+  }
+
+  private normalizeCampaignSummary(
+    payload: unknown,
+    inputs: Record<string, unknown> = {},
+  ): CampaignSummary {
+    const summaryPayload = this.extractCampaignSummaryPayload(payload);
+    const aiPillars = this.normalizeLooseStringArray(summaryPayload.contentPillars);
+    const inputPillars = this.normalizeLooseStringArray(inputs.contentPillars);
+
+    const contentPillars = (aiPillars.length > 0 ? aiPillars : inputPillars).slice(0, 5);
+
+    const postingPlan =
+      summaryPayload.postingPlan &&
+      typeof summaryPayload.postingPlan === 'object' &&
+      !Array.isArray(summaryPayload.postingPlan)
+        ? (summaryPayload.postingPlan as Record<string, unknown>)
+        : {};
+
+    const frequencyPerWeek =
+      this.toInteger(postingPlan.frequencyPerWeek, 1, 21) ??
+      this.toInteger(inputs.frequencyPerWeek, 1, 21) ??
+      3;
+    const durationWeeks =
+      this.toPositiveInteger(postingPlan.durationWeeks) ??
+      this.resolveDurationWeeks(inputs);
+
+    return {
+      contentPillars,
+      postingPlan: {
+        frequencyPerWeek,
+        durationWeeks,
+      },
+    };
+  }
+
+  private extractCampaignSummaryPayload(payload: unknown): Record<string, unknown> {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return {};
+    }
+
+    const summary = (payload as { campaignSummary?: unknown }).campaignSummary;
+    if (!summary || typeof summary !== 'object' || Array.isArray(summary)) {
+      return {};
+    }
+
+    return summary as Record<string, unknown>;
   }
 
   private extractGeneratedPostsArray(payload: unknown): unknown[] {
@@ -720,6 +868,9 @@ export class ContentService {
     const adCopyVariantB = this.normalizeOptionalString(post.adCopyVariantB);
     if (adCopyVariantB) normalized.adCopyVariantB = adCopyVariantB;
 
+    const adCopyVariantC = this.normalizeOptionalString(post.adCopyVariantC);
+    if (adCopyVariantC) normalized.adCopyVariantC = adCopyVariantC;
+
     const suggestedVisual = this.normalizeOptionalString(post.suggestedVisual);
     if (suggestedVisual) normalized.suggestedVisual = suggestedVisual;
 
@@ -776,15 +927,19 @@ export class ContentService {
     return 'post';
   }
 
-  private resolvePostIndex(campaign: ContentCampaignDocument, dto: RegeneratePostDto): number {
-    if (!dto.postId && dto.index === undefined) {
+  private resolvePostIndex(campaign: ContentCampaignDocument, selector: PostSelector): number {
+    if (!selector?.postId && selector?.index === undefined) {
       throw new BadRequestException('postId ou index est requis');
     }
 
-    if (dto.postId) {
+    if (selector.postId) {
+      if (!Types.ObjectId.isValid(selector.postId)) {
+        throw new BadRequestException('postId invalide');
+      }
+
       const postIndex = campaign.generatedPosts.findIndex(
         (post) =>
-          (post as unknown as { _id?: Types.ObjectId })._id?.toString() === dto.postId,
+          (post as unknown as { _id?: Types.ObjectId })._id?.toString() === selector.postId,
       );
 
       if (postIndex < 0) {
@@ -794,12 +949,66 @@ export class ContentService {
       return postIndex;
     }
 
-    const index = dto.index as number;
-    if (index < 0 || index >= campaign.generatedPosts.length) {
-      throw new BadRequestException('index invalide');
+    const index = selector.index as number;
+    if (!Number.isInteger(index) || index < 0 || index >= campaign.generatedPosts.length) {
+      throw new BadRequestException(
+        `index invalide: valeur attendue entre 0 et ${campaign.generatedPosts.length - 1}`,
+      );
     }
 
     return index;
+  }
+
+  private normalizeLooseStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    const normalizedValues: string[] = [];
+    for (const item of value) {
+      if (typeof item !== 'string') {
+        continue;
+      }
+      const normalized = item.trim();
+      if (!normalized) {
+        continue;
+      }
+      if (!normalizedValues.includes(normalized)) {
+        normalizedValues.push(normalized);
+      }
+    }
+
+    return normalizedValues;
+  }
+
+  private toInteger(value: unknown, min: number, max: number): number | undefined {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+      return undefined;
+    }
+    return parsed;
+  }
+
+  private toPositiveInteger(value: unknown): number | undefined {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return undefined;
+    }
+    return parsed;
+  }
+
+  private resolveDurationWeeks(inputs: Record<string, unknown>): number {
+    const startDate = new Date(String(inputs?.startDate ?? ''));
+    const endDate = new Date(String(inputs?.endDate ?? ''));
+
+    if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime())) {
+      const diffMs = endDate.getTime() - startDate.getTime();
+      if (diffMs >= 0) {
+        return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 7)));
+      }
+    }
+
+    return 4;
   }
 
   private wrapUnexpectedError(error: unknown, message: string): Error {

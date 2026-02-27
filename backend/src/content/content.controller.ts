@@ -61,7 +61,7 @@ export class ContentController {
     const campaign = await this.contentService.generateCampaign(
       userId,
       campaignId,
-      generateContentDto,
+      generateContentDto?.instruction,
     );
 
     return {
@@ -143,7 +143,8 @@ export class ContentController {
     const campaign = await this.contentService.regeneratePlatform(
       userId,
       campaignId,
-      regeneratePlatformDto,
+      regeneratePlatformDto.platform,
+      regeneratePlatformDto.instruction,
     );
 
     return {
@@ -163,7 +164,11 @@ export class ContentController {
     const campaign = await this.contentService.regeneratePost(
       userId,
       campaignId,
-      regeneratePostDto,
+      {
+        postId: regeneratePostDto.postId,
+        index: regeneratePostDto.index,
+      },
+      regeneratePostDto.instruction,
     );
 
     return {
