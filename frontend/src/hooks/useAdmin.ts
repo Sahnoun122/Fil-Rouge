@@ -4,6 +4,9 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import AdminService from '../services/adminService';
 import {
   AdminCreateUserPayload,
+  AdminStrategiesFilters,
+  AdminStrategiesResult,
+  AdminStrategy,
   AdminUser,
   AdminUserRole,
   AdminUserStats,
@@ -17,6 +20,12 @@ const DEFAULT_FILTERS: Required<AdminUsersFilters> = {
   limit: 10,
   search: '',
   role: 'all',
+};
+
+const DEFAULT_STRATEGIES_FILTERS: Required<AdminStrategiesFilters> = {
+  page: 1,
+  limit: 10,
+  search: '',
 };
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -260,6 +269,71 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     updateUser,
     deleteUser,
     setUserBanStatus,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminStrategies(initialFilters?: AdminStrategiesFilters) {
+  const initialResolvedFilters: Required<AdminStrategiesFilters> = {
+    ...DEFAULT_STRATEGIES_FILTERS,
+    ...initialFilters,
+    page: initialFilters?.page ?? DEFAULT_STRATEGIES_FILTERS.page,
+    limit: initialFilters?.limit ?? DEFAULT_STRATEGIES_FILTERS.limit,
+    search: initialFilters?.search ?? DEFAULT_STRATEGIES_FILTERS.search,
+  };
+
+  const [filters, setFiltersState] = useState<Required<AdminStrategiesFilters>>(initialResolvedFilters);
+  const filtersRef = useRef<Required<AdminStrategiesFilters>>(initialResolvedFilters);
+  const [strategiesResult, setStrategiesResult] = useState<AdminStrategiesResult | null>(null);
+  const [isLoadingStrategies, setIsLoadingStrategies] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const setFilters = useCallback((nextFilters: Required<AdminStrategiesFilters>) => {
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+  }, []);
+
+  const loadStrategies = useCallback(async (overrides?: Partial<AdminStrategiesFilters>) => {
+    const currentFilters = filtersRef.current;
+    const nextFilters: Required<AdminStrategiesFilters> = {
+      ...currentFilters,
+      ...overrides,
+      page: overrides?.page ?? currentFilters.page,
+      limit: overrides?.limit ?? currentFilters.limit,
+      search: overrides?.search ?? currentFilters.search,
+    };
+
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+    setIsLoadingStrategies(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getStrategies(nextFilters);
+      setStrategiesResult(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement des strategies');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingStrategies(false);
+    }
+  }, []);
+
+  const strategies = useMemo<AdminStrategy[]>(
+    () => strategiesResult?.strategies ?? [],
+    [strategiesResult],
+  );
+
+  return {
+    filters,
+    setFilters,
+    strategies,
+    strategiesResult,
+    error,
+    isLoadingStrategies,
+    loadStrategies,
     clearError: () => setError(null),
   };
 }

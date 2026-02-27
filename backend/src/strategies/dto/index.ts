@@ -3,3 +3,4 @@ export * from './update-strategy.dto';
 export * from './regenerate-section.dto';
 export * from './improve-section.dto';
 export * from './update-section.dto';
+export * from './admin-strategies-query.dto';

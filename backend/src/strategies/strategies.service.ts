@@ -5,11 +5,13 @@ import { Strategy, StrategyDocument, MainObjective, Tone } from './schemas/strat
 import { AiService } from '../ai/ai.service';
 import { GenerateStrategyDto, UpdateStrategyDto, RegenerateSectionDto, ImproveSectionDto, UpdateSectionDto } from './dto';
 import { buildFullStrategyPrompt, buildRegenerateSectionPrompt, buildImproveSectionPrompt } from '../ai/prompts/strategy.prompts';
+import { User, UserDocument } from '../users/entities/user.entity';
 
 @Injectable()
 export class StrategiesService {
   constructor(
     @InjectModel(Strategy.name) private strategyModel: Model<StrategyDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private aiService: AiService,
   ) {}
 
@@ -108,6 +110,39 @@ export class StrategiesService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Erreur lors de la récupération des stratégies: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Récupère toutes les stratégies pour l'admin avec pagination et recherche.
+   */
+  async findAllForAdmin(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ): Promise<{ strategies: StrategyDocument[]; total: number }> {
+    try {
+      const validatedPage = Math.max(1, page);
+      const validatedLimit = Math.min(100, Math.max(1, limit));
+      const skip = (validatedPage - 1) * validatedLimit;
+      const filters = await this.buildAdminSearchFilter(search);
+
+      const [strategies, total] = await Promise.all([
+        this.strategyModel
+          .find(filters)
+          .populate('userId', 'fullName email companyName role')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(validatedLimit)
+          .exec(),
+        this.strategyModel.countDocuments(filters).exec(),
+      ]);
+
+      return { strategies, total };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Erreur lors de la récupération admin des stratégies: ${error.message}`,
       );
     }
   }
@@ -572,5 +607,44 @@ export class StrategiesService {
     }, obj);
 
     target[lastKey] = value;
+  }
+
+  private async buildAdminSearchFilter(search?: string): Promise<Record<string, unknown>> {
+    const normalizedSearch = search?.trim();
+    if (!normalizedSearch) {
+      return {};
+    }
+
+    const safeSearch = this.escapeRegex(normalizedSearch);
+    const regex = new RegExp(safeSearch, 'i');
+
+    const matchedUsers = await this.userModel
+      .find({
+        $or: [
+          { fullName: { $regex: regex } },
+          { email: { $regex: regex } },
+          { companyName: { $regex: regex } },
+        ],
+      })
+      .select('_id')
+      .lean()
+      .exec();
+
+    const matchedUserIds = matchedUsers.map((user) => user._id);
+    const orFilters: Record<string, unknown>[] = [
+      { 'businessInfo.businessName': { $regex: regex } },
+      { 'businessInfo.industry': { $regex: regex } },
+      { 'businessInfo.productOrService': { $regex: regex } },
+    ];
+
+    if (matchedUserIds.length > 0) {
+      orFilters.push({ userId: { $in: matchedUserIds } });
+    }
+
+    return { $or: orFilters };
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

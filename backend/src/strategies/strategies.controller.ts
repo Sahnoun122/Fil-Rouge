@@ -11,16 +11,20 @@ import {
   UseGuards, 
   HttpStatus,
   HttpCode,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { StrategiesService } from './strategies.service';
 import { 
   GenerateStrategyDto, 
   UpdateStrategyDto,
   RegenerateSectionDto, 
   ImproveSectionDto, 
-  UpdateSectionDto 
+  UpdateSectionDto,
+  AdminStrategiesQueryDto,
 } from './dto';
 
 interface AuthenticatedRequest extends Request {
@@ -82,6 +86,34 @@ export class StrategiesController {
           limit: validatedLimit,
           total: result.total,
           pages: Math.ceil(result.total / validatedLimit),
+        },
+      },
+    };
+  }
+
+  /**
+   * RÃ©cupÃ¨re toutes les stratÃ©gies pour l'admin avec pagination
+   */
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async findAllForAdmin(@Query() query: AdminStrategiesQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const search = query.search;
+
+    const result = await this.strategiesService.findAllForAdmin(page, limit, search);
+
+    return {
+      success: true,
+      data: {
+        strategies: result.strategies,
+        pagination: {
+          page,
+          limit,
+          total: result.total,
+          pages: Math.ceil(result.total / limit),
         },
       },
     };

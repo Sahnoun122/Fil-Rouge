@@ -38,6 +38,48 @@ export interface AdminUserStats {
   recentSignups: number;
 }
 
+export interface AdminStrategiesFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface AdminStrategyUser {
+  id: string;
+  fullName: string;
+  email: string;
+  companyName?: string;
+  role: AdminUserRole;
+}
+
+export interface AdminStrategyBusinessInfo {
+  businessName: string;
+  industry: string;
+  productOrService: string;
+  targetAudience: string;
+  location: string;
+  mainObjective: string;
+  tone: string;
+  budget?: number;
+}
+
+export interface AdminStrategy {
+  id: string;
+  userId: string;
+  user: AdminStrategyUser;
+  businessInfo: AdminStrategyBusinessInfo;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminStrategiesResult {
+  strategies: AdminStrategy[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface AdminCreateUserPayload {
   fullName: string;
   email: string;

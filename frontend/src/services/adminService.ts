@@ -1,6 +1,9 @@
 import { api } from '../utils/fetcher';
 import {
   AdminCreateUserPayload,
+  AdminStrategiesFilters,
+  AdminStrategiesResult,
+  AdminStrategy,
   AdminUser,
   AdminUserRole,
   AdminUserStats,
@@ -22,6 +25,11 @@ type RawUsersData = {
   page?: unknown;
   limit?: unknown;
   totalPages?: unknown;
+};
+
+type RawStrategiesData = {
+  strategies?: unknown;
+  pagination?: unknown;
 };
 
 const asRecord = (value: unknown): Record<string, unknown> => {
@@ -94,6 +102,46 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
   };
 };
 
+const normalizeAdminStrategy = (payload: unknown): AdminStrategy => {
+  const source = asRecord(payload);
+  const rawId = source.id ?? source._id;
+  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+
+  const userSource = asRecord(source.userId);
+  const rawUserId = userSource._id ?? userSource.id ?? source.userId;
+  const userId =
+    typeof rawUserId === 'string' ? rawUserId : asString(rawUserId?.toString?.(), '');
+
+  const businessSource = asRecord(source.businessInfo);
+  const createdAt = toIso(source.createdAt);
+  const updatedAt = toIso(source.updatedAt, createdAt);
+
+  return {
+    id,
+    userId,
+    user: {
+      id: userId,
+      fullName: asString(userSource.fullName, 'Utilisateur inconnu'),
+      email: asString(userSource.email, '-'),
+      companyName: asString(userSource.companyName) || undefined,
+      role: userSource.role === 'admin' ? 'admin' : 'user',
+    },
+    businessInfo: {
+      businessName: asString(businessSource.businessName, 'Sans nom'),
+      industry: asString(businessSource.industry, '-'),
+      productOrService: asString(businessSource.productOrService, '-'),
+      targetAudience: asString(businessSource.targetAudience, '-'),
+      location: asString(businessSource.location, '-'),
+      mainObjective: asString(businessSource.mainObjective, '-'),
+      tone: asString(businessSource.tone, '-'),
+      budget:
+        typeof businessSource.budget === 'number' ? businessSource.budget : undefined,
+    },
+    createdAt,
+    updatedAt,
+  };
+};
+
 const buildUsersQuery = (filters: AdminUsersFilters): string => {
   const params = new URLSearchParams();
 
@@ -111,6 +159,25 @@ const buildUsersQuery = (filters: AdminUsersFilters): string => {
 
   if (filters.role && filters.role !== 'all') {
     params.set('role', filters.role);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+};
+
+const buildStrategiesQuery = (filters: AdminStrategiesFilters): string => {
+  const params = new URLSearchParams();
+
+  if (filters.page) {
+    params.set('page', String(filters.page));
+  }
+
+  if (filters.limit) {
+    params.set('limit', String(filters.limit));
+  }
+
+  if (filters.search?.trim()) {
+    params.set('search', filters.search.trim());
   }
 
   const query = params.toString();
@@ -154,6 +221,30 @@ export class AdminService {
       admins: asNumber(response.data.admins, 0),
       banned: asNumber(response.data.banned, 0),
       recentSignups: asNumber(response.data.recentSignups, 0),
+    };
+  }
+
+  static async getStrategies(filters: AdminStrategiesFilters = {}): Promise<AdminStrategiesResult> {
+    const query = buildStrategiesQuery(filters);
+    const response = (await api.get(`/strategies/admin/all${query}`, true)) as ApiEnvelope<RawStrategiesData>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || 'Impossible de recuperer les strategies');
+    }
+
+    const strategiesValue = response.data.strategies;
+    if (!Array.isArray(strategiesValue)) {
+      throw new Error('Reponse strategies invalide');
+    }
+
+    const paginationSource = asRecord(response.data.pagination);
+
+    return {
+      strategies: strategiesValue.map((item) => normalizeAdminStrategy(item)),
+      total: asNumber(paginationSource.total, 0),
+      page: asNumber(paginationSource.page, 1),
+      limit: asNumber(paginationSource.limit, 10),
+      totalPages: asNumber(paginationSource.pages, 1),
     };
   }
 
