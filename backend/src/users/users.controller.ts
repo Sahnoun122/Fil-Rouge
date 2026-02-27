@@ -1,85 +1,90 @@
-import { 
-  Controller, 
-  Get, 
-  Put, 
-  Body, 
-  Request, 
-  UseGuards,
-  Query,
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
   Param,
+  Put,
+  Query,
+  Request,
+  UseGuards,
+  UsePipes,
   ValidationPipe,
-  UsePipes
 } from '@nestjs/common';
 
-import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '../auth/guards/roles.guard';
-import { UpdateUserDto, ChangePasswordDto } from './dto/user.dto';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
+import { UsersService } from './users.service';
+import {
+  AdminUsersQueryDto,
+  ChangePasswordDto,
+  UpdateUserDto,
+  UpdateUserRoleDto,
+} from './dto/user.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // 📋 GESTION PROFIL UTILISATEUR
-
   @Get('profile')
-  async getProfile(@Request() req) {
-    const user = await this.usersService.findById(req.user.sub);
+  async getProfile(@Request() req: any) {
+    const userId = this.getAuthenticatedUserId(req);
+    const user = await this.usersService.findById(userId);
+
     return {
       success: true,
-      message: 'Profil récupéré avec succès',
-      data: user
+      message: 'Profil recupere avec succes',
+      data: user,
     };
   }
 
   @Put('profile')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async updateProfile(
-    @Request() req,
-    @Body() updateUserDto: UpdateUserDto
+    @Request() req: any,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
-    const updatedUser = await this.usersService.updateProfile(req.user.sub, updateUserDto);
-    
+    const userId = this.getAuthenticatedUserId(req);
+    const updatedUser = await this.usersService.updateProfile(userId, updateUserDto);
+
     return {
       success: true,
-      message: 'Profil mis à jour avec succès',
-      data: updatedUser
+      message: 'Profil mis a jour avec succes',
+      data: updatedUser,
     };
   }
 
   @Put('password')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async changePassword(
-    @Request() req,
-    @Body() changePasswordDto: ChangePasswordDto
+    @Request() req: any,
+    @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    const result = await this.usersService.changePassword(req.user.sub, changePasswordDto);
-    
+    const userId = this.getAuthenticatedUserId(req);
+    const result = await this.usersService.changePassword(userId, changePasswordDto);
+
     return {
       success: true,
-      message: result.message
+      message: result.message,
     };
   }
-
-  // 🔒 ROUTES ADMIN UNIQUEMENT
 
   @Get('admin/all')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async getAllUsers(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
-  ) {
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    
-    const result = await this.usersService.getAllUsers(pageNum, limitNum);
-    
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async getAllUsers(@Query() query: AdminUsersQueryDto) {
+    const result = await this.usersService.getAllUsers(query.page ?? 1, query.limit ?? 10, {
+      search: query.search,
+      role: query.role,
+      status: query.status,
+    });
+
     return {
       success: true,
-      message: 'Liste des utilisateurs récupérée avec succès',
-      data: result
+      message: 'Liste des utilisateurs recuperee avec succes',
+      data: result,
     };
   }
 
@@ -88,24 +93,25 @@ export class UsersController {
   @Roles('admin')
   async getUserStats() {
     const stats = await this.usersService.getUserStats();
-    
+
     return {
       success: true,
-      message: 'Statistiques récupérées avec succès',
-      data: stats
+      message: 'Statistiques recuperees avec succes',
+      data: stats,
     };
   }
 
   @Put('admin/:userId/toggle-status')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async toggleUserStatus(@Param('userId') userId: string) {
-    const updatedUser = await this.usersService.toggleUserStatus(userId);
-    
+  async toggleUserStatus(@Request() req: any, @Param('userId') userId: string) {
+    const adminId = this.getAuthenticatedUserId(req);
+    const updatedUser = await this.usersService.toggleUserStatus(userId, adminId);
+
     return {
       success: true,
-      message: `Statut de l'utilisateur ${updatedUser.isActive ? 'activé' : 'désactivé'} avec succès`,
-      data: updatedUser
+      message: `Statut utilisateur ${updatedUser.isActive ? 'active' : 'desactive'} avec succes`,
+      data: updatedUser,
     };
   }
 
@@ -114,15 +120,17 @@ export class UsersController {
   @Roles('admin')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async updateUserRole(
+    @Request() req: any,
     @Param('userId') userId: string,
-    @Body('role') role: 'admin' | 'user'
+    @Body() updateUserRoleDto: UpdateUserRoleDto,
   ) {
-    const updatedUser = await this.usersService.updateUserRole(userId, role);
-    
+    const adminId = this.getAuthenticatedUserId(req);
+    const updatedUser = await this.usersService.updateUserRole(userId, updateUserRoleDto.role, adminId);
+
     return {
       success: true,
-      message: `Rôle de l'utilisateur mis à jour avec succès`,
-      data: updatedUser
+      message: 'Role utilisateur mis a jour avec succes',
+      data: updatedUser,
     };
   }
 
@@ -131,11 +139,21 @@ export class UsersController {
   @Roles('admin')
   async getUserById(@Param('userId') userId: string) {
     const user = await this.usersService.findById(userId);
-    
+
     return {
       success: true,
-      message: 'Utilisateur récupéré avec succès',
-      data: user
+      message: 'Utilisateur recupere avec succes',
+      data: user,
     };
+  }
+
+  private getAuthenticatedUserId(req: any): string {
+    const rawId = req?.user?.sub ?? req?.user?.id ?? req?.user?._id?.toString?.();
+
+    if (!rawId || typeof rawId !== 'string') {
+      throw new BadRequestException('Utilisateur authentifie invalide');
+    }
+
+    return rawId;
   }
 }

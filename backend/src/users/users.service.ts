@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
 import { User, UserDocument, UserRole } from './entities/user.entity';
-import { UpdateUserDto, ChangePasswordDto } from './dto/user.dto';
+import { ChangePasswordDto, UpdateUserDto } from './dto/user.dto';
 
 export interface CreateUserData {
   fullName: string;
@@ -16,13 +21,18 @@ export interface CreateUserData {
   role?: UserRole;
 }
 
+export interface AdminUsersFilters {
+  search?: string;
+  role?: UserRole;
+  status?: 'active' | 'inactive';
+}
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
-  // 📋 CRÉATION ET RÉCUPÉRATION
   async createUser(userData: CreateUserData): Promise<UserDocument> {
     try {
       const newUser = new this.userModel({
@@ -36,18 +46,18 @@ export class UsersService {
       });
 
       return await newUser.save();
-    } catch (error) {
-      if (error.code === 11000) {
-        throw new ConflictException('Cet email est déjà utilisé');
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        throw new ConflictException('Cet email est deja utilise');
       }
-      throw new BadRequestException('Erreur lors de la création de l\'utilisateur');
+      throw new BadRequestException("Erreur lors de la creation de l'utilisateur");
     }
   }
 
   async findById(id: string): Promise<UserDocument | null> {
     try {
       return await this.userModel.findById(id).exec();
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -55,7 +65,7 @@ export class UsersService {
   async findByEmail(email: string): Promise<UserDocument | null> {
     try {
       return await this.userModel.findOne({ email }).exec();
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -63,12 +73,11 @@ export class UsersService {
   async findByEmailWithPassword(email: string): Promise<UserDocument | null> {
     try {
       return await this.userModel.findOne({ email }).select('+password').exec();
-    } catch (error) {
+    } catch {
       return null;
     }
   }
 
-  // 📝 MISE À JOUR
   async updateProfile(userId: string, updateData: UpdateUserDto): Promise<UserDocument> {
     try {
       const user = await this.userModel.findById(userId);
@@ -76,20 +85,19 @@ export class UsersService {
         throw new NotFoundException('Utilisateur introuvable');
       }
 
-      // Mettre à jour les champs modifiés
-      const allowedFields = ['fullName', 'phone', 'companyName', 'industry'];
-      allowedFields.forEach(field => {
+      const allowedFields: Array<keyof UpdateUserDto> = ['fullName', 'phone', 'companyName', 'industry'];
+      for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
-          user[field] = updateData[field];
+          user[field] = updateData[field] as never;
         }
-      });
+      }
 
       return await user.save();
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException('Erreur lors de la mise à jour du profil');
+      throw new BadRequestException('Erreur lors de la mise a jour du profil');
     }
   }
 
@@ -100,17 +108,19 @@ export class UsersService {
         throw new NotFoundException('Utilisateur introuvable');
       }
 
-      // Vérifier l'ancien mot de passe
-      const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+      const isCurrentPasswordValid = await bcrypt.compare(
+        changePasswordDto.currentPassword,
+        user.password,
+      );
+
       if (!isCurrentPasswordValid) {
         throw new BadRequestException('Mot de passe actuel incorrect');
       }
 
-      // Mettre à jour le mot de passe (sera hashé automatiquement par le middleware)
       user.password = changePasswordDto.newPassword;
       await user.save();
 
-      return { message: 'Mot de passe modifié avec succès' };
+      return { message: 'Mot de passe modifie avec succes' };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
@@ -119,41 +129,42 @@ export class UsersService {
     }
   }
 
-  // 🔐 GESTION TOKEN
   async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
     try {
       const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-      await this.userModel.findByIdAndUpdate(userId, { 
-        refreshToken: hashedRefreshToken 
+      await this.userModel.findByIdAndUpdate(userId, {
+        refreshToken: hashedRefreshToken,
       });
-    } catch (error) {
-      throw new BadRequestException('Erreur lors de la mise à jour du token');
+    } catch {
+      throw new BadRequestException('Erreur lors de la mise a jour du token');
     }
   }
 
   async removeRefreshToken(userId: string): Promise<void> {
     try {
-      await this.userModel.findByIdAndUpdate(userId, { 
-        $unset: { refreshToken: 1 }
+      await this.userModel.findByIdAndUpdate(userId, {
+        $unset: { refreshToken: 1 },
       });
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Erreur lors de la suppression du token');
     }
   }
 
   async updateLastLogin(userId: string): Promise<void> {
     try {
-      await this.userModel.findByIdAndUpdate(userId, { 
-        lastLoginAt: new Date() 
+      await this.userModel.findByIdAndUpdate(userId, {
+        lastLoginAt: new Date(),
       });
     } catch (error) {
-      // Ne pas lancer d'erreur car ce n'est pas critique
-      console.error('Erreur mise à jour dernière connexion:', error);
+      console.error('Erreur mise a jour derniere connexion:', error);
     }
   }
 
-  // 🔒 GESTION ADMIN
-  async getAllUsers(page: number = 1, limit: number = 10): Promise<{
+  async getAllUsers(
+    page: number = 1,
+    limit: number = 10,
+    filters: AdminUsersFilters = {},
+  ): Promise<{
     users: UserDocument[];
     total: number;
     page: number;
@@ -162,28 +173,48 @@ export class UsersService {
   }> {
     try {
       const skip = (page - 1) * limit;
-      
+      const query: Record<string, unknown> = {};
+
+      if (filters.role) {
+        query.role = filters.role;
+      }
+
+      if (filters.status) {
+        query.isActive = filters.status === 'active';
+      }
+
+      if (filters.search) {
+        const safeSearch = this.escapeRegex(filters.search);
+        const searchRegex = new RegExp(safeSearch, 'i');
+
+        query.$or = [
+          { fullName: searchRegex },
+          { email: searchRegex },
+          { companyName: searchRegex },
+        ];
+      }
+
       const [users, total] = await Promise.all([
         this.userModel
-          .find()
+          .find(query)
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit)
           .exec(),
-        this.userModel.countDocuments()
+        this.userModel.countDocuments(query),
       ]);
 
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / limit) || 1;
 
       return {
         users,
         total,
         page,
         limit,
-        totalPages
+        totalPages,
       };
-    } catch (error) {
-      throw new BadRequestException('Erreur lors de la récupération des utilisateurs');
+    } catch {
+      throw new BadRequestException('Erreur lors de la recuperation des utilisateurs');
     }
   }
 
@@ -199,20 +230,13 @@ export class UsersService {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const [
-        total,
-        active,
-        inactive,
-        admins,
-        emailVerified,
-        recentSignups
-      ] = await Promise.all([
+      const [total, active, inactive, admins, emailVerified, recentSignups] = await Promise.all([
         this.userModel.countDocuments(),
         this.userModel.countDocuments({ isActive: true }),
         this.userModel.countDocuments({ isActive: false }),
         this.userModel.countDocuments({ role: 'admin' }),
         this.userModel.countDocuments({ emailVerified: true }),
-        this.userModel.countDocuments({ createdAt: { $gte: thirtyDaysAgo } })
+        this.userModel.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       ]);
 
       return {
@@ -221,44 +245,81 @@ export class UsersService {
         inactive,
         admins,
         emailVerified,
-        recentSignups
+        recentSignups,
       };
-    } catch (error) {
-      throw new BadRequestException('Erreur lors de la récupération des statistiques');
+    } catch {
+      throw new BadRequestException('Erreur lors de la recuperation des statistiques');
     }
   }
 
-  async toggleUserStatus(userId: string): Promise<UserDocument> {
+  async toggleUserStatus(userId: string, currentAdminId?: string): Promise<UserDocument> {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException('Utilisateur introuvable');
       }
 
-      user.isActive = !user.isActive;
+      if (currentAdminId && user._id.toString() === currentAdminId) {
+        throw new BadRequestException('Vous ne pouvez pas desactiver votre propre compte');
+      }
+
+      const nextIsActive = !user.isActive;
+
+      if (user.role === 'admin' && !nextIsActive) {
+        const otherActiveAdmins = await this.userModel.countDocuments({
+          role: 'admin',
+          isActive: true,
+          _id: { $ne: user._id },
+        });
+
+        if (otherActiveAdmins === 0) {
+          throw new BadRequestException('Impossible de desactiver le dernier administrateur actif');
+        }
+      }
+
+      user.isActive = nextIsActive;
       return await user.save();
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
       throw new BadRequestException('Erreur lors de la modification du statut');
     }
   }
 
-  async updateUserRole(userId: string, role: UserRole): Promise<UserDocument> {
+  async updateUserRole(userId: string, role: UserRole, currentAdminId?: string): Promise<UserDocument> {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException('Utilisateur introuvable');
       }
 
+      if (currentAdminId && user._id.toString() === currentAdminId) {
+        throw new BadRequestException('Vous ne pouvez pas modifier votre propre role');
+      }
+
+      if (user.role === 'admin' && role === 'user') {
+        const otherAdmins = await this.userModel.countDocuments({
+          role: 'admin',
+          _id: { $ne: user._id },
+        });
+
+        if (otherAdmins === 0) {
+          throw new BadRequestException('Impossible de retirer le role du dernier administrateur');
+        }
+      }
+
       user.role = role;
       return await user.save();
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Erreur lors de la modification du rôle');
+      throw new BadRequestException('Erreur lors de la modification du role');
     }
+  }
+
+  private escapeRegex(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
