@@ -12,7 +12,7 @@ import { AiService } from '../ai/ai.service';
 import {
   buildGenerateContentCampaignPrompt,
   buildRegeneratePlatformPrompt,
-  buildRegeneratePostPrompt,
+  buildRegenerateSinglePostPrompt,
 } from '../ai/prompts/content.prompts';
 import { Strategy, StrategyDocument } from '../strategies/schemas/strategy.schema';
 import {
@@ -88,15 +88,14 @@ export class ContentService {
     const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
 
     try {
-      const prompt = buildGenerateContentCampaignPrompt({
-        mode: campaign.mode,
-        objective: campaign.objective,
-        platforms: campaign.platforms,
-        businessInfo: strategy.businessInfo as unknown as Record<string, unknown>,
-        strategy: strategy.generatedStrategy as unknown as Record<string, unknown>,
-        inputs: (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-        instruction: dto?.instruction,
-      });
+      const prompt = buildGenerateContentCampaignPrompt(
+        strategy.generatedStrategy as unknown as Record<string, unknown>,
+        strategy.businessInfo as unknown as Record<string, unknown>,
+        campaign.mode,
+        campaign.platforms,
+        (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
+        dto?.instruction,
+      );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
       const generatedPosts = this.normalizeGeneratedPosts(aiResponse, campaign.platforms, {
@@ -191,18 +190,15 @@ export class ContentService {
     );
 
     try {
-      const prompt = buildRegeneratePlatformPrompt({
-        mode: campaign.mode,
-        objective: campaign.objective,
-        platforms: campaign.platforms,
+      const prompt = buildRegeneratePlatformPrompt(
+        strategy.generatedStrategy as unknown as Record<string, unknown>,
+        strategy.businessInfo as unknown as Record<string, unknown>,
+        campaign.mode,
         platform,
-        businessInfo: strategy.businessInfo as unknown as Record<string, unknown>,
-        strategy: strategy.generatedStrategy as unknown as Record<string, unknown>,
-        inputs: (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-        existingPlatformPosts:
-          existingPlatformPosts as unknown as Record<string, unknown>[],
-        instruction: dto.instruction,
-      });
+        existingPlatformPosts as unknown as Record<string, unknown>[],
+        (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
+        dto.instruction,
+      );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
       const regeneratedPlatformPosts = this.normalizeGeneratedPosts(aiResponse, campaign.platforms, {
@@ -250,17 +246,15 @@ export class ContentService {
     const existingPost = campaign.generatedPosts[targetIndex];
 
     try {
-      const prompt = buildRegeneratePostPrompt({
-        mode: campaign.mode,
-        objective: campaign.objective,
-        platforms: campaign.platforms,
-        platform: existingPost.platform,
-        businessInfo: strategy.businessInfo as unknown as Record<string, unknown>,
-        strategy: strategy.generatedStrategy as unknown as Record<string, unknown>,
-        inputs: (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-        existingPost: existingPost as unknown as Record<string, unknown>,
-        instruction: dto.instruction,
-      });
+      const prompt = buildRegenerateSinglePostPrompt(
+        strategy.generatedStrategy as unknown as Record<string, unknown>,
+        strategy.businessInfo as unknown as Record<string, unknown>,
+        campaign.mode,
+        existingPost.platform,
+        existingPost as unknown as Record<string, unknown>,
+        (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
+        dto.instruction,
+      );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
       const regeneratedPost = this.normalizeSinglePost(

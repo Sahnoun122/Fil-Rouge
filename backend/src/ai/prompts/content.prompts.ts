@@ -1,216 +1,336 @@
 import { ContentMode } from '../../content/schemas/content-campaign.schema';
 
-interface ContentPromptPayload {
-  mode: ContentMode;
-  platforms: string[];
-  businessInfo: Record<string, unknown>;
-  strategy: Record<string, unknown>;
-  inputs: Record<string, unknown>;
-  objective: string;
-  instruction?: string;
+type JsonObject = Record<string, unknown>;
+
+function toPrettyJson(value: unknown): string {
+  return JSON.stringify(value ?? {}, null, 2);
 }
 
-interface RegeneratePlatformPayload extends ContentPromptPayload {
-  platform: string;
-  existingPlatformPosts: Record<string, unknown>[];
+function normalizeMode(mode: ContentMode | string): ContentMode {
+  return String(mode).toUpperCase() === ContentMode.ADS
+    ? ContentMode.ADS
+    : ContentMode.CONTENT_MARKETING;
 }
 
-interface RegeneratePostPayload extends ContentPromptPayload {
-  platform: string;
-  existingPost: Record<string, unknown>;
+function normalizePlatforms(platforms: string[]): string[] {
+  return Array.from(
+    new Set(
+      (platforms ?? [])
+        .map((platform) => String(platform ?? '').trim())
+        .filter((platform) => platform.length > 0),
+    ),
+  );
 }
 
-function buildPlatformGuide(platforms: string[]): string {
-  return platforms
+function getPlatformStyleRule(platform: string): string {
+  const lower = platform.toLowerCase();
+
+  if (lower === 'tiktok') {
+    return `${platform}: tres court, hook fort, ton dynamique.`;
+  }
+  if (lower === 'instagram') {
+    return `${platform}: caption avec hashtags, ton brand.`;
+  }
+  if (lower === 'facebook') {
+    return `${platform}: plus descriptif, CTA clair.`;
+  }
+  if (lower === 'linkedin') {
+    return `${platform}: ton professionnel, valeur et conseils.`;
+  }
+
+  return `${platform}: adapte le style natif de la plateforme, reste concret et actionnable.`;
+}
+
+function isHashtagCompatible(platform: string): boolean {
+  const lower = platform.toLowerCase();
+  return (
+    lower === 'instagram' ||
+    lower === 'tiktok' ||
+    lower === 'facebook' ||
+    lower === 'linkedin' ||
+    lower === 'x' ||
+    lower === 'youtube'
+  );
+}
+
+function getPlatformGuide(platforms: string[]): string {
+  return normalizePlatforms(platforms)
     .map((platform) => {
-      const lower = platform.toLowerCase();
-      if (lower === 'instagram') {
-        return '- Instagram: post, reel, story';
-      }
-      if (lower === 'tiktok') {
-        return '- TikTok: tiktok, short-video';
-      }
-      if (lower === 'facebook') {
-        return '- Facebook: post, story, carousel';
-      }
-      if (lower === 'linkedin') {
-        return '- LinkedIn: post, article, carousel';
-      }
-      if (lower === 'youtube') {
-        return '- YouTube: short, community-post';
-      }
-      return `- ${platform}: post`;
+      const hashtagRule = isHashtagCompatible(platform)
+        ? 'hashtags: 5 a 10, tableau de strings sans #.'
+        : 'hashtags: tableau vide [].';
+
+      return `- ${getPlatformStyleRule(platform)} ${hashtagRule}`;
     })
     .join('\n');
 }
 
-export function buildGenerateContentCampaignPrompt(payload: ContentPromptPayload): string {
-  const modeHint =
-    payload.mode === ContentMode.ADS
-      ? 'Create ad copies focused on conversion and include adCopyVariantA/adCopyVariantB whenever relevant.'
-      : 'Create editorial/social content focused on relationship and authority building.';
+function resolveFrequencyPerWeek(inputs: JsonObject): number {
+  const raw = Number(inputs?.frequencyPerWeek);
+  if (Number.isInteger(raw) && raw > 0) {
+    return raw;
+  }
 
-  return `You are a senior social media strategist.
+  return 3;
+}
 
-Task: generate platform-specific social copy from the provided strategy.
-Language: French only.
+function resolveDurationWeeks(inputs: JsonObject): number {
+  const startDate = new Date(String(inputs?.startDate ?? ''));
+  const endDate = new Date(String(inputs?.endDate ?? ''));
 
-MODE: ${payload.mode}
-OBJECTIVE: ${payload.objective}
-PLATFORMS: ${payload.platforms.join(', ')}
+  if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime())) {
+    const diffMs = endDate.getTime() - startDate.getTime();
+    if (diffMs >= 0) {
+      return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 7)));
+    }
+  }
 
-PLATFORM TYPE GUIDE:
-${buildPlatformGuide(payload.platforms)}
+  return 4;
+}
 
-BUSINESS INFO:
-${JSON.stringify(payload.businessInfo, null, 2)}
+function buildModeRules(mode: ContentMode): string {
+  if (mode === ContentMode.ADS) {
+    return `Regles mode ADS:
+- Pour chaque plateforme, genere au minimum 2 posts.
+- Chaque post doit inclure: adCopyVariantA, adCopyVariantB, adCopyVariantC, hook (court), caption, cta (clair), suggestedVisual.
+- hashtags: 5 a 10 si la plateforme est compatible, sinon [].
+- Les ad copies doivent etre distinctes (A/B/C) et orientees conversion.`;
+  }
 
-MARKETING STRATEGY:
-${JSON.stringify(payload.strategy, null, 2)}
+  return `Regles mode CONTENT_MARKETING:
+- Definis 3 a 5 content pillars dans campaignSummary.contentPillars.
+- Definis campaignSummary.postingPlan.frequencyPerWeek selon inputs.frequencyPerWeek (sinon valeur par defaut).
+- Definis campaignSummary.postingPlan.durationWeeks selon inputs (sinon valeur par defaut).
+- Pour chaque plateforme, genere au minimum 2 posts adaptes au format natif.
+- Chaque post doit inclure: format/type, caption, hook, cta (soft), suggestedVisual.
+- hashtags: 5 a 10 si la plateforme est compatible, sinon [].`;
+}
 
-USER INPUTS:
-${JSON.stringify(payload.inputs ?? {}, null, 2)}
+export function buildGenerateContentCampaignPrompt(
+  strategyJson: JsonObject,
+  businessInfo: JsonObject,
+  mode: ContentMode | string,
+  platforms: string[],
+  inputs: JsonObject,
+  instruction?: string,
+): string {
+  const normalizedMode = normalizeMode(mode);
+  const normalizedPlatforms = normalizePlatforms(platforms);
+  const frequencyPerWeek = resolveFrequencyPerWeek(inputs ?? {});
+  const durationWeeks = resolveDurationWeeks(inputs ?? {});
 
-ADDITIONAL INSTRUCTION:
-${payload.instruction || 'No additional instruction.'}
+  return `Tu es un expert senior en social media et content marketing.
 
-STRICT RULES:
-1) Return valid JSON only.
-2) Use this exact root key: "generatedPosts".
-3) Generate at least 2 posts per platform.
-4) Every post must include: platform, type, caption.
-5) Add hook, cta, suggestedVisual when useful.
-6) hashtags must be an array of short strings (without # symbol).
-7) ${modeHint}
+Mission:
+1) Analyse la strategie marketing fournie (Avant/Pendant/Apres).
+2) Relie cette strategie au contexte business et aux plateformes.
+3) Genere du contenu concret, en francais uniquement.
 
-JSON FORMAT:
+Mode: ${normalizedMode}
+Plateformes cibles: ${normalizedPlatforms.join(', ') || 'Aucune'}
+
+Guide style par plateforme:
+${getPlatformGuide(normalizedPlatforms)}
+
+Contexte business:
+${toPrettyJson(businessInfo)}
+
+Strategie a analyser (Avant/Pendant/Apres):
+${toPrettyJson(strategyJson)}
+
+Inputs utilisateur:
+${toPrettyJson(inputs)}
+
+Instruction supplementaire:
+${instruction?.trim() || 'Aucune instruction supplementaire.'}
+
+Regles globales:
+- Francais uniquement.
+- Contenu concret, specifique et actionnable.
+- JSON valide uniquement.
+- Interdit: markdown, commentaires, texte hors JSON.
+- Garde platform strictement dans la liste cible.
+
+${buildModeRules(normalizedMode)}
+
+Format de sortie strict:
 {
+  "campaignSummary": {
+    "contentPillars": ["pillar 1", "pillar 2", "pillar 3"],
+    "postingPlan": {
+      "frequencyPerWeek": ${frequencyPerWeek},
+      "durationWeeks": ${durationWeeks}
+    }
+  },
   "generatedPosts": [
     {
       "platform": "Instagram",
       "type": "reel",
-      "title": "Optional short title",
-      "caption": "Post caption",
-      "hashtags": ["marketing", "startup"],
-      "hook": "Optional hook",
-      "cta": "Optional CTA",
-      "adCopyVariantA": "Optional ad version A",
-      "adCopyVariantB": "Optional ad version B",
-      "suggestedVisual": "Optional visual idea",
-      "schedule": { "date": "2026-03-01", "time": "09:00" }
+      "caption": "Texte principal",
+      "hook": "Hook court",
+      "cta": "CTA",
+      "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
+      "suggestedVisual": "Suggestion de visuel",
+      "adCopyVariantA": "Variante A",
+      "adCopyVariantB": "Variante B",
+      "adCopyVariantC": "Variante C"
     }
   ]
-}`;
 }
 
-export function buildRegeneratePlatformPrompt(payload: RegeneratePlatformPayload): string {
-  const modeHint =
-    payload.mode === ContentMode.ADS
-      ? 'Focus on conversion and include ad copy variants when relevant.'
-      : 'Focus on content marketing quality, education, and engagement.';
+Retourne uniquement ce JSON final.`;
+}
 
-  return `You are a senior social media strategist.
+export function buildRegeneratePlatformPrompt(
+  strategyJson: JsonObject,
+  businessInfo: JsonObject,
+  mode: ContentMode | string,
+  platform: string,
+  existingPostsForPlatform: JsonObject[],
+  inputs: JsonObject,
+  instruction?: string,
+): string {
+  const normalizedMode = normalizeMode(mode);
 
-Task: regenerate posts for one platform only.
-Language: French only.
+  return `Tu es un expert senior en social media et content marketing.
 
-MODE: ${payload.mode}
-OBJECTIVE: ${payload.objective}
-TARGET PLATFORM: ${payload.platform}
-${modeHint}
+Mission:
+1) Analyse la strategie (Avant/Pendant/Apres).
+2) Analyse les posts existants de la plateforme ${platform}.
+3) Regenere uniquement des posts pour ${platform}, en francais uniquement.
 
-BUSINESS INFO:
-${JSON.stringify(payload.businessInfo, null, 2)}
+Mode: ${normalizedMode}
+Plateforme cible unique: ${platform}
 
-MARKETING STRATEGY:
-${JSON.stringify(payload.strategy, null, 2)}
+Guide style plateforme:
+- ${getPlatformStyleRule(platform)}
+- ${isHashtagCompatible(platform) ? 'hashtags: 5 a 10, tableau de strings sans #.' : 'hashtags: tableau vide [].'}
 
-USER INPUTS:
-${JSON.stringify(payload.inputs ?? {}, null, 2)}
+Contexte business:
+${toPrettyJson(businessInfo)}
 
-CURRENT POSTS FOR THIS PLATFORM:
-${JSON.stringify(payload.existingPlatformPosts ?? [], null, 2)}
+Strategie a analyser (Avant/Pendant/Apres):
+${toPrettyJson(strategyJson)}
 
-ADDITIONAL INSTRUCTION:
-${payload.instruction || 'No additional instruction.'}
+Inputs utilisateur:
+${toPrettyJson(inputs)}
 
-STRICT RULES:
-1) Return valid JSON only.
-2) Use root key "generatedPosts".
-3) Generate at least 2 improved posts for ${payload.platform}.
-4) platform field must always be exactly "${payload.platform}".
-5) Every post must include: platform, type, caption.
+Posts existants pour ${platform}:
+${toPrettyJson(existingPostsForPlatform)}
 
-JSON FORMAT:
+Instruction supplementaire:
+${instruction?.trim() || 'Aucune instruction supplementaire.'}
+
+Regles globales:
+- Francais uniquement.
+- platform doit toujours etre "${platform}".
+- JSON valide uniquement.
+- Interdit: markdown, commentaires, texte hors JSON.
+
+${
+  normalizedMode === ContentMode.ADS
+    ? `Regles ADS:
+- Genere au minimum 2 posts.
+- Chaque post inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, cta clair, suggestedVisual.
+- hashtags: 5 a 10 si compatible, sinon [].`
+    : `Regles CONTENT_MARKETING:
+- Genere au minimum 2 posts adaptes a ${platform}.
+- Chaque post inclut type, caption, hook, cta soft, suggestedVisual.
+- hashtags: 5 a 10 si compatible, sinon [].`
+}
+
+Format de sortie strict:
 {
   "generatedPosts": [
     {
-      "platform": "${payload.platform}",
+      "platform": "${platform}",
       "type": "post",
-      "caption": "Post caption",
-      "hashtags": ["example"],
-      "hook": "Optional hook",
-      "cta": "Optional CTA",
-      "adCopyVariantA": "Optional",
-      "adCopyVariantB": "Optional",
-      "suggestedVisual": "Optional visual idea",
-      "schedule": { "date": "2026-03-02", "time": "10:00" }
+      "caption": "Texte principal",
+      "hook": "Hook court",
+      "cta": "CTA",
+      "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
+      "suggestedVisual": "Suggestion de visuel",
+      "adCopyVariantA": "Variante A",
+      "adCopyVariantB": "Variante B",
+      "adCopyVariantC": "Variante C"
     }
   ]
-}`;
 }
 
-export function buildRegeneratePostPrompt(payload: RegeneratePostPayload): string {
-  const modeHint =
-    payload.mode === ContentMode.ADS
-      ? 'Keep an ad mindset and optimize for conversion.'
-      : 'Keep a content marketing mindset and optimize for engagement and trust.';
+Retourne uniquement le JSON final.`;
+}
 
-  return `You are a senior social media strategist.
+export function buildRegenerateSinglePostPrompt(
+  strategyJson: JsonObject,
+  businessInfo: JsonObject,
+  mode: ContentMode | string,
+  platform: string,
+  existingPost: JsonObject,
+  inputs: JsonObject,
+  instruction?: string,
+): string {
+  const normalizedMode = normalizeMode(mode);
 
-Task: regenerate one post only.
-Language: French only.
+  return `Tu es un expert senior en social media et content marketing.
 
-MODE: ${payload.mode}
-OBJECTIVE: ${payload.objective}
-PLATFORM: ${payload.platform}
-${modeHint}
+Mission:
+1) Analyse la strategie (Avant/Pendant/Apres).
+2) Analyse le post existant.
+3) Regenere un seul post pour ${platform}, en francais uniquement.
 
-BUSINESS INFO:
-${JSON.stringify(payload.businessInfo, null, 2)}
+Mode: ${normalizedMode}
+Plateforme cible: ${platform}
 
-MARKETING STRATEGY:
-${JSON.stringify(payload.strategy, null, 2)}
+Guide style plateforme:
+- ${getPlatformStyleRule(platform)}
+- ${isHashtagCompatible(platform) ? 'hashtags: 5 a 10, tableau de strings sans #.' : 'hashtags: tableau vide [].'}
 
-USER INPUTS:
-${JSON.stringify(payload.inputs ?? {}, null, 2)}
+Contexte business:
+${toPrettyJson(businessInfo)}
 
-CURRENT POST TO IMPROVE:
-${JSON.stringify(payload.existingPost, null, 2)}
+Strategie a analyser (Avant/Pendant/Apres):
+${toPrettyJson(strategyJson)}
 
-ADDITIONAL INSTRUCTION:
-${payload.instruction || 'No additional instruction.'}
+Inputs utilisateur:
+${toPrettyJson(inputs)}
 
-STRICT RULES:
-1) Return valid JSON only.
-2) Use root key "post".
-3) Keep platform exactly "${payload.platform}".
-4) Required fields: platform, type, caption.
+Post actuel a regenerer:
+${toPrettyJson(existingPost)}
 
-JSON FORMAT:
+Instruction supplementaire:
+${instruction?.trim() || 'Aucune instruction supplementaire.'}
+
+Regles globales:
+- Francais uniquement.
+- platform doit toujours etre "${platform}".
+- JSON valide uniquement.
+- Interdit: markdown, commentaires, texte hors JSON.
+
+${
+  normalizedMode === ContentMode.ADS
+    ? `Regles ADS:
+- Le post regenere inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, cta clair, suggestedVisual.
+- hashtags: 5 a 10 si compatible, sinon [].`
+    : `Regles CONTENT_MARKETING:
+- Le post regenere inclut type, caption, hook, cta soft, suggestedVisual.
+- hashtags: 5 a 10 si compatible, sinon [].`
+}
+
+Format de sortie strict (objet post uniquement):
 {
-  "post": {
-    "platform": "${payload.platform}",
-    "type": "post",
-    "title": "Optional title",
-    "caption": "Improved caption",
-    "hashtags": ["example"],
-    "hook": "Optional hook",
-    "cta": "Optional CTA",
-    "adCopyVariantA": "Optional",
-    "adCopyVariantB": "Optional",
-    "suggestedVisual": "Optional visual idea",
-    "schedule": { "date": "2026-03-03", "time": "11:00" }
-  }
-}`;
+  "platform": "${platform}",
+  "type": "post",
+  "caption": "Texte principal",
+  "hook": "Hook court",
+  "cta": "CTA",
+  "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
+  "suggestedVisual": "Suggestion de visuel",
+  "adCopyVariantA": "Variante A",
+  "adCopyVariantB": "Variante B",
+  "adCopyVariantC": "Variante C"
 }
+
+Retourne uniquement le JSON final.`;
+}
+
+export const buildRegeneratePostPrompt = buildRegenerateSinglePostPrompt;
