@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEmail,
   IsInt,
   IsIn,
@@ -145,6 +146,18 @@ export class UpdateUserRoleDto {
   @IsIn(['admin', 'user'], { message: 'Le role doit etre admin ou user' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   role: UserRole;
+}
+
+export class BanUserDto {
+  @IsOptional()
+  @IsBoolean({ message: 'Le statut de bannissement doit etre un booleen' })
+  ban?: boolean = true;
+
+  @IsOptional()
+  @IsString({ message: 'La raison doit etre une chaine de caracteres' })
+  @MaxLength(250, { message: 'La raison ne peut pas depasser 250 caracteres' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  reason?: string;
 }
 
 export class AdminUsersQueryDto {

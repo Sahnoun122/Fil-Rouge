@@ -5,6 +5,7 @@ export interface User {
   fullName: string;
   email: string;
   role: UserRole;
+  isBanned: boolean;
 
   phone?: string;
   companyName?: string;

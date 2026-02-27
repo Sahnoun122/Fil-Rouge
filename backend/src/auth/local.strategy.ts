@@ -22,6 +22,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
+    if (user.isBanned) {
+      throw new UnauthorizedException('Compte banni');
+    }
+
     return user;
   }
 }

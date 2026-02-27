@@ -58,6 +58,23 @@ export class User {
   role: UserRole;
 
   @Prop({
+    default: false,
+  })
+  isBanned: boolean;
+
+  @Prop({
+    type: Date,
+    default: null,
+  })
+  bannedAt?: Date | null;
+
+  @Prop({
+    trim: true,
+    maxlength: 250,
+  })
+  banReason?: string;
+
+  @Prop({
     select: false,
   })
   refreshToken?: string;
@@ -88,4 +105,5 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 };
 
 UserSchema.index({ role: 1 });
+UserSchema.index({ isBanned: 1 });
 UserSchema.index({ createdAt: -1 });

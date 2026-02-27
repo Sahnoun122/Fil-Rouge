@@ -7,6 +7,7 @@ import {
   AdminUsersFilters,
   AdminUsersResult,
   AdminUpdateUserPayload,
+  SetUserBanPayload,
 } from '../types/admin.types';
 
 type ApiEnvelope<T> = {
@@ -33,6 +34,10 @@ const asRecord = (value: unknown): Record<string, unknown> => {
 
 const asString = (value: unknown, fallback = ''): string => {
   return typeof value === 'string' ? value : fallback;
+};
+
+const asBoolean = (value: unknown, fallback = false): boolean => {
+  return typeof value === 'boolean' ? value : fallback;
 };
 
 const asNumber = (value: unknown, fallback = 0): number => {
@@ -77,6 +82,9 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
     fullName: asString(source.fullName),
     email: asString(source.email),
     role: source.role === 'admin' ? 'admin' : 'user',
+    isBanned: asBoolean(source.isBanned, false),
+    bannedAt: source.bannedAt ? toIso(source.bannedAt) : undefined,
+    banReason: asString(source.banReason) || undefined,
     phone: asString(source.phone) || undefined,
     companyName: asString(source.companyName) || undefined,
     industry: asString(source.industry) || undefined,
@@ -144,6 +152,7 @@ export class AdminService {
     return {
       total: asNumber(response.data.total, 0),
       admins: asNumber(response.data.admins, 0),
+      banned: asNumber(response.data.banned, 0),
       recentSignups: asNumber(response.data.recentSignups, 0),
     };
   }
@@ -184,6 +193,16 @@ export class AdminService {
     if (!response?.success) {
       throw new Error(response?.message || 'Impossible de supprimer cet utilisateur');
     }
+  }
+
+  static async setUserBanStatus(userId: string, payload: SetUserBanPayload): Promise<AdminUser> {
+    const response = (await api.put(`/users/admin/${userId}/ban`, payload, true)) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || 'Impossible de modifier le statut de bannissement');
+    }
+
+    return normalizeAdminUser(response.data);
   }
 }
 

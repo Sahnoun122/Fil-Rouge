@@ -21,6 +21,7 @@ import {
   AdminCreateUserDto,
   AdminUpdateUserDto,
   AdminUsersQueryDto,
+  BanUserDto,
   ChangePasswordDto,
   UpdateUserDto,
   UpdateUserRoleDto,
@@ -119,6 +120,31 @@ export class UsersController {
     return {
       success: true,
       message: 'Role utilisateur mis a jour avec succes',
+      data: updatedUser,
+    };
+  }
+
+  @Put('admin/:userId/ban')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async setUserBanStatus(
+    @Request() req: any,
+    @Param('userId') userId: string,
+    @Body() banUserDto: BanUserDto,
+  ) {
+    const adminId = this.getAuthenticatedUserId(req);
+    const shouldBan = banUserDto.ban ?? true;
+    const updatedUser = await this.usersService.setUserBanStatus(
+      userId,
+      shouldBan,
+      adminId,
+      banUserDto.reason,
+    );
+
+    return {
+      success: true,
+      message: shouldBan ? 'Utilisateur banni avec succes' : 'Utilisateur debanni avec succes',
       data: updatedUser,
     };
   }

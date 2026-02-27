@@ -219,6 +219,23 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     }
   }, [removeCachedUser]);
 
+  const setUserBanStatus = useCallback(async (userId: string, ban: boolean, reason?: string) => {
+    setIsMutatingUser(true);
+    setError(null);
+
+    try {
+      const updated = await AdminService.setUserBanStatus(userId, { ban, reason });
+      updateCachedUser(updated);
+      return updated;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur lors du changement de statut de bannissement');
+      setError(message);
+      throw err;
+    } finally {
+      setIsMutatingUser(false);
+    }
+  }, [updateCachedUser]);
+
   const refreshAll = useCallback(async () => {
     await Promise.all([loadUsers(), loadStats()]);
   }, [loadUsers, loadStats]);
@@ -242,6 +259,7 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     createUser,
     updateUser,
     deleteUser,
+    setUserBanStatus,
     clearError: () => setError(null),
   };
 }

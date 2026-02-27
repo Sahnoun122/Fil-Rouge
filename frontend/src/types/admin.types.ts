@@ -5,6 +5,9 @@ export interface AdminUser {
   fullName: string;
   email: string;
   role: AdminUserRole;
+  isBanned: boolean;
+  bannedAt?: string;
+  banReason?: string;
   phone?: string;
   companyName?: string;
   industry?: string;
@@ -31,6 +34,7 @@ export interface AdminUsersResult {
 export interface AdminUserStats {
   total: number;
   admins: number;
+  banned: number;
   recentSignups: number;
 }
 
@@ -52,4 +56,9 @@ export interface AdminUpdateUserPayload {
   companyName?: string;
   industry?: string;
   role?: AdminUserRole;
+}
+
+export interface SetUserBanPayload {
+  ban: boolean;
+  reason?: string;
 }

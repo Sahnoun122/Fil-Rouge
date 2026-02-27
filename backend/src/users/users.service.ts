@@ -232,21 +232,24 @@ export class UsersService {
   async getUserStats(): Promise<{
     total: number;
     admins: number;
+    banned: number;
     recentSignups: number;
   }> {
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const [total, admins, recentSignups] = await Promise.all([
+      const [total, admins, banned, recentSignups] = await Promise.all([
         this.userModel.countDocuments(),
         this.userModel.countDocuments({ role: 'admin' }),
+        this.userModel.countDocuments({ isBanned: true }),
         this.userModel.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       ]);
 
       return {
         total,
         admins,
+        banned,
         recentSignups,
       };
     } catch {
@@ -266,10 +269,7 @@ export class UsersService {
       }
 
       if (user.role === 'admin' && role === 'user') {
-        const otherAdmins = await this.userModel.countDocuments({
-          role: 'admin',
-          _id: { $ne: user._id },
-        });
+        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
 
         if (otherAdmins === 0) {
           throw new BadRequestException('Impossible de retirer le role du dernier administrateur');
@@ -306,10 +306,7 @@ export class UsersService {
       const nextRole = updateData.role ?? user.role;
 
       if (user.role === 'admin' && nextRole !== 'admin') {
-        const otherAdmins = await this.userModel.countDocuments({
-          role: 'admin',
-          _id: { $ne: user._id },
-        });
+        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
 
         if (otherAdmins === 0) {
           throw new BadRequestException(
@@ -359,11 +356,8 @@ export class UsersService {
         throw new BadRequestException('Vous ne pouvez pas supprimer votre propre compte');
       }
 
-      if (user.role === 'admin') {
-        const otherAdmins = await this.userModel.countDocuments({
-          role: 'admin',
-          _id: { $ne: user._id },
-        });
+      if (user.role === 'admin' && !user.isBanned) {
+        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
 
         if (otherAdmins === 0) {
           throw new BadRequestException('Impossible de supprimer le dernier administrateur');
@@ -378,6 +372,58 @@ export class UsersService {
 
       throw new BadRequestException("Erreur lors de la suppression de l'utilisateur");
     }
+  }
+
+  async setUserBanStatus(
+    userId: string,
+    ban: boolean,
+    currentAdminId?: string,
+    reason?: string,
+  ): Promise<UserDocument> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      if (currentAdminId && user._id.toString() === currentAdminId && ban) {
+        throw new BadRequestException('Vous ne pouvez pas bannir votre propre compte');
+      }
+
+      const isStateChanging = user.isBanned !== ban;
+      if (isStateChanging && user.role === 'admin' && !user.isBanned && ban) {
+        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
+
+        if (otherAdmins === 0) {
+          throw new BadRequestException('Impossible de bannir le dernier administrateur actif');
+        }
+      }
+
+      user.isBanned = ban;
+      if (ban) {
+        user.bannedAt = new Date();
+        user.banReason = reason || undefined;
+      } else {
+        user.bannedAt = null;
+        user.banReason = undefined;
+      }
+
+      return await user.save();
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException('Erreur lors de la modification du statut de bannissement');
+    }
+  }
+
+  private async countOtherUnbannedAdmins(excludedUserId: string): Promise<number> {
+    return this.userModel.countDocuments({
+      role: 'admin',
+      isBanned: { $ne: true },
+      _id: { $ne: excludedUserId },
+    });
   }
 
   private escapeRegex(input: string): string {

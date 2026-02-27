@@ -96,6 +96,11 @@ export class AuthService {
         throw new UnauthorizedException('Email ou mot de passe incorrect');
       }
 
+      if (user.isBanned) {
+        this.logger.warn(`Login reject: banned account email=${loginDto.email}`);
+        throw new UnauthorizedException('Votre compte a ete banni');
+      }
+
       // First compare exact input; then compare trimmed input to tolerate accidental spaces.
       const candidates = [loginDto.password];
       const trimmedPassword = loginDto.password.trim();
@@ -153,6 +158,10 @@ export class AuthService {
         throw new UnauthorizedException('Token de rafraichissement invalide');
       }
 
+      if (user.isBanned) {
+        throw new UnauthorizedException('Votre compte a ete banni');
+      }
+
       const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
       if (!isRefreshTokenValid) {
         throw new UnauthorizedException('Token de rafraichissement invalide');
@@ -186,7 +195,8 @@ export class AuthService {
 
   async validateUserById(userId: string): Promise<UserDocument | null> {
     try {
-      return await this.usersService.findById(userId);
+      const user = await this.usersService.findById(userId);
+      return user?.isBanned ? null : user;
     } catch {
       return null;
     }

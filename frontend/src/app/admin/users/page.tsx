@@ -78,6 +78,7 @@ export default function AdminUsersPage() {
     createUser,
     updateUser,
     deleteUser,
+    setUserBanStatus,
     clearError,
   } = useAdminUsers({ page: 1, limit: 10 });
 
@@ -118,6 +119,7 @@ export default function AdminUsersPage() {
       return [
         { label: 'Total comptes', value: '-' },
         { label: 'Administrateurs', value: '-' },
+        { label: 'Comptes bannis', value: '-' },
         { label: 'Nouveaux (30j)', value: '-' },
       ];
     }
@@ -125,6 +127,7 @@ export default function AdminUsersPage() {
     return [
       { label: 'Total comptes', value: String(stats.total) },
       { label: 'Administrateurs', value: String(stats.admins) },
+      { label: 'Comptes bannis', value: String(stats.banned) },
       { label: 'Nouveaux (30j)', value: String(stats.recentSignups) },
     ];
   }, [stats]);
@@ -277,6 +280,33 @@ export default function AdminUsersPage() {
     }
   };
 
+  const onToggleBan = async (targetUser: AdminUser) => {
+    const actionLabel = targetUser.isBanned ? 'debannir' : 'bannir';
+    const confirmed = window.confirm(`Confirmer ${actionLabel} cet utilisateur ?`);
+    if (!confirmed) {
+      return;
+    }
+
+    setPendingUserId(targetUser.id);
+
+    try {
+      const reason = targetUser.isBanned ? undefined : 'Banni par un administrateur';
+      await setUserBanStatus(targetUser.id, !targetUser.isBanned, reason);
+      setToast({
+        type: 'success',
+        message: targetUser.isBanned ? 'Utilisateur debanni.' : 'Utilisateur banni.',
+      });
+      await loadStats();
+    } catch (err: unknown) {
+      setToast({
+        type: 'error',
+        message: getErrorMessage(err, 'Erreur lors de la mise a jour du bannissement.'),
+      });
+    } finally {
+      setPendingUserId(null);
+    }
+  };
+
   return (
     <section className="space-y-6">
       {toast ? <SimpleToast type={toast.type} message={toast.message} onClose={() => setToast(null)} /> : null}
@@ -289,7 +319,7 @@ export default function AdminUsersPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {statsCards.map((card) => (
           <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-500">{card.label}</p>
@@ -467,6 +497,7 @@ export default function AdminUsersPage() {
                   <th className="px-4 py-3 font-semibold text-slate-600">Nom</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Email</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Role</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Statut</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Derniere connexion</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Cree le</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Action</th>
@@ -476,13 +507,13 @@ export default function AdminUsersPage() {
               <tbody className="divide-y divide-slate-200 bg-white">
                 {isLoadingUsers ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
                       Chargement des utilisateurs...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
                       Aucun utilisateur trouve pour ces filtres.
                     </td>
                   </tr>
@@ -513,6 +544,18 @@ export default function AdminUsersPage() {
                           </select>
                         </td>
 
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              managedUser.isBanned
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-emerald-100 text-emerald-700'
+                            }`}
+                          >
+                            {managedUser.isBanned ? 'Banni' : 'Normal'}
+                          </span>
+                        </td>
+
                         <td className="px-4 py-3 text-slate-700">{formatDate(managedUser.lastLoginAt)}</td>
                         <td className="px-4 py-3 text-slate-700">{formatDate(managedUser.createdAt)}</td>
 
@@ -537,6 +580,19 @@ export default function AdminUsersPage() {
                                 type="button"
                               >
                                 Supprimer
+                              </button>
+
+                              <button
+                                onClick={() => onToggleBan(managedUser)}
+                                disabled={disableActions}
+                                className={`rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                                  managedUser.isBanned
+                                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                }`}
+                                type="button"
+                              >
+                                {managedUser.isBanned ? 'Debannir' : 'Bannir'}
                               </button>
                             </div>
                           )}

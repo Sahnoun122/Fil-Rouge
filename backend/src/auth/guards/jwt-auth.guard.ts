@@ -28,6 +28,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
       throw err || new UnauthorizedException("Token d'acces requis");
     }
 
+    if (user.isBanned) {
+      throw new UnauthorizedException('Compte banni');
+    }
+
     return user;
   }
 }
