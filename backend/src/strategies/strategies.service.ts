@@ -131,6 +131,7 @@ export class StrategiesService {
       const [strategies, total] = await Promise.all([
         this.strategyModel
           .find(filters)
+          .select('userId businessInfo createdAt updatedAt')
           .populate('userId', 'fullName email companyName role')
           .sort({ createdAt: -1 })
           .skip(skip)
@@ -143,6 +144,32 @@ export class StrategiesService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Erreur lors de la récupération admin des stratégies: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Récupère une stratégie précise pour l'admin.
+   */
+  async findOneForAdmin(strategyId: string): Promise<StrategyDocument> {
+    try {
+      const strategy = await this.strategyModel
+        .findById(new Types.ObjectId(strategyId))
+        .populate('userId', 'fullName email companyName role phone')
+        .exec();
+
+      if (!strategy) {
+        throw new NotFoundException('Strategie non trouvee');
+      }
+
+      return strategy;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Erreur lors de la récupération admin de la stratégie: ${error.message}`,
       );
     }
   }

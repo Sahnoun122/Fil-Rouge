@@ -2,6 +2,7 @@ import { api } from '../utils/fetcher';
 import {
   AdminCreateUserPayload,
   AdminStrategiesFilters,
+  AdminStrategyDetail,
   AdminStrategiesResult,
   AdminStrategy,
   AdminUser,
@@ -142,6 +143,25 @@ const normalizeAdminStrategy = (payload: unknown): AdminStrategy => {
   };
 };
 
+const normalizeGeneratedStrategy = (value: unknown): AdminStrategyDetail['generatedStrategy'] => {
+  const source = asRecord(value);
+  return {
+    avant: asRecord(source.avant) as AdminStrategyDetail['generatedStrategy']['avant'],
+    pendant: asRecord(source.pendant) as AdminStrategyDetail['generatedStrategy']['pendant'],
+    apres: asRecord(source.apres) as AdminStrategyDetail['generatedStrategy']['apres'],
+  };
+};
+
+const normalizeAdminStrategyDetail = (payload: unknown): AdminStrategyDetail => {
+  const base = normalizeAdminStrategy(payload);
+  const source = asRecord(payload);
+
+  return {
+    ...base,
+    generatedStrategy: normalizeGeneratedStrategy(source.generatedStrategy),
+  };
+};
+
 const buildUsersQuery = (filters: AdminUsersFilters): string => {
   const params = new URLSearchParams();
 
@@ -246,6 +266,16 @@ export class AdminService {
       limit: asNumber(paginationSource.limit, 10),
       totalPages: asNumber(paginationSource.pages, 1),
     };
+  }
+
+  static async getStrategyById(strategyId: string): Promise<AdminStrategyDetail> {
+    const response = (await api.get(`/strategies/admin/${strategyId}`, true)) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || 'Impossible de recuperer la strategie');
+    }
+
+    return normalizeAdminStrategyDetail(response.data);
   }
 
   static async updateUserRole(userId: string, role: AdminUserRole): Promise<AdminUser> {

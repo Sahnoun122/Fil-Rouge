@@ -5,6 +5,7 @@ import AdminService from '../services/adminService';
 import {
   AdminCreateUserPayload,
   AdminStrategiesFilters,
+  AdminStrategyDetail,
   AdminStrategiesResult,
   AdminStrategy,
   AdminUser,
@@ -334,6 +335,37 @@ export function useAdminStrategies(initialFilters?: AdminStrategiesFilters) {
     error,
     isLoadingStrategies,
     loadStrategies,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminStrategy() {
+  const [strategy, setStrategy] = useState<AdminStrategyDetail | null>(null);
+  const [isLoadingStrategy, setIsLoadingStrategy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadStrategy = useCallback(async (strategyId: string) => {
+    setIsLoadingStrategy(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getStrategyById(strategyId);
+      setStrategy(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement de la strategie');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingStrategy(false);
+    }
+  }, []);
+
+  return {
+    strategy,
+    error,
+    isLoadingStrategy,
+    loadStrategy,
     clearError: () => setError(null),
   };
 }

@@ -1,3 +1,5 @@
+import type { GeneratedStrategy } from './strategy.types';
+
 export type AdminUserRole = 'admin' | 'user';
 
 export interface AdminUser {
@@ -78,6 +80,10 @@ export interface AdminStrategiesResult {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface AdminStrategyDetail extends AdminStrategy {
+  generatedStrategy: GeneratedStrategy;
 }
 
 export interface AdminCreateUserPayload {

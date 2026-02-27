@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAdminStrategies } from '@/src/hooks/useAdmin';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
@@ -132,19 +133,20 @@ export default function AdminStrategiesPage() {
                   <th className="px-4 py-3 font-semibold text-slate-600">Business</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Objectif</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Cree le</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Action</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-200 bg-white">
                 {isLoadingStrategies ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
                       Chargement des strategies...
                     </td>
                   </tr>
                 ) : strategies.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
                       Aucune strategie trouvee.
                     </td>
                   </tr>
@@ -160,6 +162,14 @@ export default function AdminStrategiesPage() {
                       <td className="px-4 py-3 text-slate-700">{strategy.businessInfo.businessName}</td>
                       <td className="px-4 py-3 text-slate-700">{formatObjective(strategy.businessInfo.mainObjective)}</td>
                       <td className="px-4 py-3 text-slate-700">{formatDate(strategy.createdAt)}</td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/strategies/${strategy.id}`}
+                          className="inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          Consulter
+                        </Link>
+                      </td>
                     </tr>
                   ))
                 )}

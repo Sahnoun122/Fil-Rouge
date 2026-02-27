@@ -120,6 +120,21 @@ export class StrategiesController {
   }
 
   /**
+   * Récupère une stratégie précise pour l'admin
+   */
+  @Get('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async findOneForAdmin(@Param('id') strategyId: string) {
+    const strategy = await this.strategiesService.findOneForAdmin(strategyId);
+
+    return {
+      success: true,
+      data: strategy,
+    };
+  }
+
+  /**
    * Récupère une stratégie spécifique par son ID
    */
   @Get(':id')
