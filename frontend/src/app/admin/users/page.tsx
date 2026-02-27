@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/src/hooks/useAuth';
 import useAdminUsers from '@/src/hooks/useAdmin';
-import { SimpleToast } from '@/src/components/ui/SimpleToast';
 import { AdminUser, AdminUserRole } from '@/src/types/admin.types';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
@@ -29,11 +28,6 @@ const normalizeOptional = (value: string): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-type ToastState = {
-  type: 'success' | 'error' | 'info';
-  message: string;
-} | null;
-
 type UserFormState = {
   fullName: string;
   email: string;
@@ -52,13 +46,6 @@ const EMPTY_FORM: UserFormState = {
   companyName: '',
   industry: '',
   role: 'user',
-};
-
-const getErrorMessage = (error: unknown, fallback: string): string => {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return fallback;
 };
 
 export default function AdminUsersPage() {
@@ -85,7 +72,6 @@ export default function AdminUsersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [roleFilter, setRoleFilter] = useState<AdminUserRole | 'all'>('all');
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [formState, setFormState] = useState<UserFormState>(EMPTY_FORM);
@@ -154,10 +140,9 @@ export default function AdminUsersPage() {
 
     try {
       await updateUserRole(targetUserId, role);
-      setToast({ type: 'success', message: 'Role utilisateur mis a jour.' });
       await loadStats();
-    } catch (err: unknown) {
-      setToast({ type: 'error', message: getErrorMessage(err, 'Erreur lors de la mise a jour du role.') });
+    } catch {
+      // handled by hook state
     } finally {
       setPendingUserId(null);
     }
@@ -207,12 +192,10 @@ export default function AdminUsersPage() {
     const password = formState.password.trim();
 
     if (!fullName || !email) {
-      setToast({ type: 'error', message: 'Nom complet et email sont obligatoires.' });
       return;
     }
 
     if (!isEditing && !password) {
-      setToast({ type: 'error', message: 'Le mot de passe est obligatoire pour la creation.' });
       return;
     }
 
@@ -231,10 +214,8 @@ export default function AdminUsersPage() {
 
       if (isEditing && editingUserId) {
         await updateUser(editingUserId, payload);
-        setToast({ type: 'success', message: 'Utilisateur mis a jour.' });
       } else {
         await createUser({ ...payload, password });
-        setToast({ type: 'success', message: 'Utilisateur cree.' });
       }
 
       closeForm();
@@ -246,24 +227,18 @@ export default function AdminUsersPage() {
         role: roleFilter,
       });
       await loadStats();
-    } catch (err: unknown) {
-      setToast({ type: 'error', message: getErrorMessage(err, 'Erreur lors de la sauvegarde utilisateur.') });
+    } catch {
+      // handled by hook state
     } finally {
       setIsSubmittingForm(false);
     }
   };
 
   const onDeleteUser = async (targetUserId: string) => {
-    const confirmed = window.confirm('Confirmer la suppression de cet utilisateur ?');
-    if (!confirmed) {
-      return;
-    }
-
     setPendingUserId(targetUserId);
 
     try {
       await deleteUser(targetUserId);
-      setToast({ type: 'success', message: 'Utilisateur supprime.' });
 
       const nextPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
       await loadUsers({
@@ -273,35 +248,22 @@ export default function AdminUsersPage() {
         role: roleFilter,
       });
       await loadStats();
-    } catch (err: unknown) {
-      setToast({ type: 'error', message: getErrorMessage(err, 'Erreur lors de la suppression utilisateur.') });
+    } catch {
+      // handled by hook state
     } finally {
       setPendingUserId(null);
     }
   };
 
   const onToggleBan = async (targetUser: AdminUser) => {
-    const actionLabel = targetUser.isBanned ? 'debannir' : 'bannir';
-    const confirmed = window.confirm(`Confirmer ${actionLabel} cet utilisateur ?`);
-    if (!confirmed) {
-      return;
-    }
-
     setPendingUserId(targetUser.id);
 
     try {
       const reason = targetUser.isBanned ? undefined : 'Banni par un administrateur';
       await setUserBanStatus(targetUser.id, !targetUser.isBanned, reason);
-      setToast({
-        type: 'success',
-        message: targetUser.isBanned ? 'Utilisateur debanni.' : 'Utilisateur banni.',
-      });
       await loadStats();
-    } catch (err: unknown) {
-      setToast({
-        type: 'error',
-        message: getErrorMessage(err, 'Erreur lors de la mise a jour du bannissement.'),
-      });
+    } catch {
+      // handled by hook state
     } finally {
       setPendingUserId(null);
     }
@@ -309,8 +271,6 @@ export default function AdminUsersPage() {
 
   return (
     <section className="space-y-6">
-      {toast ? <SimpleToast type={toast.type} message={toast.message} onClose={() => setToast(null)} /> : null}
-
       <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Administration</p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">Gestion des comptes utilisateurs</h1>
