@@ -82,7 +82,6 @@ export class UsersController {
     const result = await this.usersService.getAllUsers(query.page ?? 1, query.limit ?? 10, {
       search: query.search,
       role: query.role,
-      status: query.status,
     });
 
     return {
@@ -102,20 +101,6 @@ export class UsersController {
       success: true,
       message: 'Statistiques recuperees avec succes',
       data: stats,
-    };
-  }
-
-  @Put('admin/:userId/toggle-status')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  async toggleUserStatus(@Request() req: any, @Param('userId') userId: string) {
-    const adminId = this.getAuthenticatedUserId(req);
-    const updatedUser = await this.usersService.toggleUserStatus(userId, adminId);
-
-    return {
-      success: true,
-      message: `Statut utilisateur ${updatedUser.isActive ? 'active' : 'desactive'} avec succes`,
-      data: updatedUser,
     };
   }
 
@@ -151,7 +136,6 @@ export class UsersController {
       companyName: createUserDto.companyName,
       industry: createUserDto.industry,
       role: createUserDto.role ?? 'user',
-      isActive: createUserDto.isActive ?? true,
     });
 
     return {

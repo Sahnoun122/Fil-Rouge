@@ -17,7 +17,6 @@ const DEFAULT_FILTERS: Required<AdminUsersFilters> = {
   limit: 10,
   search: '',
   role: 'all',
-  status: 'all',
 };
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -35,7 +34,6 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     limit: initialFilters?.limit ?? DEFAULT_FILTERS.limit,
     search: initialFilters?.search ?? DEFAULT_FILTERS.search,
     role: initialFilters?.role ?? DEFAULT_FILTERS.role,
-    status: initialFilters?.status ?? DEFAULT_FILTERS.status,
   };
 
   const [filters, setFiltersState] = useState<Required<AdminUsersFilters>>(initialResolvedFilters);
@@ -63,7 +61,6 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
       limit: overrides?.limit ?? currentFilters.limit,
       search: overrides?.search ?? currentFilters.search,
       role: overrides?.role ?? currentFilters.role,
-      status: overrides?.status ?? currentFilters.status,
     };
 
     filtersRef.current = nextFilters;
@@ -155,23 +152,6 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     });
   }, []);
 
-  const toggleUserStatus = useCallback(async (userId: string) => {
-    setIsMutatingUser(true);
-    setError(null);
-
-    try {
-      const updated = await AdminService.toggleUserStatus(userId);
-      updateCachedUser(updated);
-      return updated;
-    } catch (err: unknown) {
-      const message = getErrorMessage(err, 'Erreur lors du changement de statut');
-      setError(message);
-      throw err;
-    } finally {
-      setIsMutatingUser(false);
-    }
-  }, [updateCachedUser]);
-
   const updateUserRole = useCallback(async (userId: string, role: AdminUserRole) => {
     setIsMutatingUser(true);
     setError(null);
@@ -258,7 +238,6 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     loadUsers,
     loadStats,
     refreshAll,
-    toggleUserStatus,
     updateUserRole,
     createUser,
     updateUser,

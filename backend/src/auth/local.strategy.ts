@@ -10,22 +10,16 @@ import { UserDocument } from '../users/entities/user.entity';
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private usersService: UsersService) {
     super({
-      usernameField: 'email', // Utiliser email au lieu de username
+      usernameField: 'email',
       passwordField: 'password',
     });
   }
 
   async validate(email: string, password: string): Promise<UserDocument> {
-    // Trouver l'utilisateur avec le mot de passe
     const user = await this.usersService.findByEmailWithPassword(email);
-    
+
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
-    }
-
-    // Vérifications de sécurité
-    if (!user.isActive) {
-      throw new UnauthorizedException('Compte désactivé');
     }
 
     return user;

@@ -81,7 +81,6 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
     fullName: asString(source.fullName),
     email: asString(source.email),
     role: source.role === 'admin' ? 'admin' : 'user',
-    isActive: asBoolean(source.isActive, true),
     emailVerified: asBoolean(source.emailVerified, false),
     phone: asString(source.phone) || undefined,
     companyName: asString(source.companyName) || undefined,
@@ -109,10 +108,6 @@ const buildUsersQuery = (filters: AdminUsersFilters): string => {
 
   if (filters.role && filters.role !== 'all') {
     params.set('role', filters.role);
-  }
-
-  if (filters.status && filters.status !== 'all') {
-    params.set('status', filters.status);
   }
 
   const query = params.toString();
@@ -153,22 +148,10 @@ export class AdminService {
 
     return {
       total: asNumber(response.data.total, 0),
-      active: asNumber(response.data.active, 0),
-      inactive: asNumber(response.data.inactive, 0),
       admins: asNumber(response.data.admins, 0),
       emailVerified: asNumber(response.data.emailVerified, 0),
       recentSignups: asNumber(response.data.recentSignups, 0),
     };
-  }
-
-  static async toggleUserStatus(userId: string): Promise<AdminUser> {
-    const response = (await api.put(`/users/admin/${userId}/toggle-status`, {}, true)) as ApiEnvelope<unknown>;
-
-    if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de modifier le statut utilisateur');
-    }
-
-    return normalizeAdminUser(response.data);
   }
 
   static async updateUserRole(userId: string, role: AdminUserRole): Promise<AdminUser> {

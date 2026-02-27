@@ -58,11 +58,6 @@ export class User {
   role: UserRole;
 
   @Prop({
-    default: true
-  })
-  isActive: boolean;
-
-  @Prop({
     default: false
   })
   emailVerified: boolean;
@@ -115,5 +110,4 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 // 📊 Index pour optimiser les requêtes
 // Note: email a déjà un index unique via "unique: true" dans le @Prop
 UserSchema.index({ role: 1 });
-UserSchema.index({ isActive: 1 });
 UserSchema.index({ createdAt: -1 });

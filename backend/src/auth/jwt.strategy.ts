@@ -7,7 +7,7 @@ import { UsersService } from '../users/users.service';
 import { UserDocument } from '../users/entities/user.entity';
 
 export interface JwtPayload {
-  sub: string; // user ID
+  sub: string;
   email: string;
   role: string;
   iat?: number;
@@ -29,13 +29,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload): Promise<UserDocument> {
     const user = await this.usersService.findById(payload.sub);
-    
-    if (!user) {
-      throw new UnauthorizedException('Utilisateur non trouvé');
-    }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException('Compte désactivé');
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur non trouve');
     }
 
     return user;

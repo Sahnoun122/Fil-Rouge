@@ -19,13 +19,11 @@ export interface CreateUserData {
   companyName?: string;
   industry?: string;
   role?: UserRole;
-  isActive?: boolean;
 }
 
 export interface AdminUsersFilters {
   search?: string;
   role?: UserRole;
-  status?: 'active' | 'inactive';
 }
 
 @Injectable()
@@ -44,7 +42,6 @@ export class UsersService {
         companyName: userData.companyName,
         industry: userData.industry,
         role: userData.role || 'user',
-        isActive: userData.isActive ?? true,
       });
 
       const savedUser = await newUser.save();
@@ -197,10 +194,6 @@ export class UsersService {
         query.role = filters.role;
       }
 
-      if (filters.status) {
-        query.isActive = filters.status === 'active';
-      }
-
       if (filters.search) {
         const safeSearch = this.escapeRegex(filters.search);
         const searchRegex = new RegExp(safeSearch, 'i');
@@ -238,8 +231,6 @@ export class UsersService {
 
   async getUserStats(): Promise<{
     total: number;
-    active: number;
-    inactive: number;
     admins: number;
     emailVerified: number;
     recentSignups: number;
@@ -248,10 +239,8 @@ export class UsersService {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const [total, active, inactive, admins, emailVerified, recentSignups] = await Promise.all([
+      const [total, admins, emailVerified, recentSignups] = await Promise.all([
         this.userModel.countDocuments(),
-        this.userModel.countDocuments({ isActive: true }),
-        this.userModel.countDocuments({ isActive: false }),
         this.userModel.countDocuments({ role: 'admin' }),
         this.userModel.countDocuments({ emailVerified: true }),
         this.userModel.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
@@ -259,49 +248,12 @@ export class UsersService {
 
       return {
         total,
-        active,
-        inactive,
         admins,
         emailVerified,
         recentSignups,
       };
     } catch {
       throw new BadRequestException('Erreur lors de la recuperation des statistiques');
-    }
-  }
-
-  async toggleUserStatus(userId: string, currentAdminId?: string): Promise<UserDocument> {
-    try {
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new NotFoundException('Utilisateur introuvable');
-      }
-
-      if (currentAdminId && user._id.toString() === currentAdminId) {
-        throw new BadRequestException('Vous ne pouvez pas desactiver votre propre compte');
-      }
-
-      const nextIsActive = !user.isActive;
-
-      if (user.role === 'admin' && !nextIsActive) {
-        const otherActiveAdmins = await this.userModel.countDocuments({
-          role: 'admin',
-          isActive: true,
-          _id: { $ne: user._id },
-        });
-
-        if (otherActiveAdmins === 0) {
-          throw new BadRequestException('Impossible de desactiver le dernier administrateur actif');
-        }
-      }
-
-      user.isActive = nextIsActive;
-      return await user.save();
-    } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new BadRequestException('Erreur lors de la modification du statut');
     }
   }
 
@@ -352,25 +304,19 @@ export class UsersService {
         if (updateData.role === 'user') {
           throw new BadRequestException('Vous ne pouvez pas modifier votre propre role');
         }
-
-        if (updateData.isActive === false) {
-          throw new BadRequestException('Vous ne pouvez pas desactiver votre propre compte');
-        }
       }
 
       const nextRole = updateData.role ?? user.role;
-      const nextIsActive = updateData.isActive ?? user.isActive;
 
-      if (user.role === 'admin' && (nextRole !== 'admin' || !nextIsActive)) {
-        const otherActiveAdmins = await this.userModel.countDocuments({
+      if (user.role === 'admin' && nextRole !== 'admin') {
+        const otherAdmins = await this.userModel.countDocuments({
           role: 'admin',
-          isActive: true,
           _id: { $ne: user._id },
         });
 
-        if (otherActiveAdmins === 0) {
+        if (otherAdmins === 0) {
           throw new BadRequestException(
-            'Impossible de modifier le dernier administrateur actif',
+            'Impossible de modifier le dernier administrateur',
           );
         }
       }
@@ -383,7 +329,6 @@ export class UsersService {
         'companyName',
         'industry',
         'role',
-        'isActive',
       ];
 
       for (const field of allowedFields) {
@@ -417,15 +362,14 @@ export class UsersService {
         throw new BadRequestException('Vous ne pouvez pas supprimer votre propre compte');
       }
 
-      if (user.role === 'admin' && user.isActive) {
-        const otherActiveAdmins = await this.userModel.countDocuments({
+      if (user.role === 'admin') {
+        const otherAdmins = await this.userModel.countDocuments({
           role: 'admin',
-          isActive: true,
           _id: { $ne: user._id },
         });
 
-        if (otherActiveAdmins === 0) {
-          throw new BadRequestException('Impossible de supprimer le dernier administrateur actif');
+        if (otherAdmins === 0) {
+          throw new BadRequestException('Impossible de supprimer le dernier administrateur');
         }
       }
 

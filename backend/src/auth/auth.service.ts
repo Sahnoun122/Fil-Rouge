@@ -33,7 +33,6 @@ export interface AuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    isActive: boolean;
     emailVerified: boolean;
     lastLoginAt?: Date;
   };
@@ -77,7 +76,6 @@ export class AuthService {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          isActive: user.isActive,
           emailVerified: user.emailVerified,
           lastLoginAt: user.lastLoginAt,
         },
@@ -98,11 +96,6 @@ export class AuthService {
       if (!user) {
         this.logger.warn(`Login reject: user not found for email=${loginDto.email}`);
         throw new UnauthorizedException('Email ou mot de passe incorrect');
-      }
-
-      if (!user.isActive) {
-        this.logger.warn(`Login reject: inactive account email=${loginDto.email}`);
-        throw new UnauthorizedException('Votre compte a ete desactive');
       }
 
       // First compare exact input; then compare trimmed input to tolerate accidental spaces.
@@ -139,7 +132,6 @@ export class AuthService {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          isActive: user.isActive,
           emailVerified: user.emailVerified,
           lastLoginAt: new Date(),
         },
@@ -197,8 +189,7 @@ export class AuthService {
 
   async validateUserById(userId: string): Promise<UserDocument | null> {
     try {
-      const user = await this.usersService.findById(userId);
-      return user?.isActive ? user : null;
+      return await this.usersService.findById(userId);
     } catch {
       return null;
     }

@@ -17,7 +17,6 @@ const normalizeUser = (payload: any): User => {
     fullName: payload?.fullName || payload?.name || "",
     email: payload?.email || "",
     role: payload?.role === "admin" ? "admin" : "user",
-    isActive: payload?.isActive ?? true,
     emailVerified: payload?.emailVerified ?? false,
     phone: payload?.phone,
     companyName: payload?.companyName,

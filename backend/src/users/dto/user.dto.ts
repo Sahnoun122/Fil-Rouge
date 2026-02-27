@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsEmail,
   IsInt,
   IsIn,
@@ -94,10 +93,6 @@ export class AdminCreateUserDto {
   @IsIn(['admin', 'user'], { message: 'Le role doit etre admin ou user' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   role?: UserRole = 'user';
-
-  @IsOptional()
-  @IsBoolean({ message: 'Le statut actif doit etre un booleen' })
-  isActive?: boolean = true;
 }
 
 export class AdminUpdateUserDto {
@@ -143,10 +138,6 @@ export class AdminUpdateUserDto {
   @IsIn(['admin', 'user'], { message: 'Le role doit etre admin ou user' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   role?: UserRole;
-
-  @IsOptional()
-  @IsBoolean({ message: 'Le statut actif doit etre un booleen' })
-  isActive?: boolean;
 }
 
 export class UpdateUserRoleDto {
@@ -180,9 +171,4 @@ export class AdminUsersQueryDto {
   @IsIn(['admin', 'user'], { message: 'Le role doit etre admin ou user' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   role?: UserRole;
-
-  @IsOptional()
-  @IsIn(['active', 'inactive'], { message: "Le statut doit etre 'active' ou 'inactive'" })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
-  status?: 'active' | 'inactive';
 }
