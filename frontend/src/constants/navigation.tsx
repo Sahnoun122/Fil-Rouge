@@ -76,6 +76,17 @@ const calendarIcon = (
   </svg>
 );
 
+const contentIcon = (
+  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M7 8h10M7 12h7m-7 4h10M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"
+    />
+  </svg>
+);
+
 const profileIcon = (
   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
@@ -96,6 +107,7 @@ const monitoringIcon = (
 export const userNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/user/dashboard", icon: dashboardIcon },
   { name: "Mes strategies", href: "/user/strategies", icon: strategiesIcon },
+  { name: "Content", href: "/content", icon: contentIcon },
   { name: "SWOT", href: "/user/swot", icon: analyticsIcon },
   { name: "Calendrier", href: "/user/calendar", icon: calendarIcon },
   { name: "Profil", href: "/user/profile", icon: profileIcon },

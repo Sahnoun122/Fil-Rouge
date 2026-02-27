@@ -331,6 +331,13 @@ export default function StrategyDetailPage() {
                 Creer SWOT a partir de cette strategie
               </Link>
               <Link
+                href={`/content/new?strategyId=${strategy._id}`}
+                className="flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generer du contenu
+              </Link>
+              <Link
                 href={`/swot?strategyId=${strategy._id}`}
                 className="flex items-center rounded-lg border border-cyan-300 px-4 py-2 text-cyan-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800"
               >
