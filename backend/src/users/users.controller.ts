@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Post,
   Put,
   Query,
   Request,
@@ -16,6 +18,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { UsersService } from './users.service';
 import {
+  AdminCreateUserDto,
+  AdminUpdateUserDto,
   AdminUsersQueryDto,
   ChangePasswordDto,
   UpdateUserDto,
@@ -134,11 +138,66 @@ export class UsersController {
     };
   }
 
+  @Post('admin')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async createUserByAdmin(@Body() createUserDto: AdminCreateUserDto) {
+    const createdUser = await this.usersService.createUser({
+      fullName: createUserDto.fullName,
+      email: createUserDto.email,
+      password: createUserDto.password,
+      phone: createUserDto.phone,
+      companyName: createUserDto.companyName,
+      industry: createUserDto.industry,
+      role: createUserDto.role ?? 'user',
+      isActive: createUserDto.isActive ?? true,
+    });
+
+    return {
+      success: true,
+      message: 'Utilisateur cree avec succes',
+      data: createdUser,
+    };
+  }
+
+  @Put('admin/:userId')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async updateUserByAdmin(
+    @Request() req: any,
+    @Param('userId') userId: string,
+    @Body() updateUserDto: AdminUpdateUserDto,
+  ) {
+    const adminId = this.getAuthenticatedUserId(req);
+    const updatedUser = await this.usersService.updateUserByAdmin(userId, updateUserDto, adminId);
+
+    return {
+      success: true,
+      message: 'Utilisateur mis a jour avec succes',
+      data: updatedUser,
+    };
+  }
+
+  @Delete('admin/:userId')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async deleteUserByAdmin(@Request() req: any, @Param('userId') userId: string) {
+    const adminId = this.getAuthenticatedUserId(req);
+    await this.usersService.deleteUserByAdmin(userId, adminId);
+
+    return {
+      success: true,
+      message: 'Utilisateur supprime avec succes',
+    };
+  }
+
   @Get('admin/:userId')
   @UseGuards(RolesGuard)
   @Roles('admin')
   async getUserById(@Param('userId') userId: string) {
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findByIdOrThrow(userId);
 
     return {
       success: true,

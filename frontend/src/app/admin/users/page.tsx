@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/src/hooks/useAuth';
 import useAdminUsers from '@/src/hooks/useAdmin';
 import { SimpleToast } from '@/src/components/ui/SimpleToast';
-import { AdminUserRole, AdminUserStatusFilter } from '@/src/types/admin.types';
+import { AdminUser, AdminUserRole, AdminUserStatusFilter } from '@/src/types/admin.types';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'medium',
@@ -24,10 +24,37 @@ const formatDate = (value?: string) => {
   return DATE_FORMATTER.format(date);
 };
 
+const normalizeOptional = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
 type ToastState = {
   type: 'success' | 'error' | 'info';
   message: string;
 } | null;
+
+type UserFormState = {
+  fullName: string;
+  email: string;
+  password: string;
+  phone: string;
+  companyName: string;
+  industry: string;
+  role: AdminUserRole;
+  isActive: boolean;
+};
+
+const EMPTY_FORM: UserFormState = {
+  fullName: '',
+  email: '',
+  password: '',
+  phone: '',
+  companyName: '',
+  industry: '',
+  role: 'user',
+  isActive: true,
+};
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (error instanceof Error && error.message) {
@@ -51,6 +78,9 @@ export default function AdminUsersPage() {
     loadStats,
     toggleUserStatus,
     updateUserRole,
+    createUser,
+    updateUser,
+    deleteUser,
     clearError,
   } = useAdminUsers({ page: 1, limit: 10 });
 
@@ -59,6 +89,10 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<AdminUserStatusFilter>('all');
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [formState, setFormState] = useState<UserFormState>(EMPTY_FORM);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   useEffect(() => {
     loadStats().catch(() => undefined);
@@ -79,6 +113,7 @@ export default function AdminUsersPage() {
   }, [searchInput, roleFilter, statusFilter, loadUsers]);
 
   const isAnyUserActionPending = isMutatingUser && pendingUserId !== null;
+  const isEditing = editingUserId !== null;
 
   const totalPages = usersResult?.totalPages ?? 1;
   const currentPage = usersResult?.page ?? 1;
@@ -151,6 +186,127 @@ export default function AdminUsersPage() {
     }
   };
 
+  const resetForm = () => {
+    setFormState(EMPTY_FORM);
+    setEditingUserId(null);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    resetForm();
+  };
+
+  const openCreateForm = () => {
+    resetForm();
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (managedUser: AdminUser) => {
+    setEditingUserId(managedUser.id);
+    setFormState({
+      fullName: managedUser.fullName || '',
+      email: managedUser.email || '',
+      password: '',
+      phone: managedUser.phone || '',
+      companyName: managedUser.companyName || '',
+      industry: managedUser.industry || '',
+      role: managedUser.role,
+      isActive: managedUser.isActive,
+    });
+    setIsFormOpen(true);
+  };
+
+  const onFormFieldChange = <K extends keyof UserFormState,>(field: K, value: UserFormState[K]) => {
+    setFormState((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const onSubmitUserForm = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const fullName = formState.fullName.trim();
+    const email = formState.email.trim().toLowerCase();
+    const password = formState.password.trim();
+
+    if (!fullName || !email) {
+      setToast({ type: 'error', message: 'Nom complet et email sont obligatoires.' });
+      return;
+    }
+
+    if (!isEditing && !password) {
+      setToast({ type: 'error', message: 'Le mot de passe est obligatoire pour la creation.' });
+      return;
+    }
+
+    setIsSubmittingForm(true);
+
+    try {
+      const payload = {
+        fullName,
+        email,
+        phone: normalizeOptional(formState.phone),
+        companyName: normalizeOptional(formState.companyName),
+        industry: normalizeOptional(formState.industry),
+        role: formState.role,
+        isActive: formState.isActive,
+        ...(password ? { password } : {}),
+      };
+
+      if (isEditing && editingUserId) {
+        await updateUser(editingUserId, payload);
+        setToast({ type: 'success', message: 'Utilisateur mis a jour.' });
+      } else {
+        await createUser({ ...payload, password });
+        setToast({ type: 'success', message: 'Utilisateur cree.' });
+      }
+
+      closeForm();
+
+      await loadUsers({
+        page: isEditing ? currentPage : 1,
+        limit: 10,
+        search: searchInput,
+        role: roleFilter,
+        status: statusFilter,
+      });
+      await loadStats();
+    } catch (err: unknown) {
+      setToast({ type: 'error', message: getErrorMessage(err, 'Erreur lors de la sauvegarde utilisateur.') });
+    } finally {
+      setIsSubmittingForm(false);
+    }
+  };
+
+  const onDeleteUser = async (targetUserId: string) => {
+    const confirmed = window.confirm('Confirmer la suppression de cet utilisateur ?');
+    if (!confirmed) {
+      return;
+    }
+
+    setPendingUserId(targetUserId);
+
+    try {
+      await deleteUser(targetUserId);
+      setToast({ type: 'success', message: 'Utilisateur supprime.' });
+
+      const nextPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+      await loadUsers({
+        page: nextPage,
+        limit: 10,
+        search: searchInput,
+        role: roleFilter,
+        status: statusFilter,
+      });
+      await loadStats();
+    } catch (err: unknown) {
+      setToast({ type: 'error', message: getErrorMessage(err, 'Erreur lors de la suppression utilisateur.') });
+    } finally {
+      setPendingUserId(null);
+    }
+  };
+
   return (
     <section className="space-y-6">
       {toast ? (
@@ -181,44 +337,180 @@ export default function AdminUsersPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_1fr]">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recherche</span>
-            <input
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Nom, email, entreprise"
-              className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
-              type="text"
-            />
-          </label>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="grid flex-1 gap-3 md:grid-cols-[1.5fr_1fr_1fr]">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recherche</span>
+              <input
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Nom, email, entreprise"
+                className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                type="text"
+              />
+            </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Role</span>
-            <select
-              value={roleFilter}
-              onChange={(event) => setRoleFilter(event.target.value as AdminUserRole | 'all')}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
-            >
-              <option value="all">Tous</option>
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </select>
-          </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Role</span>
+              <select
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value as AdminUserRole | 'all')}
+                className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+              >
+                <option value="all">Tous</option>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+              </select>
+            </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Statut</span>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as AdminUserStatusFilter)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
-            >
-              <option value="all">Tous</option>
-              <option value="active">Actif</option>
-              <option value="inactive">Inactif</option>
-            </select>
-          </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Statut</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as AdminUserStatusFilter)}
+                className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+              >
+                <option value="all">Tous</option>
+                <option value="active">Actif</option>
+                <option value="inactive">Inactif</option>
+              </select>
+            </label>
+          </div>
+
+          <button
+            onClick={openCreateForm}
+            className="h-10 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+            type="button"
+          >
+            Nouvel utilisateur
+          </button>
         </div>
+
+        {isFormOpen ? (
+          <form
+            onSubmit={onSubmitUserForm}
+            className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-slate-900">
+                {isEditing ? 'Modifier un utilisateur' : 'Creer un utilisateur'}
+              </h2>
+              <button
+                onClick={closeForm}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                type="button"
+              >
+                Fermer
+              </button>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nom complet</span>
+                <input
+                  value={formState.fullName}
+                  onChange={(event) => onFormFieldChange('fullName', event.target.value)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  type="text"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</span>
+                <input
+                  value={formState.email}
+                  onChange={(event) => onFormFieldChange('email', event.target.value)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  type="email"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Mot de passe {isEditing ? '(optionnel)' : ''}
+                </span>
+                <input
+                  value={formState.password}
+                  onChange={(event) => onFormFieldChange('password', event.target.value)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  type="password"
+                  required={!isEditing}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telephone</span>
+                <input
+                  value={formState.phone}
+                  onChange={(event) => onFormFieldChange('phone', event.target.value)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  type="text"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Entreprise</span>
+                <input
+                  value={formState.companyName}
+                  onChange={(event) => onFormFieldChange('companyName', event.target.value)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  type="text"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secteur</span>
+                <input
+                  value={formState.industry}
+                  onChange={(event) => onFormFieldChange('industry', event.target.value)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  type="text"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Role</span>
+                <select
+                  value={formState.role}
+                  onChange={(event) => onFormFieldChange('role', event.target.value as AdminUserRole)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+
+              <label className="flex items-center gap-2 pt-6 text-sm text-slate-700">
+                <input
+                  checked={formState.isActive}
+                  onChange={(event) => onFormFieldChange('isActive', event.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300"
+                  type="checkbox"
+                />
+                Compte actif
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={closeForm}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                type="button"
+              >
+                Annuler
+              </button>
+              <button
+                disabled={isSubmittingForm}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                type="submit"
+              >
+                {isSubmittingForm ? 'Sauvegarde...' : isEditing ? 'Mettre a jour' : 'Creer'}
+              </button>
+            </div>
+          </form>
+        ) : null}
 
         {error ? (
           <div className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -320,18 +612,38 @@ export default function AdminUsersPage() {
                           {isCurrentAdmin ? (
                             <span className="text-xs font-semibold text-slate-400">Compte connecte</span>
                           ) : (
-                            <button
-                              onClick={() => onToggleStatus(managedUser.id)}
-                              disabled={disableActions}
-                              className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                                managedUser.isActive
-                                  ? 'bg-rose-50 text-rose-700 hover:bg-rose-100'
-                                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                              } disabled:cursor-not-allowed disabled:opacity-60`}
-                              type="button"
-                            >
-                              {managedUser.isActive ? 'Desactiver' : 'Activer'}
-                            </button>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => openEditForm(managedUser)}
+                                disabled={disableActions}
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                type="button"
+                              >
+                                Modifier
+                              </button>
+
+                              <button
+                                onClick={() => onToggleStatus(managedUser.id)}
+                                disabled={disableActions}
+                                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                                  managedUser.isActive
+                                    ? 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                } disabled:cursor-not-allowed disabled:opacity-60`}
+                                type="button"
+                              >
+                                {managedUser.isActive ? 'Desactiver' : 'Activer'}
+                              </button>
+
+                              <button
+                                onClick={() => onDeleteUser(managedUser.id)}
+                                disabled={disableActions}
+                                className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                type="button"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>

@@ -9,7 +9,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
 import { User, UserDocument, UserRole } from './entities/user.entity';
-import { ChangePasswordDto, UpdateUserDto } from './dto/user.dto';
+import { AdminUpdateUserDto, ChangePasswordDto, UpdateUserDto } from './dto/user.dto';
 
 export interface CreateUserData {
   fullName: string;
@@ -19,6 +19,7 @@ export interface CreateUserData {
   companyName?: string;
   industry?: string;
   role?: UserRole;
+  isActive?: boolean;
 }
 
 export interface AdminUsersFilters {
@@ -43,9 +44,17 @@ export class UsersService {
         companyName: userData.companyName,
         industry: userData.industry,
         role: userData.role || 'user',
+        isActive: userData.isActive ?? true,
       });
 
-      return await newUser.save();
+      const savedUser = await newUser.save();
+      const safeUser = await this.userModel.findById(savedUser._id).exec();
+
+      if (!safeUser) {
+        throw new BadRequestException("Erreur lors de la creation de l'utilisateur");
+      }
+
+      return safeUser;
     } catch (error: any) {
       if (error?.code === 11000) {
         throw new ConflictException('Cet email est deja utilise');
@@ -60,6 +69,15 @@ export class UsersService {
     } catch {
       return null;
     }
+  }
+
+  async findByIdOrThrow(id: string): Promise<UserDocument> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    return user;
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
@@ -316,6 +334,108 @@ export class UsersService {
         throw error;
       }
       throw new BadRequestException('Erreur lors de la modification du role');
+    }
+  }
+
+  async updateUserByAdmin(
+    userId: string,
+    updateData: AdminUpdateUserDto,
+    currentAdminId?: string,
+  ): Promise<UserDocument> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      if (currentAdminId && user._id.toString() === currentAdminId) {
+        if (updateData.role === 'user') {
+          throw new BadRequestException('Vous ne pouvez pas modifier votre propre role');
+        }
+
+        if (updateData.isActive === false) {
+          throw new BadRequestException('Vous ne pouvez pas desactiver votre propre compte');
+        }
+      }
+
+      const nextRole = updateData.role ?? user.role;
+      const nextIsActive = updateData.isActive ?? user.isActive;
+
+      if (user.role === 'admin' && (nextRole !== 'admin' || !nextIsActive)) {
+        const otherActiveAdmins = await this.userModel.countDocuments({
+          role: 'admin',
+          isActive: true,
+          _id: { $ne: user._id },
+        });
+
+        if (otherActiveAdmins === 0) {
+          throw new BadRequestException(
+            'Impossible de modifier le dernier administrateur actif',
+          );
+        }
+      }
+
+      const allowedFields: Array<keyof AdminUpdateUserDto> = [
+        'fullName',
+        'email',
+        'password',
+        'phone',
+        'companyName',
+        'industry',
+        'role',
+        'isActive',
+      ];
+
+      for (const field of allowedFields) {
+        if (updateData[field] !== undefined) {
+          user[field] = updateData[field] as never;
+        }
+      }
+
+      return await user.save();
+    } catch (error: any) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      if (error?.code === 11000) {
+        throw new ConflictException('Cet email est deja utilise');
+      }
+
+      throw new BadRequestException("Erreur lors de la mise a jour de l'utilisateur");
+    }
+  }
+
+  async deleteUserByAdmin(userId: string, currentAdminId?: string): Promise<void> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      if (currentAdminId && user._id.toString() === currentAdminId) {
+        throw new BadRequestException('Vous ne pouvez pas supprimer votre propre compte');
+      }
+
+      if (user.role === 'admin' && user.isActive) {
+        const otherActiveAdmins = await this.userModel.countDocuments({
+          role: 'admin',
+          isActive: true,
+          _id: { $ne: user._id },
+        });
+
+        if (otherActiveAdmins === 0) {
+          throw new BadRequestException('Impossible de supprimer le dernier administrateur actif');
+        }
+      }
+
+      await this.userModel.findByIdAndDelete(userId).exec();
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException("Erreur lors de la suppression de l'utilisateur");
     }
   }
 

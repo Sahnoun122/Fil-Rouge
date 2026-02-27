@@ -40,3 +40,25 @@ export interface AdminUserStats {
   emailVerified: number;
   recentSignups: number;
 }
+
+export interface AdminCreateUserPayload {
+  fullName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  companyName?: string;
+  industry?: string;
+  role?: AdminUserRole;
+  isActive?: boolean;
+}
+
+export interface AdminUpdateUserPayload {
+  fullName?: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  companyName?: string;
+  industry?: string;
+  role?: AdminUserRole;
+  isActive?: boolean;
+}

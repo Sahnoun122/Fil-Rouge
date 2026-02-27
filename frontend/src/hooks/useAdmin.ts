@@ -3,11 +3,13 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import AdminService from '../services/adminService';
 import {
+  AdminCreateUserPayload,
   AdminUser,
   AdminUserRole,
   AdminUserStats,
   AdminUsersFilters,
   AdminUsersResult,
+  AdminUpdateUserPayload,
 } from '../types/admin.types';
 
 const DEFAULT_FILTERS: Required<AdminUsersFilters> = {
@@ -112,6 +114,47 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     });
   }, []);
 
+  const addCachedUser = useCallback((created: AdminUser) => {
+    setUsersResult((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      const nextTotal = prev.total + 1;
+      const nextUsers = [created, ...prev.users].slice(0, prev.limit);
+
+      return {
+        ...prev,
+        users: nextUsers,
+        total: nextTotal,
+        totalPages: Math.max(1, Math.ceil(nextTotal / prev.limit)),
+      };
+    });
+  }, []);
+
+  const removeCachedUser = useCallback((userId: string) => {
+    setUsersResult((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      const nextUsers = prev.users.filter((user) => user.id !== userId);
+      const hasRemoved = nextUsers.length !== prev.users.length;
+      if (!hasRemoved) {
+        return prev;
+      }
+
+      const nextTotal = Math.max(0, prev.total - 1);
+
+      return {
+        ...prev,
+        users: nextUsers,
+        total: nextTotal,
+        totalPages: Math.max(1, Math.ceil(nextTotal / prev.limit)),
+      };
+    });
+  }, []);
+
   const toggleUserStatus = useCallback(async (userId: string) => {
     setIsMutatingUser(true);
     setError(null);
@@ -146,6 +189,56 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     }
   }, [updateCachedUser]);
 
+  const createUser = useCallback(async (payload: AdminCreateUserPayload) => {
+    setIsMutatingUser(true);
+    setError(null);
+
+    try {
+      const created = await AdminService.createUser(payload);
+      addCachedUser(created);
+      return created;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur lors de la creation utilisateur');
+      setError(message);
+      throw err;
+    } finally {
+      setIsMutatingUser(false);
+    }
+  }, [addCachedUser]);
+
+  const updateUser = useCallback(async (userId: string, payload: AdminUpdateUserPayload) => {
+    setIsMutatingUser(true);
+    setError(null);
+
+    try {
+      const updated = await AdminService.updateUser(userId, payload);
+      updateCachedUser(updated);
+      return updated;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur lors de la mise a jour utilisateur');
+      setError(message);
+      throw err;
+    } finally {
+      setIsMutatingUser(false);
+    }
+  }, [updateCachedUser]);
+
+  const deleteUser = useCallback(async (userId: string) => {
+    setIsMutatingUser(true);
+    setError(null);
+
+    try {
+      await AdminService.deleteUser(userId);
+      removeCachedUser(userId);
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur lors de la suppression utilisateur');
+      setError(message);
+      throw err;
+    } finally {
+      setIsMutatingUser(false);
+    }
+  }, [removeCachedUser]);
+
   const refreshAll = useCallback(async () => {
     await Promise.all([loadUsers(), loadStats()]);
   }, [loadUsers, loadStats]);
@@ -167,6 +260,9 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
     refreshAll,
     toggleUserStatus,
     updateUserRole,
+    createUser,
+    updateUser,
+    deleteUser,
     clearError: () => setError(null),
   };
 }
