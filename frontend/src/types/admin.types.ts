@@ -86,6 +86,58 @@ export interface AdminStrategyDetail extends AdminStrategy {
   generatedStrategy: GeneratedStrategy;
 }
 
+export interface AdminSwotFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface AdminSwotStrategySummary {
+  id: string;
+  businessName: string;
+  industry: string;
+}
+
+export interface AdminSwotInputs {
+  notesInternes?: string;
+  notesExternes?: string;
+  concurrents?: string[];
+  ressources?: string[];
+  objectifs?: string;
+}
+
+export interface AdminSwotMatrix {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+}
+
+export interface AdminSwot {
+  id: string;
+  userId: string;
+  strategyId: string;
+  title: string;
+  user: AdminStrategyUser;
+  strategy: AdminSwotStrategySummary;
+  swot: AdminSwotMatrix;
+  isAiGenerated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminSwotDetail extends AdminSwot {
+  inputs: AdminSwotInputs;
+}
+
+export interface AdminSwotsResult {
+  swots: AdminSwot[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface AdminCreateUserPayload {
   fullName: string;
   email: string;

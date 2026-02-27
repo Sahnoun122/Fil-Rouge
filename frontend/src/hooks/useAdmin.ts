@@ -8,6 +8,10 @@ import {
   AdminStrategyDetail,
   AdminStrategiesResult,
   AdminStrategy,
+  AdminSwotDetail,
+  AdminSwotFilters,
+  AdminSwotsResult,
+  AdminSwot,
   AdminUser,
   AdminUserRole,
   AdminUserStats,
@@ -24,6 +28,12 @@ const DEFAULT_FILTERS: Required<AdminUsersFilters> = {
 };
 
 const DEFAULT_STRATEGIES_FILTERS: Required<AdminStrategiesFilters> = {
+  page: 1,
+  limit: 10,
+  search: '',
+};
+
+const DEFAULT_SWOTS_FILTERS: Required<AdminSwotFilters> = {
   page: 1,
   limit: 10,
   search: '',
@@ -366,6 +376,102 @@ export function useAdminStrategy() {
     error,
     isLoadingStrategy,
     loadStrategy,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminSwots(initialFilters?: AdminSwotFilters) {
+  const initialResolvedFilters: Required<AdminSwotFilters> = {
+    ...DEFAULT_SWOTS_FILTERS,
+    ...initialFilters,
+    page: initialFilters?.page ?? DEFAULT_SWOTS_FILTERS.page,
+    limit: initialFilters?.limit ?? DEFAULT_SWOTS_FILTERS.limit,
+    search: initialFilters?.search ?? DEFAULT_SWOTS_FILTERS.search,
+  };
+
+  const [filters, setFiltersState] = useState<Required<AdminSwotFilters>>(initialResolvedFilters);
+  const filtersRef = useRef<Required<AdminSwotFilters>>(initialResolvedFilters);
+  const [swotsResult, setSwotsResult] = useState<AdminSwotsResult | null>(null);
+  const [isLoadingSwots, setIsLoadingSwots] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const setFilters = useCallback((nextFilters: Required<AdminSwotFilters>) => {
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+  }, []);
+
+  const loadSwots = useCallback(async (overrides?: Partial<AdminSwotFilters>) => {
+    const currentFilters = filtersRef.current;
+    const nextFilters: Required<AdminSwotFilters> = {
+      ...currentFilters,
+      ...overrides,
+      page: overrides?.page ?? currentFilters.page,
+      limit: overrides?.limit ?? currentFilters.limit,
+      search: overrides?.search ?? currentFilters.search,
+    };
+
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+    setIsLoadingSwots(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getSwots(nextFilters);
+      setSwotsResult(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement des SWOT');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingSwots(false);
+    }
+  }, []);
+
+  const swots = useMemo<AdminSwot[]>(
+    () => swotsResult?.swots ?? [],
+    [swotsResult],
+  );
+
+  return {
+    filters,
+    setFilters,
+    swots,
+    swotsResult,
+    error,
+    isLoadingSwots,
+    loadSwots,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminSwot() {
+  const [swot, setSwot] = useState<AdminSwotDetail | null>(null);
+  const [isLoadingSwot, setIsLoadingSwot] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadSwot = useCallback(async (swotId: string) => {
+    setIsLoadingSwot(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getSwotById(swotId);
+      setSwot(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement du SWOT');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingSwot(false);
+    }
+  }, []);
+
+  return {
+    swot,
+    error,
+    isLoadingSwot,
+    loadSwot,
     clearError: () => setError(null),
   };
 }

@@ -11,10 +11,14 @@ import {
   Query,
   Req,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import {
+  AdminSwotQueryDto,
   CreateSwotDto,
   GenerateSwotDto,
   ImproveSwotDto,
@@ -107,6 +111,43 @@ export class SwotController {
           pages: Math.ceil(result.total / validatedLimit),
         },
       },
+    };
+  }
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async findAllForAdmin(@Query() query: AdminSwotQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const search = query.search;
+
+    const result = await this.swotService.findAllForAdmin(page, limit, search);
+
+    return {
+      success: true,
+      data: {
+        swots: result.swots,
+        pagination: {
+          page,
+          limit,
+          total: result.total,
+          pages: Math.ceil(result.total / limit),
+        },
+      },
+    };
+  }
+
+  @Get('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async findOneForAdmin(@Param('id') swotId: string) {
+    const swot = await this.swotService.findOneForAdmin(swotId);
+
+    return {
+      success: true,
+      data: swot,
     };
   }
 

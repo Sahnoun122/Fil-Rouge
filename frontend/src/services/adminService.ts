@@ -5,6 +5,11 @@ import {
   AdminStrategyDetail,
   AdminStrategiesResult,
   AdminStrategy,
+  AdminSwotDetail,
+  AdminSwotFilters,
+  AdminSwotsResult,
+  AdminSwot,
+  AdminSwotMatrix,
   AdminUser,
   AdminUserRole,
   AdminUserStats,
@@ -30,6 +35,11 @@ type RawUsersData = {
 
 type RawStrategiesData = {
   strategies?: unknown;
+  pagination?: unknown;
+};
+
+type RawSwotsData = {
+  swots?: unknown;
   pagination?: unknown;
 };
 
@@ -162,6 +172,80 @@ const normalizeAdminStrategyDetail = (payload: unknown): AdminStrategyDetail => 
   };
 };
 
+const normalizeSwotMatrix = (value: unknown): AdminSwotMatrix => {
+  const source = asRecord(value);
+  const toList = (raw: unknown): string[] =>
+    Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
+
+  return {
+    strengths: toList(source.strengths),
+    weaknesses: toList(source.weaknesses),
+    opportunities: toList(source.opportunities),
+    threats: toList(source.threats),
+  };
+};
+
+const normalizeAdminSwot = (payload: unknown): AdminSwot => {
+  const source = asRecord(payload);
+  const rawId = source.id ?? source._id;
+  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+
+  const userSource = asRecord(source.userId);
+  const rawUserId = userSource._id ?? userSource.id ?? source.userId;
+  const userId = typeof rawUserId === 'string' ? rawUserId : asString(rawUserId?.toString?.(), '');
+
+  const strategySource = asRecord(source.strategyId);
+  const rawStrategyId = strategySource._id ?? strategySource.id ?? source.strategyId;
+  const strategyId =
+    typeof rawStrategyId === 'string' ? rawStrategyId : asString(rawStrategyId?.toString?.(), '');
+
+  const strategyBusinessInfo = asRecord(strategySource.businessInfo);
+  const createdAt = toIso(source.createdAt);
+  const updatedAt = toIso(source.updatedAt, createdAt);
+
+  return {
+    id,
+    userId,
+    strategyId,
+    title: asString(source.title, 'SWOT'),
+    user: {
+      id: userId,
+      fullName: asString(userSource.fullName, 'Utilisateur inconnu'),
+      email: asString(userSource.email, '-'),
+      companyName: asString(userSource.companyName) || undefined,
+      role: userSource.role === 'admin' ? 'admin' : 'user',
+    },
+    strategy: {
+      id: strategyId,
+      businessName: asString(strategyBusinessInfo.businessName, 'Strategie inconnue'),
+      industry: asString(strategyBusinessInfo.industry, '-'),
+    },
+    swot: normalizeSwotMatrix(source.swot),
+    isAiGenerated: asBoolean(source.isAiGenerated, false),
+    createdAt,
+    updatedAt,
+  };
+};
+
+const normalizeAdminSwotDetail = (payload: unknown): AdminSwotDetail => {
+  const base = normalizeAdminSwot(payload);
+  const source = asRecord(payload);
+  const inputsSource = asRecord(source.inputs);
+  const toList = (raw: unknown): string[] =>
+    Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
+
+  return {
+    ...base,
+    inputs: {
+      notesInternes: asString(inputsSource.notesInternes) || undefined,
+      notesExternes: asString(inputsSource.notesExternes) || undefined,
+      concurrents: toList(inputsSource.concurrents),
+      ressources: toList(inputsSource.ressources),
+      objectifs: asString(inputsSource.objectifs) || undefined,
+    },
+  };
+};
+
 const buildUsersQuery = (filters: AdminUsersFilters): string => {
   const params = new URLSearchParams();
 
@@ -186,6 +270,25 @@ const buildUsersQuery = (filters: AdminUsersFilters): string => {
 };
 
 const buildStrategiesQuery = (filters: AdminStrategiesFilters): string => {
+  const params = new URLSearchParams();
+
+  if (filters.page) {
+    params.set('page', String(filters.page));
+  }
+
+  if (filters.limit) {
+    params.set('limit', String(filters.limit));
+  }
+
+  if (filters.search?.trim()) {
+    params.set('search', filters.search.trim());
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+};
+
+const buildSwotsQuery = (filters: AdminSwotFilters): string => {
   const params = new URLSearchParams();
 
   if (filters.page) {
@@ -276,6 +379,40 @@ export class AdminService {
     }
 
     return normalizeAdminStrategyDetail(response.data);
+  }
+
+  static async getSwots(filters: AdminSwotFilters = {}): Promise<AdminSwotsResult> {
+    const query = buildSwotsQuery(filters);
+    const response = (await api.get(`/swot/admin/all${query}`, true)) as ApiEnvelope<RawSwotsData>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || 'Impossible de recuperer les SWOT');
+    }
+
+    const swotsValue = response.data.swots;
+    if (!Array.isArray(swotsValue)) {
+      throw new Error('Reponse SWOT invalide');
+    }
+
+    const paginationSource = asRecord(response.data.pagination);
+
+    return {
+      swots: swotsValue.map((item) => normalizeAdminSwot(item)),
+      total: asNumber(paginationSource.total, 0),
+      page: asNumber(paginationSource.page, 1),
+      limit: asNumber(paginationSource.limit, 10),
+      totalPages: asNumber(paginationSource.pages, 1),
+    };
+  }
+
+  static async getSwotById(swotId: string): Promise<AdminSwotDetail> {
+    const response = (await api.get(`/swot/admin/${swotId}`, true)) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || 'Impossible de recuperer le SWOT');
+    }
+
+    return normalizeAdminSwotDetail(response.data);
   }
 
   static async updateUserRole(userId: string, role: AdminUserRole): Promise<AdminUser> {

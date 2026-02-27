@@ -1,8 +1,7 @@
-export default function AdminAnalyticsPage() {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900">Analytics</h1>
-      <p className="mt-2 text-sm text-slate-600">This page is not implemented yet.</p>
-    </section>
-  );
+'use client';
+
+import AdminSwotAnalyticsPage from '@/src/app/admin/swot-analytics/page';
+
+export default function AdminAnalyticsAliasPage() {
+  return <AdminSwotAnalyticsPage />;
 }

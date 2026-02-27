@@ -12,6 +12,7 @@ import {
   buildSwotFromStrategyPrompt,
 } from '../ai/prompts/swot.prompts';
 import { Strategy, StrategyDocument } from '../strategies/schemas/strategy.schema';
+import { User, UserDocument } from '../users/entities/user.entity';
 import {
   CreateSwotDto,
   GenerateSwotDto,
@@ -49,6 +50,7 @@ export class SwotService {
   constructor(
     @InjectModel(Swot.name) private readonly swotModel: Model<SwotDocument>,
     @InjectModel(Strategy.name) private readonly strategyModel: Model<StrategyDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly aiService: AiService,
   ) {}
 
@@ -145,6 +147,47 @@ export class SwotService {
 
   async findOne(userId: string, swotId: string): Promise<SwotDocument> {
     return this.getOwnedSwotOrThrow(userId, swotId);
+  }
+
+  async findAllForAdmin(
+    page = 1,
+    limit = 10,
+    search?: string,
+  ): Promise<{ swots: SwotDocument[]; total: number }> {
+    const sanitizedPage = Math.max(1, Number(page) || 1);
+    const sanitizedLimit = Math.min(100, Math.max(1, Number(limit) || 10));
+    const skip = (sanitizedPage - 1) * sanitizedLimit;
+    const filters = await this.buildAdminSearchFilter(search);
+
+    const [swots, total] = await Promise.all([
+      this.swotModel
+        .find(filters)
+        .select('userId strategyId title swot isAiGenerated createdAt updatedAt')
+        .populate('userId', 'fullName email companyName role')
+        .populate('strategyId', 'businessInfo.businessName businessInfo.industry')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(sanitizedLimit)
+        .exec(),
+      this.swotModel.countDocuments(filters).exec(),
+    ]);
+
+    return { swots, total };
+  }
+
+  async findOneForAdmin(swotId: string): Promise<SwotDocument> {
+    const swotObjectId = this.toObjectId(swotId, 'swotId');
+    const swot = await this.swotModel
+      .findById(swotObjectId)
+      .populate('userId', 'fullName email companyName role')
+      .populate('strategyId', 'businessInfo.businessName businessInfo.industry')
+      .exec();
+
+    if (!swot) {
+      throw new NotFoundException('SWOT introuvable');
+    }
+
+    return swot;
   }
 
   async deleteOne(userId: string, swotId: string): Promise<void> {
@@ -320,5 +363,59 @@ export class SwotService {
       opportunities: [],
       threats: [],
     };
+  }
+
+  private async buildAdminSearchFilter(search?: string): Promise<Record<string, unknown>> {
+    const normalizedSearch = search?.trim();
+    if (!normalizedSearch) {
+      return {};
+    }
+
+    const safeSearch = this.escapeRegex(normalizedSearch);
+    const regex = new RegExp(safeSearch, 'i');
+
+    const [matchedUsers, matchedStrategies] = await Promise.all([
+      this.userModel
+        .find({
+          $or: [
+            { fullName: { $regex: regex } },
+            { email: { $regex: regex } },
+            { companyName: { $regex: regex } },
+          ],
+        })
+        .select('_id')
+        .lean()
+        .exec(),
+      this.strategyModel
+        .find({
+          $or: [
+            { 'businessInfo.businessName': { $regex: regex } },
+            { 'businessInfo.industry': { $regex: regex } },
+            { 'businessInfo.productOrService': { $regex: regex } },
+          ],
+        })
+        .select('_id')
+        .lean()
+        .exec(),
+    ]);
+
+    const matchedUserIds = matchedUsers.map((user) => user._id);
+    const matchedStrategyIds = matchedStrategies.map((strategy) => strategy._id);
+
+    const orFilters: Record<string, unknown>[] = [{ title: { $regex: regex } }];
+
+    if (matchedUserIds.length > 0) {
+      orFilters.push({ userId: { $in: matchedUserIds } });
+    }
+
+    if (matchedStrategyIds.length > 0) {
+      orFilters.push({ strategyId: { $in: matchedStrategyIds } });
+    }
+
+    return { $or: orFilters };
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

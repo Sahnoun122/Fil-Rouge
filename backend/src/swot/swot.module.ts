@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AiModule } from '../ai/ai.module';
 import { Strategy, StrategySchema } from '../strategies/schemas/strategy.schema';
+import { User, UserSchema } from '../users/entities/user.entity';
 import { SwotController } from './swot.controller';
 import { Swot, SwotSchema } from './schemas/swot.schema';
 import { SwotService } from './swot.service';
@@ -11,6 +12,7 @@ import { SwotService } from './swot.service';
     MongooseModule.forFeature([
       { name: Swot.name, schema: SwotSchema },
       { name: Strategy.name, schema: StrategySchema },
+      { name: User.name, schema: UserSchema },
     ]),
     AiModule,
   ],
