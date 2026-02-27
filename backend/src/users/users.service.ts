@@ -232,24 +232,21 @@ export class UsersService {
   async getUserStats(): Promise<{
     total: number;
     admins: number;
-    emailVerified: number;
     recentSignups: number;
   }> {
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const [total, admins, emailVerified, recentSignups] = await Promise.all([
+      const [total, admins, recentSignups] = await Promise.all([
         this.userModel.countDocuments(),
         this.userModel.countDocuments({ role: 'admin' }),
-        this.userModel.countDocuments({ emailVerified: true }),
         this.userModel.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       ]);
 
       return {
         total,
         admins,
-        emailVerified,
         recentSignups,
       };
     } catch {

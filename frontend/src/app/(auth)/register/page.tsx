@@ -167,7 +167,7 @@ export default function RegisterPage() {
               </p>
             </div>
             <ul className="space-y-3 text-sm text-slate-200">
-              <li>Profile identity and email verification flow ready.</li>
+              <li>Profile identity flow ready.</li>
               <li>Company and industry fields synced with backend DTO.</li>
               <li>Password policy aligned with API security rules.</li>
             </ul>

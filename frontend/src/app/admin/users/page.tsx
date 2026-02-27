@@ -118,7 +118,6 @@ export default function AdminUsersPage() {
       return [
         { label: 'Total comptes', value: '-' },
         { label: 'Administrateurs', value: '-' },
-        { label: 'Emails verifies', value: '-' },
         { label: 'Nouveaux (30j)', value: '-' },
       ];
     }
@@ -126,7 +125,6 @@ export default function AdminUsersPage() {
     return [
       { label: 'Total comptes', value: String(stats.total) },
       { label: 'Administrateurs', value: String(stats.admins) },
-      { label: 'Emails verifies', value: String(stats.emailVerified) },
       { label: 'Nouveaux (30j)', value: String(stats.recentSignups) },
     ];
   }, [stats]);
@@ -291,7 +289,7 @@ export default function AdminUsersPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {statsCards.map((card) => (
           <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-500">{card.label}</p>
@@ -469,7 +467,6 @@ export default function AdminUsersPage() {
                   <th className="px-4 py-3 font-semibold text-slate-600">Nom</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Email</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Role</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Verification</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Derniere connexion</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Cree le</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Action</th>
@@ -479,13 +476,13 @@ export default function AdminUsersPage() {
               <tbody className="divide-y divide-slate-200 bg-white">
                 {isLoadingUsers ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
                       Chargement des utilisateurs...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
                       Aucun utilisateur trouve pour ces filtres.
                     </td>
                   </tr>
@@ -514,16 +511,6 @@ export default function AdminUsersPage() {
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                           </select>
-                        </td>
-
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              managedUser.emailVerified ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {managedUser.emailVerified ? 'Verifie' : 'Non verifie'}
-                          </span>
                         </td>
 
                         <td className="px-4 py-3 text-slate-700">{formatDate(managedUser.lastLoginAt)}</td>

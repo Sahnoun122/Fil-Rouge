@@ -5,7 +5,6 @@ export interface AdminUser {
   fullName: string;
   email: string;
   role: AdminUserRole;
-  emailVerified: boolean;
   phone?: string;
   companyName?: string;
   industry?: string;
@@ -32,7 +31,6 @@ export interface AdminUsersResult {
 export interface AdminUserStats {
   total: number;
   admins: number;
-  emailVerified: number;
   recentSignups: number;
 }
 

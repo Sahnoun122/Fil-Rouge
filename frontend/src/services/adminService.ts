@@ -35,10 +35,6 @@ const asString = (value: unknown, fallback = ''): string => {
   return typeof value === 'string' ? value : fallback;
 };
 
-const asBoolean = (value: unknown, fallback = false): boolean => {
-  return typeof value === 'boolean' ? value : fallback;
-};
-
 const asNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -81,7 +77,6 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
     fullName: asString(source.fullName),
     email: asString(source.email),
     role: source.role === 'admin' ? 'admin' : 'user',
-    emailVerified: asBoolean(source.emailVerified, false),
     phone: asString(source.phone) || undefined,
     companyName: asString(source.companyName) || undefined,
     industry: asString(source.industry) || undefined,
@@ -149,7 +144,6 @@ export class AdminService {
     return {
       total: asNumber(response.data.total, 0),
       admins: asNumber(response.data.admins, 0),
-      emailVerified: asNumber(response.data.emailVerified, 0),
       recentSignups: asNumber(response.data.recentSignups, 0),
     };
   }

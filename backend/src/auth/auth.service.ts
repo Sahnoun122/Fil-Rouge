@@ -33,7 +33,6 @@ export interface AuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    emailVerified: boolean;
     lastLoginAt?: Date;
   };
   tokens: AuthTokens;
@@ -76,7 +75,6 @@ export class AuthService {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          emailVerified: user.emailVerified,
           lastLoginAt: user.lastLoginAt,
         },
         tokens,
@@ -132,7 +130,6 @@ export class AuthService {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          emailVerified: user.emailVerified,
           lastLoginAt: new Date(),
         },
         tokens,

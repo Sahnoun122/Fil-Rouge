@@ -66,12 +66,6 @@ export default function UserPlan() {
         <div>
           <h4 className="mb-2 text-sm font-medium text-gray-700">Etat du compte</h4>
           <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-500">Email verifie</span>
-              <span className={`text-sm font-medium ${user.emailVerified ? 'text-green-600' : 'text-orange-600'}`}>
-                {user.emailVerified ? 'Verifie' : 'En attente'}
-              </span>
-            </div>
             {user.lastLoginAt && (
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Derniere connexion</span>
