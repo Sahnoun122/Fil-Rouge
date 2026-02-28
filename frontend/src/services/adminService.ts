@@ -425,6 +425,16 @@ export class AdminService {
     return normalizeAdminUser(response.data);
   }
 
+  static async getUserById(userId: string): Promise<AdminUser> {
+    const response = (await api.get(`/users/admin/${userId}`, true)) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || 'Impossible de recuperer cet utilisateur');
+    }
+
+    return normalizeAdminUser(response.data);
+  }
+
   static async createUser(payload: AdminCreateUserPayload): Promise<AdminUser> {
     const response = (await api.post('/users/admin', payload, true)) as ApiEnvelope<unknown>;
 

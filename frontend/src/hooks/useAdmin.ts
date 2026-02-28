@@ -284,6 +284,37 @@ export function useAdminUsers(initialFilters?: AdminUsersFilters) {
   };
 }
 
+export function useAdminUser() {
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadUser = useCallback(async (userId: string) => {
+    setIsLoadingUser(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getUserById(userId);
+      setUser(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement utilisateur');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingUser(false);
+    }
+  }, []);
+
+  return {
+    user,
+    error,
+    isLoadingUser,
+    loadUser,
+    clearError: () => setError(null),
+  };
+}
+
 export function useAdminStrategies(initialFilters?: AdminStrategiesFilters) {
   const initialResolvedFilters: Required<AdminStrategiesFilters> = {
     ...DEFAULT_STRATEGIES_FILTERS,

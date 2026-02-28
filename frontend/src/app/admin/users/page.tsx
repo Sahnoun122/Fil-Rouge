@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/src/hooks/useAuth';
 import useAdminUsers from '@/src/hooks/useAdmin';
@@ -520,10 +521,20 @@ export default function AdminUsersPage() {
                         <td className="px-4 py-3 text-slate-700">{formatDate(managedUser.createdAt)}</td>
 
                         <td className="px-4 py-3">
-                          {isCurrentAdmin ? (
-                            <span className="text-xs font-semibold text-slate-400">Compte connecte</span>
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Link
+                              href={`/admin/users/${managedUser.id}`}
+                              className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              Consulter
+                            </Link>
+
+                            {isCurrentAdmin ? (
+                              <span className="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
+                                Compte connecte
+                              </span>
+                            ) : (
+                              <>
                               <button
                                 onClick={() => openEditForm(managedUser)}
                                 disabled={disableActions}
@@ -554,8 +565,9 @@ export default function AdminUsersPage() {
                               >
                                 {managedUser.isBanned ? 'Debannir' : 'Bannir'}
                               </button>
-                            </div>
-                          )}
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
