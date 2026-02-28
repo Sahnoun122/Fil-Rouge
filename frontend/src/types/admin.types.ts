@@ -1,4 +1,11 @@
 import type { GeneratedStrategy } from './strategy.types';
+import type {
+  CampaignSummary,
+  ContentCampaignInputs,
+  ContentMode,
+  ContentObjective,
+  GeneratedPost,
+} from './content.types';
 
 export type AdminUserRole = 'admin' | 'user';
 
@@ -132,6 +139,47 @@ export interface AdminSwotDetail extends AdminSwot {
 
 export interface AdminSwotsResult {
   swots: AdminSwot[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AdminContentStrategySummary {
+  id: string;
+  businessName: string;
+  industry: string;
+}
+
+export interface AdminContent {
+  id: string;
+  userId: string;
+  strategyId: string;
+  name: string;
+  mode: ContentMode;
+  objective: ContentObjective;
+  platforms: string[];
+  generatedPostsCount: number;
+  user: AdminStrategyUser;
+  strategy: AdminContentStrategySummary;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminContentDetail extends Omit<AdminContent, 'generatedPostsCount'> {
+  inputs?: ContentCampaignInputs;
+  campaignSummary?: CampaignSummary;
+  generatedPosts: GeneratedPost[];
+}
+
+export interface AdminContentsFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface AdminContentsResult {
+  campaigns: AdminContent[];
   total: number;
   page: number;
   limit: number;

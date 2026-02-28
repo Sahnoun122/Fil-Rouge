@@ -3,6 +3,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import AdminService from '../services/adminService';
 import {
+  AdminContent,
+  AdminContentDetail,
+  AdminContentsFilters,
+  AdminContentsResult,
   AdminCreateUserPayload,
   AdminStrategiesFilters,
   AdminStrategyDetail,
@@ -34,6 +38,12 @@ const DEFAULT_STRATEGIES_FILTERS: Required<AdminStrategiesFilters> = {
 };
 
 const DEFAULT_SWOTS_FILTERS: Required<AdminSwotFilters> = {
+  page: 1,
+  limit: 10,
+  search: '',
+};
+
+const DEFAULT_CONTENTS_FILTERS: Required<AdminContentsFilters> = {
   page: 1,
   limit: 10,
   search: '',
@@ -407,6 +417,102 @@ export function useAdminStrategy() {
     error,
     isLoadingStrategy,
     loadStrategy,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminContents(initialFilters?: AdminContentsFilters) {
+  const initialResolvedFilters: Required<AdminContentsFilters> = {
+    ...DEFAULT_CONTENTS_FILTERS,
+    ...initialFilters,
+    page: initialFilters?.page ?? DEFAULT_CONTENTS_FILTERS.page,
+    limit: initialFilters?.limit ?? DEFAULT_CONTENTS_FILTERS.limit,
+    search: initialFilters?.search ?? DEFAULT_CONTENTS_FILTERS.search,
+  };
+
+  const [filters, setFiltersState] = useState<Required<AdminContentsFilters>>(initialResolvedFilters);
+  const filtersRef = useRef<Required<AdminContentsFilters>>(initialResolvedFilters);
+  const [contentsResult, setContentsResult] = useState<AdminContentsResult | null>(null);
+  const [isLoadingContents, setIsLoadingContents] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const setFilters = useCallback((nextFilters: Required<AdminContentsFilters>) => {
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+  }, []);
+
+  const loadContents = useCallback(async (overrides?: Partial<AdminContentsFilters>) => {
+    const currentFilters = filtersRef.current;
+    const nextFilters: Required<AdminContentsFilters> = {
+      ...currentFilters,
+      ...overrides,
+      page: overrides?.page ?? currentFilters.page,
+      limit: overrides?.limit ?? currentFilters.limit,
+      search: overrides?.search ?? currentFilters.search,
+    };
+
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+    setIsLoadingContents(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getContents(nextFilters);
+      setContentsResult(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement des contenus');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingContents(false);
+    }
+  }, []);
+
+  const campaigns = useMemo<AdminContent[]>(
+    () => contentsResult?.campaigns ?? [],
+    [contentsResult],
+  );
+
+  return {
+    filters,
+    setFilters,
+    campaigns,
+    contentsResult,
+    error,
+    isLoadingContents,
+    loadContents,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminContent() {
+  const [content, setContent] = useState<AdminContentDetail | null>(null);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadContent = useCallback(async (contentId: string) => {
+    setIsLoadingContent(true);
+    setError(null);
+
+    try {
+      const data = await AdminService.getContentById(contentId);
+      setContent(data);
+      return data;
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Erreur de chargement du contenu');
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoadingContent(false);
+    }
+  }, []);
+
+  return {
+    content,
+    error,
+    isLoadingContent,
+    loadContent,
     clearError: () => setError(null),
   };
 }

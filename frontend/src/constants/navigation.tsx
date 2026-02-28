@@ -118,6 +118,7 @@ export const adminNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/admin/dashboard", icon: dashboardIcon },
   { name: "Utilisateurs", href: "/admin/users", icon: userIcon },
   { name: "Strategies", href: "/admin/strategies", icon: strategiesIcon },
+  { name: "Content", href: "/admin/content", icon: contentIcon },
   { name: "SWOT Analytics", href: "/admin/swot-analytics", icon: analyticsIcon },
   { name: "Analytics", href: "/admin/analytics", icon: analyticsIcon },
   { name: "AI monitoring", href: "/admin/ai-monitoring", icon: monitoringIcon },

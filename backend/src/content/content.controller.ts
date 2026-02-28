@@ -11,10 +11,13 @@ import {
   Query,
   Req,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
+  AdminContentQueryDto,
   CreateContentCampaignDto,
   GenerateContentDto,
   RegeneratePlatformDto,
@@ -22,6 +25,7 @@ import {
   UpdateCampaignDto,
 } from './dto';
 import { ContentService } from './content.service';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -42,7 +46,10 @@ export class ContentController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const campaign = await this.contentService.createCampaign(userId, createCampaignDto);
+    const campaign = await this.contentService.createCampaign(
+      userId,
+      createCampaignDto,
+    );
 
     return {
       success: true,
@@ -83,7 +90,11 @@ export class ContentController {
     const validatedPage = Math.max(1, pageNumber);
     const validatedLimit = Math.min(50, Math.max(1, limitNumber));
 
-    const result = await this.contentService.findAll(userId, validatedPage, validatedLimit);
+    const result = await this.contentService.findAll(
+      userId,
+      validatedPage,
+      validatedLimit,
+    );
 
     return {
       success: true,
@@ -96,6 +107,47 @@ export class ContentController {
           pages: Math.ceil(result.total / validatedLimit),
         },
       },
+    };
+  }
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async findAllForAdmin(@Query() query: AdminContentQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const search = query.search;
+
+    const result = await this.contentService.findAllForAdmin(
+      page,
+      limit,
+      search,
+    );
+
+    return {
+      success: true,
+      data: {
+        campaigns: result.campaigns,
+        pagination: {
+          page,
+          limit,
+          total: result.total,
+          pages: Math.ceil(result.total / limit),
+        },
+      },
+    };
+  }
+
+  @Get('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async findOneForAdmin(@Param('id') campaignId: string) {
+    const campaign = await this.contentService.findOneForAdmin(campaignId);
+
+    return {
+      success: true,
+      data: campaign,
     };
   }
 

@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AiModule } from '../ai/ai.module';
-import { Strategy, StrategySchema } from '../strategies/schemas/strategy.schema';
+import {
+  Strategy,
+  StrategySchema,
+} from '../strategies/schemas/strategy.schema';
+import { User, UserSchema } from '../users/entities/user.entity';
 import { ContentController } from './content.controller';
 import { ContentService } from './content.service';
 import {
@@ -14,6 +18,7 @@ import {
     MongooseModule.forFeature([
       { name: ContentCampaign.name, schema: ContentCampaignSchema },
       { name: Strategy.name, schema: StrategySchema },
+      { name: User.name, schema: UserSchema },
     ]),
     AiModule,
   ],

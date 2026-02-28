@@ -14,7 +14,11 @@ import {
   buildRegeneratePlatformPrompt,
   buildRegenerateSinglePostPrompt,
 } from '../ai/prompts/content.prompts';
-import { Strategy, StrategyDocument } from '../strategies/schemas/strategy.schema';
+import {
+  Strategy,
+  StrategyDocument,
+} from '../strategies/schemas/strategy.schema';
+import { User, UserDocument } from '../users/entities/user.entity';
 import {
   ContentCampaignInputsDto,
   CreateContentCampaignDto,
@@ -49,6 +53,8 @@ export class ContentService {
     private readonly contentCampaignModel: Model<ContentCampaignDocument>,
     @InjectModel(Strategy.name)
     private readonly strategyModel: Model<StrategyDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly aiService: AiService,
   ) {}
 
@@ -56,9 +62,15 @@ export class ContentService {
     userId: string,
     dto: CreateContentCampaignDto,
   ): Promise<ContentCampaignDocument> {
-    const strategy = await this.getOwnedStrategyByIdOrThrow(userId, dto.strategyId);
+    const strategy = await this.getOwnedStrategyByIdOrThrow(
+      userId,
+      dto.strategyId,
+    );
     const normalizedInputs = this.normalizeInputs(dto.inputs, dto.mode);
-    const platforms = this.resolvePlatformsForCreation(strategy, normalizedInputs);
+    const platforms = this.resolvePlatformsForCreation(
+      strategy,
+      normalizedInputs,
+    );
 
     if (platforms.length === 0) {
       throw new BadRequestException(
@@ -84,7 +96,9 @@ export class ContentService {
     });
 
     const savedCampaign = await campaignDocument.save();
-    this.logger.log(`Campaign ${savedCampaign._id.toString()} created for user ${userId}`);
+    this.logger.log(
+      `Campaign ${savedCampaign._id.toString()} created for user ${userId}`,
+    );
 
     return savedCampaign;
   }
@@ -95,8 +109,14 @@ export class ContentService {
     instruction?: string,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
-    const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
-    const generationPlatforms = this.resolvePlatformsForGeneration(strategy, campaign);
+    const strategy = await this.getOwnedStrategyByIdOrThrow(
+      userId,
+      campaign.strategyId.toString(),
+    );
+    const generationPlatforms = this.resolvePlatformsForGeneration(
+      strategy,
+      campaign,
+    );
 
     if (generationPlatforms.length === 0) {
       throw new BadRequestException(
@@ -115,16 +135,20 @@ export class ContentService {
       );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const generatedPosts = this.normalizeGeneratedPosts(aiResponse, generationPlatforms, {
-        requireAllPlatforms: true,
-      });
+      const generatedPosts = this.normalizeGeneratedPosts(
+        aiResponse,
+        generationPlatforms,
+        {
+          requireAllPlatforms: true,
+        },
+      );
       const campaignSummary = this.normalizeCampaignSummary(
         aiResponse,
         (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
       );
 
       campaign.platforms = generationPlatforms;
-      campaign.generatedPosts = generatedPosts as GeneratedPost[];
+      campaign.generatedPosts = generatedPosts;
       campaign.campaignSummary = campaignSummary;
       const savedCampaign = await campaign.save();
 
@@ -138,7 +162,10 @@ export class ContentService {
         `Failed to generate posts for campaign ${campaignId}: ${error.message}`,
         error.stack,
       );
-      throw this.wrapUnexpectedError(error, 'Erreur lors de la generation du contenu');
+      throw this.wrapUnexpectedError(
+        error,
+        'Erreur lors de la generation du contenu',
+      );
     }
   }
 
@@ -165,8 +192,57 @@ export class ContentService {
     return { campaigns, total };
   }
 
-  async findOne(userId: string, campaignId: string): Promise<ContentCampaignDocument> {
+  async findOne(
+    userId: string,
+    campaignId: string,
+  ): Promise<ContentCampaignDocument> {
     return this.getOwnedCampaignOrThrow(userId, campaignId);
+  }
+
+  async findAllForAdmin(
+    page = 1,
+    limit = 10,
+    search?: string,
+  ): Promise<{ campaigns: ContentCampaignDocument[]; total: number }> {
+    const sanitizedPage = Math.max(1, Number(page) || 1);
+    const sanitizedLimit = Math.min(100, Math.max(1, Number(limit) || 10));
+    const skip = (sanitizedPage - 1) * sanitizedLimit;
+    const filters = await this.buildAdminSearchFilter(search);
+
+    const [campaigns, total] = await Promise.all([
+      this.contentCampaignModel
+        .find(filters)
+        .select(
+          'userId strategyId name mode objective platforms campaignSummary generatedPosts createdAt updatedAt',
+        )
+        .populate('userId', 'fullName email companyName role')
+        .populate(
+          'strategyId',
+          'businessInfo.businessName businessInfo.industry',
+        )
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(sanitizedLimit)
+        .exec(),
+      this.contentCampaignModel.countDocuments(filters).exec(),
+    ]);
+
+    return { campaigns, total };
+  }
+
+  async findOneForAdmin(campaignId: string): Promise<ContentCampaignDocument> {
+    const campaignObjectId = this.toObjectId(campaignId, 'campaignId');
+    const campaign = await this.contentCampaignModel
+      .findById(campaignObjectId)
+      .populate('userId', 'fullName email companyName role phone')
+      .populate('strategyId', 'businessInfo.businessName businessInfo.industry')
+      .exec();
+
+    if (!campaign) {
+      throw new NotFoundException('Campagne introuvable');
+    }
+
+    return campaign;
   }
 
   async updateCampaign(
@@ -179,15 +255,23 @@ export class ContentService {
     if (dto.name !== undefined) {
       const name = dto.name.trim();
       if (!name) {
-        throw new BadRequestException('Le nom de la campagne ne peut pas etre vide');
+        throw new BadRequestException(
+          'Le nom de la campagne ne peut pas etre vide',
+        );
       }
       campaign.name = name;
     }
 
     if (dto.inputs !== undefined) {
       campaign.inputs = this.normalizeInputs(dto.inputs, campaign.mode);
-      const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
-      campaign.platforms = this.resolvePlatformsForGeneration(strategy, campaign);
+      const strategy = await this.getOwnedStrategyByIdOrThrow(
+        userId,
+        campaign.strategyId.toString(),
+      );
+      campaign.platforms = this.resolvePlatformsForGeneration(
+        strategy,
+        campaign,
+      );
     }
 
     const savedCampaign = await campaign.save();
@@ -202,8 +286,14 @@ export class ContentService {
     instruction?: string,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
-    const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
-    const generationPlatforms = this.resolvePlatformsForGeneration(strategy, campaign);
+    const strategy = await this.getOwnedStrategyByIdOrThrow(
+      userId,
+      campaign.strategyId.toString(),
+    );
+    const generationPlatforms = this.resolvePlatformsForGeneration(
+      strategy,
+      campaign,
+    );
 
     if (generationPlatforms.length === 0) {
       throw new BadRequestException(
@@ -211,7 +301,10 @@ export class ContentService {
       );
     }
 
-    const resolvedPlatform = this.resolveAllowedPlatform(platform, generationPlatforms);
+    const resolvedPlatform = this.resolveAllowedPlatform(
+      platform,
+      generationPlatforms,
+    );
 
     if (!resolvedPlatform) {
       throw new BadRequestException(
@@ -235,19 +328,24 @@ export class ContentService {
       );
 
       const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const regeneratedPlatformPosts = this.normalizeGeneratedPosts(aiResponse, generationPlatforms, {
-        forcedPlatform: resolvedPlatform,
-        requireAllPlatforms: true,
-      });
+      const regeneratedPlatformPosts = this.normalizeGeneratedPosts(
+        aiResponse,
+        generationPlatforms,
+        {
+          forcedPlatform: resolvedPlatform,
+          requireAllPlatforms: true,
+        },
+      );
 
       const untouchedPosts = campaign.generatedPosts.filter(
-        (post) => post.platform.toLowerCase() !== resolvedPlatform.toLowerCase(),
+        (post) =>
+          post.platform.toLowerCase() !== resolvedPlatform.toLowerCase(),
       );
 
       campaign.platforms = generationPlatforms;
       campaign.generatedPosts = [
-        ...(untouchedPosts as GeneratedPost[]),
-        ...(regeneratedPlatformPosts as GeneratedPost[]),
+        ...untouchedPosts,
+        ...regeneratedPlatformPosts,
       ];
 
       const savedCampaign = await campaign.save();
@@ -261,7 +359,10 @@ export class ContentService {
         `Failed to regenerate platform ${resolvedPlatform} for campaign ${campaignId}: ${error.message}`,
         error.stack,
       );
-      throw this.wrapUnexpectedError(error, 'Erreur lors de la regeneration de la plateforme');
+      throw this.wrapUnexpectedError(
+        error,
+        'Erreur lors de la regeneration de la plateforme',
+      );
     }
   }
 
@@ -272,18 +373,29 @@ export class ContentService {
     instruction?: string,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
-    const strategy = await this.getOwnedStrategyByIdOrThrow(userId, campaign.strategyId.toString());
+    const strategy = await this.getOwnedStrategyByIdOrThrow(
+      userId,
+      campaign.strategyId.toString(),
+    );
 
     if (!campaign.generatedPosts?.length) {
-      throw new BadRequestException('Aucun post disponible a regenerer pour cette campagne');
+      throw new BadRequestException(
+        'Aucun post disponible a regenerer pour cette campagne',
+      );
     }
 
     const targetIndex = this.resolvePostIndex(campaign, selector);
     const existingPost = campaign.generatedPosts[targetIndex];
-    const generationPlatforms = this.resolvePlatformsForGeneration(strategy, campaign);
+    const generationPlatforms = this.resolvePlatformsForGeneration(
+      strategy,
+      campaign,
+    );
     const forcedPlatform =
-      this.resolveAllowedPlatform(existingPost.platform, generationPlatforms) ?? existingPost.platform;
-    const singlePostPlatforms = this.mergeUniquePlatforms(generationPlatforms, [forcedPlatform]);
+      this.resolveAllowedPlatform(existingPost.platform, generationPlatforms) ??
+      existingPost.platform;
+    const singlePostPlatforms = this.mergeUniquePlatforms(generationPlatforms, [
+      forcedPlatform,
+    ]);
 
     try {
       const prompt = buildRegenerateSinglePostPrompt(
@@ -303,7 +415,9 @@ export class ContentService {
         forcedPlatform,
       );
 
-      const previousPostId = (existingPost as unknown as { _id?: Types.ObjectId })._id;
+      const previousPostId = (
+        existingPost as unknown as { _id?: Types.ObjectId }
+      )._id;
       const replacement = {
         ...(regeneratedPost as unknown as Record<string, unknown>),
       };
@@ -312,12 +426,18 @@ export class ContentService {
         replacement._id = previousPostId;
       }
 
-      (campaign.generatedPosts as unknown as Array<Record<string, unknown>>)[targetIndex] =
-        replacement;
-      campaign.platforms = this.mergeUniquePlatforms(campaign.platforms, generationPlatforms);
+      (campaign.generatedPosts as unknown as Array<Record<string, unknown>>)[
+        targetIndex
+      ] = replacement;
+      campaign.platforms = this.mergeUniquePlatforms(
+        campaign.platforms,
+        generationPlatforms,
+      );
 
       const savedCampaign = await campaign.save();
-      this.logger.log(`Regenerated post #${targetIndex} for campaign ${campaignId}`);
+      this.logger.log(
+        `Regenerated post #${targetIndex} for campaign ${campaignId}`,
+      );
 
       return savedCampaign;
     } catch (error) {
@@ -325,7 +445,10 @@ export class ContentService {
         `Failed to regenerate one post for campaign ${campaignId}: ${error.message}`,
         error.stack,
       );
-      throw this.wrapUnexpectedError(error, 'Erreur lors de la regeneration du post');
+      throw this.wrapUnexpectedError(
+        error,
+        'Erreur lors de la regeneration du post',
+      );
     }
   }
 
@@ -340,14 +463,18 @@ export class ContentService {
     campaignId: string,
   ): Promise<ContentCampaignDocument> {
     const campaignObjectId = this.toObjectId(campaignId, 'campaignId');
-    const campaign = await this.contentCampaignModel.findById(campaignObjectId).exec();
+    const campaign = await this.contentCampaignModel
+      .findById(campaignObjectId)
+      .exec();
 
     if (!campaign) {
       throw new NotFoundException('Campagne introuvable');
     }
 
     if (campaign.userId.toString() !== userId) {
-      throw new ForbiddenException('Acces refuse: cette campagne ne vous appartient pas');
+      throw new ForbiddenException(
+        'Acces refuse: cette campagne ne vous appartient pas',
+      );
     }
 
     return campaign;
@@ -365,7 +492,9 @@ export class ContentService {
     }
 
     if (strategy.userId.toString() !== userId) {
-      throw new ForbiddenException('Acces refuse: cette strategie ne vous appartient pas');
+      throw new ForbiddenException(
+        'Acces refuse: cette strategie ne vous appartient pas',
+      );
     }
 
     return strategy;
@@ -473,7 +602,10 @@ export class ContentService {
       .join(' ');
   }
 
-  private resolveAllowedPlatform(platform: string, allowedPlatforms: string[]): string | null {
+  private resolveAllowedPlatform(
+    platform: string,
+    allowedPlatforms: string[],
+  ): string | null {
     const normalizedRequested = this.normalizePlatform(platform);
     if (!normalizedRequested) {
       return null;
@@ -488,7 +620,9 @@ export class ContentService {
   }
 
   private resolveObjective(strategy: StrategyDocument): ContentObjective {
-    const objective = String(strategy.businessInfo?.mainObjective ?? '').toLowerCase();
+    const objective = String(
+      strategy.businessInfo?.mainObjective ?? '',
+    ).toLowerCase();
 
     if (objective === ContentObjective.LEADS) {
       return ContentObjective.LEADS;
@@ -516,7 +650,8 @@ export class ContentService {
       return normalizedName;
     }
 
-    const businessName = strategy.businessInfo?.businessName?.trim() || 'Business';
+    const businessName =
+      strategy.businessInfo?.businessName?.trim() || 'Business';
     const modeLabel = mode === ContentMode.ADS ? 'Ads' : 'Content Marketing';
     return `${modeLabel} - ${businessName}`;
   }
@@ -536,11 +671,15 @@ export class ContentService {
       targetAudience: this.normalizeOptionalString(inputsObject.targetAudience),
       tone: this.normalizeOptionalString(inputsObject.tone),
       callToAction: this.normalizeOptionalString(inputsObject.callToAction),
-      platforms: this.normalizePlatformsArray(inputsObject.platforms, 'platforms'),
+      platforms: this.normalizePlatformsArray(
+        inputsObject.platforms,
+        'platforms',
+      ),
     };
 
     const hasAdsFields =
-      inputsObject.promoDetails !== undefined || inputsObject.budget !== undefined;
+      inputsObject.promoDetails !== undefined ||
+      inputsObject.budget !== undefined;
     const hasContentMarketingFields =
       inputsObject.contentPillars !== undefined ||
       inputsObject.frequencyPerWeek !== undefined ||
@@ -560,8 +699,13 @@ export class ContentService {
     }
 
     if (mode === ContentMode.ADS) {
-      normalized.promoDetails = this.normalizeOptionalString(inputsObject.promoDetails);
-      normalized.budget = this.normalizeOptionalNumber(inputsObject.budget, 'budget');
+      normalized.promoDetails = this.normalizeOptionalString(
+        inputsObject.promoDetails,
+      );
+      normalized.budget = this.normalizeOptionalNumber(
+        inputsObject.budget,
+        'budget',
+      );
     }
 
     if (mode === ContentMode.CONTENT_MARKETING) {
@@ -576,12 +720,20 @@ export class ContentService {
         1,
         21,
       );
-      normalized.startDate = this.normalizeOptionalDate(inputsObject.startDate, 'startDate');
-      normalized.endDate = this.normalizeOptionalDate(inputsObject.endDate, 'endDate');
+      normalized.startDate = this.normalizeOptionalDate(
+        inputsObject.startDate,
+        'startDate',
+      );
+      normalized.endDate = this.normalizeOptionalDate(
+        inputsObject.endDate,
+        'endDate',
+      );
 
       if (normalized.startDate && normalized.endDate) {
         if (normalized.endDate.getTime() < normalized.startDate.getTime()) {
-          throw new BadRequestException('endDate doit etre posterieure a startDate');
+          throw new BadRequestException(
+            'endDate doit etre posterieure a startDate',
+          );
         }
       }
     }
@@ -602,14 +754,19 @@ export class ContentService {
     return normalized.length > 0 ? normalized : undefined;
   }
 
-  private normalizeOptionalNumber(value: unknown, fieldName: string): number | undefined {
+  private normalizeOptionalNumber(
+    value: unknown,
+    fieldName: string,
+  ): number | undefined {
     if (value === undefined || value === null) {
       return undefined;
     }
 
     const parsedNumber = Number(value);
     if (!Number.isFinite(parsedNumber) || parsedNumber < 0) {
-      throw new BadRequestException(`${fieldName} invalide: nombre positif attendu`);
+      throw new BadRequestException(
+        `${fieldName} invalide: nombre positif attendu`,
+      );
     }
 
     return parsedNumber;
@@ -635,7 +792,10 @@ export class ContentService {
     return parsed;
   }
 
-  private normalizeOptionalDate(value: unknown, fieldName: string): Date | undefined {
+  private normalizeOptionalDate(
+    value: unknown,
+    fieldName: string,
+  ): Date | undefined {
     if (value === undefined || value === null) {
       return undefined;
     }
@@ -657,7 +817,9 @@ export class ContentService {
     }
 
     if (!Array.isArray(value)) {
-      throw new BadRequestException(`Champ "${fieldName}" invalide: tableau attendu`);
+      throw new BadRequestException(
+        `Champ "${fieldName}" invalide: tableau attendu`,
+      );
     }
 
     return this.normalizePlatforms(value);
@@ -673,7 +835,9 @@ export class ContentService {
     }
 
     if (!Array.isArray(value)) {
-      throw new BadRequestException(`Champ "${fieldName}" invalide: tableau attendu`);
+      throw new BadRequestException(
+        `Champ "${fieldName}" invalide: tableau attendu`,
+      );
     }
 
     if (value.length > maxItems) {
@@ -699,7 +863,12 @@ export class ContentService {
   ): GeneratedPost[] {
     const generatedPosts = this.extractGeneratedPostsArray(payload);
     const normalizedPosts = generatedPosts.map((post, index) =>
-      this.normalizeGeneratedPost(post, index, allowedPlatforms, options?.forcedPlatform),
+      this.normalizeGeneratedPost(
+        post,
+        index,
+        allowedPlatforms,
+        options?.forcedPlatform,
+      ),
     );
 
     if (normalizedPosts.length === 0) {
@@ -736,7 +905,12 @@ export class ContentService {
       (payload as { post?: unknown; generatedPost?: unknown })?.generatedPost ??
       payload;
 
-    return this.normalizeGeneratedPost(sourcePayload, 0, allowedPlatforms, forcedPlatform);
+    return this.normalizeGeneratedPost(
+      sourcePayload,
+      0,
+      allowedPlatforms,
+      forcedPlatform,
+    );
   }
 
   private normalizeCampaignSummary(
@@ -744,10 +918,14 @@ export class ContentService {
     inputs: Record<string, unknown> = {},
   ): CampaignSummary {
     const summaryPayload = this.extractCampaignSummaryPayload(payload);
-    const aiPillars = this.normalizeLooseStringArray(summaryPayload.contentPillars);
+    const aiPillars = this.normalizeLooseStringArray(
+      summaryPayload.contentPillars,
+    );
     const inputPillars = this.normalizeLooseStringArray(inputs.contentPillars);
 
-    const contentPillars = (aiPillars.length > 0 ? aiPillars : inputPillars).slice(0, 5);
+    const contentPillars = (
+      aiPillars.length > 0 ? aiPillars : inputPillars
+    ).slice(0, 5);
 
     const postingPlan =
       summaryPayload.postingPlan &&
@@ -773,7 +951,9 @@ export class ContentService {
     };
   }
 
-  private extractCampaignSummaryPayload(payload: unknown): Record<string, unknown> {
+  private extractCampaignSummaryPayload(
+    payload: unknown,
+  ): Record<string, unknown> {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
       return {};
     }
@@ -792,7 +972,9 @@ export class ContentService {
     }
 
     if (!payload || typeof payload !== 'object') {
-      throw new BadRequestException('Format IA invalide: tableau de posts attendu');
+      throw new BadRequestException(
+        'Format IA invalide: tableau de posts attendu',
+      );
     }
 
     const objectPayload = payload as {
@@ -808,7 +990,9 @@ export class ContentService {
       return objectPayload.posts;
     }
 
-    throw new BadRequestException('Format IA invalide: generatedPosts/posts manquant');
+    throw new BadRequestException(
+      'Format IA invalide: generatedPosts/posts manquant',
+    );
   }
 
   private normalizeGeneratedPost(
@@ -817,7 +1001,11 @@ export class ContentService {
     allowedPlatforms: string[],
     forcedPlatform?: string,
   ): GeneratedPost {
-    if (!postPayload || typeof postPayload !== 'object' || Array.isArray(postPayload)) {
+    if (
+      !postPayload ||
+      typeof postPayload !== 'object' ||
+      Array.isArray(postPayload)
+    ) {
       throw new BadRequestException(
         `Format IA invalide: generatedPosts[${index}] doit etre un objet`,
       );
@@ -825,9 +1013,12 @@ export class ContentService {
 
     const post = postPayload as Record<string, unknown>;
 
-    const rawPlatform = forcedPlatform ?? this.normalizeOptionalString(post.platform);
+    const rawPlatform =
+      forcedPlatform ?? this.normalizeOptionalString(post.platform);
     if (!rawPlatform) {
-      throw new BadRequestException(`generatedPosts[${index}].platform est obligatoire`);
+      throw new BadRequestException(
+        `generatedPosts[${index}].platform est obligatoire`,
+      );
     }
 
     const platform = this.resolveAllowedPlatform(rawPlatform, allowedPlatforms);
@@ -838,7 +1029,8 @@ export class ContentService {
     }
 
     const type =
-      this.normalizeOptionalString(post.type) ?? this.defaultTypeForPlatform(platform);
+      this.normalizeOptionalString(post.type) ??
+      this.defaultTypeForPlatform(platform);
     const caption = this.extractRequiredString(
       post.caption,
       `generatedPosts[${index}].caption`,
@@ -898,7 +1090,9 @@ export class ContentService {
     }
 
     if (!date || !time) {
-      throw new BadRequestException('schedule invalide: date et time sont requis');
+      throw new BadRequestException(
+        'schedule invalide: date et time sont requis',
+      );
     }
 
     return { date, time };
@@ -927,7 +1121,10 @@ export class ContentService {
     return 'post';
   }
 
-  private resolvePostIndex(campaign: ContentCampaignDocument, selector: PostSelector): number {
+  private resolvePostIndex(
+    campaign: ContentCampaignDocument,
+    selector: PostSelector,
+  ): number {
     if (!selector?.postId && selector?.index === undefined) {
       throw new BadRequestException('postId ou index est requis');
     }
@@ -939,7 +1136,8 @@ export class ContentService {
 
       const postIndex = campaign.generatedPosts.findIndex(
         (post) =>
-          (post as unknown as { _id?: Types.ObjectId })._id?.toString() === selector.postId,
+          (post as unknown as { _id?: Types.ObjectId })._id?.toString() ===
+          selector.postId,
       );
 
       if (postIndex < 0) {
@@ -950,7 +1148,11 @@ export class ContentService {
     }
 
     const index = selector.index as number;
-    if (!Number.isInteger(index) || index < 0 || index >= campaign.generatedPosts.length) {
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= campaign.generatedPosts.length
+    ) {
       throw new BadRequestException(
         `index invalide: valeur attendue entre 0 et ${campaign.generatedPosts.length - 1}`,
       );
@@ -981,7 +1183,11 @@ export class ContentService {
     return normalizedValues;
   }
 
-  private toInteger(value: unknown, min: number, max: number): number | undefined {
+  private toInteger(
+    value: unknown,
+    min: number,
+    max: number,
+  ): number | undefined {
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
       return undefined;
@@ -1001,7 +1207,10 @@ export class ContentService {
     const startDate = new Date(String(inputs?.startDate ?? ''));
     const endDate = new Date(String(inputs?.endDate ?? ''));
 
-    if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime())) {
+    if (
+      !Number.isNaN(startDate.getTime()) &&
+      !Number.isNaN(endDate.getTime())
+    ) {
       const diffMs = endDate.getTime() - startDate.getTime();
       if (diffMs >= 0) {
         return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 7)));
@@ -1009,6 +1218,66 @@ export class ContentService {
     }
 
     return 4;
+  }
+
+  private async buildAdminSearchFilter(
+    search?: string,
+  ): Promise<Record<string, unknown>> {
+    const normalizedSearch = search?.trim();
+    if (!normalizedSearch) {
+      return {};
+    }
+
+    const safeSearch = this.escapeRegex(normalizedSearch);
+    const regex = new RegExp(safeSearch, 'i');
+
+    const [matchedUsers, matchedStrategies] = await Promise.all([
+      this.userModel
+        .find({
+          $or: [
+            { fullName: { $regex: regex } },
+            { email: { $regex: regex } },
+            { companyName: { $regex: regex } },
+          ],
+        })
+        .select('_id')
+        .lean()
+        .exec(),
+      this.strategyModel
+        .find({
+          $or: [
+            { 'businessInfo.businessName': { $regex: regex } },
+            { 'businessInfo.industry': { $regex: regex } },
+            { 'businessInfo.productOrService': { $regex: regex } },
+          ],
+        })
+        .select('_id')
+        .lean()
+        .exec(),
+    ]);
+
+    const matchedUserIds = matchedUsers.map((user) => user._id);
+    const matchedStrategyIds = matchedStrategies.map(
+      (strategy) => strategy._id,
+    );
+    const orFilters: Record<string, unknown>[] = [
+      { name: { $regex: regex } },
+      { platforms: { $regex: regex } },
+    ];
+
+    if (matchedUserIds.length > 0) {
+      orFilters.push({ userId: { $in: matchedUserIds } });
+    }
+
+    if (matchedStrategyIds.length > 0) {
+      orFilters.push({ strategyId: { $in: matchedStrategyIds } });
+    }
+
+    return { $or: orFilters };
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private wrapUnexpectedError(error: unknown, message: string): Error {
