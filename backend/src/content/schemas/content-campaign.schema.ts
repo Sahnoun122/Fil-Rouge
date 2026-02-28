@@ -74,6 +74,9 @@ export class GeneratedPost {
   @Prop({ required: true })
   caption: string;
 
+  @Prop()
+  description?: string;
+
   @Prop({ type: [String], default: [] })
   hashtags?: string[];
 
@@ -153,7 +156,8 @@ export class ContentCampaign {
   updatedAt?: Date;
 }
 
-export const ContentCampaignSchema = SchemaFactory.createForClass(ContentCampaign);
+export const ContentCampaignSchema =
+  SchemaFactory.createForClass(ContentCampaign);
 
 ContentCampaignSchema.index({ userId: 1, createdAt: -1 });
 ContentCampaignSchema.index({ strategyId: 1 });

@@ -7,7 +7,7 @@ function toPrettyJson(value: unknown): string {
 }
 
 function normalizeMode(mode: ContentMode | string): ContentMode {
-  return String(mode).toUpperCase() === ContentMode.ADS
+  return String(mode).toUpperCase() === 'ADS'
     ? ContentMode.ADS
     : ContentMode.CONTENT_MARKETING;
 }
@@ -26,7 +26,10 @@ function getPlatformStyleRule(platform: string): string {
   const lower = platform.toLowerCase();
 
   if (lower === 'tiktok') {
-    return `${platform}: tres court, hook fort, ton dynamique.`;
+    return `${platform}: tres court, hook fort, ton dynamique, description courte orientee contexte video.`;
+  }
+  if (lower === 'snapchat') {
+    return `${platform}: ton direct, format story, message tres rapide a consommer, description courte et claire.`;
   }
   if (lower === 'instagram') {
     return `${platform}: caption avec hashtags, ton brand.`;
@@ -36,6 +39,18 @@ function getPlatformStyleRule(platform: string): string {
   }
   if (lower === 'linkedin') {
     return `${platform}: ton professionnel, valeur et conseils.`;
+  }
+  if (lower === 'youtube') {
+    return `${platform}: hook video, description utile pour contexte et recherche, CTA explicite.`;
+  }
+  if (lower === 'x') {
+    return `${platform}: message court, impact immediat, angle conversationnel.`;
+  }
+  if (lower === 'pinterest') {
+    return `${platform}: ton inspirationnel, description SEO courte, promesse visuelle claire.`;
+  }
+  if (lower === 'threads') {
+    return `${platform}: ton conversationnel, humain, spontané et engageant.`;
   }
 
   return `${platform}: adapte le style natif de la plateforme, reste concret et actionnable.`;
@@ -49,7 +64,9 @@ function isHashtagCompatible(platform: string): boolean {
     lower === 'facebook' ||
     lower === 'linkedin' ||
     lower === 'x' ||
-    lower === 'youtube'
+    lower === 'youtube' ||
+    lower === 'pinterest' ||
+    lower === 'threads'
   );
 }
 
@@ -75,8 +92,12 @@ function resolveFrequencyPerWeek(inputs: JsonObject): number {
 }
 
 function resolveDurationWeeks(inputs: JsonObject): number {
-  const startDate = new Date(String(inputs?.startDate ?? ''));
-  const endDate = new Date(String(inputs?.endDate ?? ''));
+  const startDateValue =
+    typeof inputs?.startDate === 'string' ? inputs.startDate : '';
+  const endDateValue =
+    typeof inputs?.endDate === 'string' ? inputs.endDate : '';
+  const startDate = new Date(startDateValue);
+  const endDate = new Date(endDateValue);
 
   if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime())) {
     const diffMs = endDate.getTime() - startDate.getTime();
@@ -92,8 +113,9 @@ function buildModeRules(mode: ContentMode): string {
   if (mode === ContentMode.ADS) {
     return `Regles mode ADS:
 - Pour chaque plateforme, genere au minimum 2 posts.
-- Chaque post doit inclure: adCopyVariantA, adCopyVariantB, adCopyVariantC, hook (court), caption, cta (clair), suggestedVisual.
+- Chaque post doit inclure: adCopyVariantA, adCopyVariantB, adCopyVariantC, hook (court), caption, description, cta (clair), suggestedVisual.
 - hashtags: 5 a 10 si la plateforme est compatible, sinon [].
+- Pour TikTok, Snapchat et YouTube, la description doit etre pertinente et distincte du caption.
 - Les ad copies doivent etre distinctes (A/B/C) et orientees conversion.`;
   }
 
@@ -102,7 +124,8 @@ function buildModeRules(mode: ContentMode): string {
 - Definis campaignSummary.postingPlan.frequencyPerWeek selon inputs.frequencyPerWeek (sinon valeur par defaut).
 - Definis campaignSummary.postingPlan.durationWeeks selon inputs (sinon valeur par defaut).
 - Pour chaque plateforme, genere au minimum 2 posts adaptes au format natif.
-- Chaque post doit inclure: format/type, caption, hook, cta (soft), suggestedVisual.
+- Chaque post doit inclure: format/type, caption, description, hook, cta (soft), suggestedVisual.
+- Pour TikTok, Snapchat et YouTube, la description doit etre pertinente et distincte du caption.
 - hashtags: 5 a 10 si la plateforme est compatible, sinon [].`;
 }
 
@@ -167,6 +190,7 @@ Format de sortie strict:
       "platform": "Instagram",
       "type": "reel",
       "caption": "Texte principal",
+      "description": "Description utile du post",
       "hook": "Hook court",
       "cta": "CTA",
       "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
@@ -231,11 +255,13 @@ ${
   normalizedMode === ContentMode.ADS
     ? `Regles ADS:
 - Genere au minimum 2 posts.
-- Chaque post inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, cta clair, suggestedVisual.
+- Chaque post inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, description, cta clair, suggestedVisual.
+- Pour TikTok, Snapchat et YouTube, description distincte et utile.
 - hashtags: 5 a 10 si compatible, sinon [].`
     : `Regles CONTENT_MARKETING:
 - Genere au minimum 2 posts adaptes a ${platform}.
-- Chaque post inclut type, caption, hook, cta soft, suggestedVisual.
+- Chaque post inclut type, caption, description, hook, cta soft, suggestedVisual.
+- Pour TikTok, Snapchat et YouTube, description distincte et utile.
 - hashtags: 5 a 10 si compatible, sinon [].`
 }
 
@@ -246,6 +272,7 @@ Format de sortie strict:
       "platform": "${platform}",
       "type": "post",
       "caption": "Texte principal",
+      "description": "Description utile du post",
       "hook": "Hook court",
       "cta": "CTA",
       "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
@@ -309,10 +336,12 @@ Regles globales:
 ${
   normalizedMode === ContentMode.ADS
     ? `Regles ADS:
-- Le post regenere inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, cta clair, suggestedVisual.
+- Le post regenere inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, description, cta clair, suggestedVisual.
+- Pour TikTok, Snapchat et YouTube, description distincte et utile.
 - hashtags: 5 a 10 si compatible, sinon [].`
     : `Regles CONTENT_MARKETING:
-- Le post regenere inclut type, caption, hook, cta soft, suggestedVisual.
+- Le post regenere inclut type, caption, description, hook, cta soft, suggestedVisual.
+- Pour TikTok, Snapchat et YouTube, description distincte et utile.
 - hashtags: 5 a 10 si compatible, sinon [].`
 }
 
@@ -321,6 +350,7 @@ Format de sortie strict (objet post uniquement):
   "platform": "${platform}",
   "type": "post",
   "caption": "Texte principal",
+  "description": "Description utile du post",
   "hook": "Hook court",
   "cta": "CTA",
   "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],

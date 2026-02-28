@@ -26,6 +26,7 @@ export interface GeneratedPost {
   type: string;
   title?: string;
   caption: string;
+  description?: string;
   hashtags?: string[];
   hook?: string;
   cta?: string;

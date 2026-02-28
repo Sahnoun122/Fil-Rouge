@@ -37,6 +37,18 @@ const toneOptions: Array<{ label: string; value: ToneValue }> = [
   { label: 'Jeune', value: 'young' },
 ];
 
+const platformOptions = [
+  { label: 'Instagram', value: 'Instagram', helper: 'Reels, carrousels, posts sponsorises' },
+  { label: 'Facebook', value: 'Facebook', helper: 'Posts, campagnes conversion et trafic' },
+  { label: 'TikTok', value: 'TikTok', helper: 'Videos courtes, ads verticales, captions natives' },
+  { label: 'LinkedIn', value: 'LinkedIn', helper: 'Expertise, B2B, lead gen et brand content' },
+  { label: 'YouTube', value: 'YouTube', helper: 'Shorts, video ads et descriptions video' },
+  { label: 'X', value: 'X', helper: 'Messages courts, threads sponsorises ou organiques' },
+  { label: 'Snapchat', value: 'Snapchat', helper: 'Stories, format mobile rapide, ads natives' },
+  { label: 'Pinterest', value: 'Pinterest', helper: 'Pins, inspiration visuelle et trafic evergreen' },
+  { label: 'Threads', value: 'Threads', helper: 'Conversationnel, communautaire, contenu rapide' },
+];
+
 const formSchema = z
   .object({
     strategyId: z.string().min(1, 'La strategie est obligatoire'),
@@ -46,6 +58,7 @@ const formSchema = z
     tone: z.union([z.enum(['friendly', 'professional', 'luxury', 'young']), z.literal('')]).optional(),
     productOffer: z.string().max(500, '500 caracteres maximum').optional(),
     targetAudience: z.string().max(500, '500 caracteres maximum').optional(),
+    platforms: z.array(z.string()).min(1, 'Choisissez au moins une plateforme'),
     promoDetails: z.string().max(1000, '1000 caracteres maximum').optional(),
     budget: z.string().optional(),
     frequencyPerWeek: z.string().optional(),
@@ -114,6 +127,7 @@ export default function NewContentCampaignPage() {
       tone: '',
       productOffer: '',
       targetAudience: '',
+      platforms: [],
       promoDetails: '',
       budget: '',
       frequencyPerWeek: '3',
@@ -124,6 +138,7 @@ export default function NewContentCampaignPage() {
 
   const mode = watch('mode');
   const selectedStrategyId = watch('strategyId');
+  const selectedPlatforms = watch('platforms');
 
   useEffect(() => {
     const queryStrategyId = searchParams.get('strategyId');
@@ -157,6 +172,19 @@ export default function NewContentCampaignPage() {
     [selectedStrategyId, strategies],
   );
 
+  const togglePlatform = (platform: string) => {
+    const hasPlatform = selectedPlatforms.includes(platform);
+    const nextPlatforms = hasPlatform
+      ? selectedPlatforms.filter((item) => item !== platform)
+      : [...selectedPlatforms, platform];
+
+    setValue('platforms', nextPlatforms, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  };
+
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
@@ -169,6 +197,7 @@ export default function NewContentCampaignPage() {
           tone: values.tone || undefined,
           productOffer: normalizeOptionalText(values.productOffer),
           targetAudience: normalizeOptionalText(values.targetAudience),
+          platforms: values.platforms,
           ...(values.mode === 'ADS'
             ? {
                 promoDetails: normalizeOptionalText(values.promoDetails),
@@ -308,6 +337,50 @@ export default function NewContentCampaignPage() {
               />
             </div>
 
+            <div className="md:col-span-2">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <label className="block text-sm font-medium text-slate-700">Plateformes *</label>
+                <span className="text-xs text-slate-500">{selectedPlatforms.length} selectionnee(s)</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {platformOptions.map((platform) => {
+                  const isSelected = selectedPlatforms.includes(platform.value);
+
+                  return (
+                    <button
+                      key={platform.value}
+                      type="button"
+                      onClick={() => togglePlatform(platform.value)}
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        isSelected
+                          ? 'border-cyan-500 bg-cyan-50 shadow-sm'
+                          : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span
+                          className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded border text-xs font-bold ${
+                            isSelected
+                              ? 'border-cyan-600 bg-cyan-600 text-white'
+                              : 'border-slate-300 bg-white text-transparent'
+                          }`}
+                        >
+                          ✓
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{platform.label}</p>
+                          <p className="mt-1 text-xs text-slate-600">{platform.helper}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.platforms ? (
+                <p className="mt-1 text-xs text-rose-600">{errors.platforms.message}</p>
+              ) : null}
+            </div>
+
             {mode === 'ADS' ? (
               <>
                 <div className="md:col-span-2">
@@ -383,6 +456,12 @@ export default function NewContentCampaignPage() {
                 Strategie:{' '}
                 <span className="font-semibold text-slate-900">
                   {selectedStrategy?.businessInfo.businessName || 'Non selectionnee'}
+                </span>
+              </li>
+              <li>
+                Plateformes:{' '}
+                <span className="font-semibold text-slate-900">
+                  {selectedPlatforms.length > 0 ? selectedPlatforms.join(', ') : 'Aucune'}
                 </span>
               </li>
               <li>

@@ -306,6 +306,7 @@ const normalizeGeneratedPost = (value: unknown): AdminContentDetail['generatedPo
     type: asString(source.type),
     title: asString(source.title) || undefined,
     caption: asString(source.caption),
+    description: asString(source.description) || undefined,
     hashtags: asStringArray(source.hashtags),
     hook: asString(source.hook) || undefined,
     cta: asString(source.cta) || undefined,

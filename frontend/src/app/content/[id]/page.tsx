@@ -320,6 +320,11 @@ export default function ContentCampaignDetailPage() {
 
                 {post.hook ? <p className="mt-3 text-sm font-semibold text-slate-900">Hook: {post.hook}</p> : null}
                 <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{post.caption}</p>
+                {post.description ? (
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">
+                    Description: {post.description}
+                  </p>
+                ) : null}
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   {(post.hashtags ?? []).map((tag) => (

@@ -528,26 +528,31 @@ export class ContentService {
     strategy: StrategyDocument,
     inputs: ContentCampaignInputs,
   ): string[] {
+    const inputsPlatforms = this.extractPlatformsFromInputs(inputs);
+    if (inputsPlatforms.length > 0) {
+      return inputsPlatforms;
+    }
+
     const strategyPlatforms = this.extractPlatformsFromStrategy(strategy);
     if (strategyPlatforms.length > 0) {
       return strategyPlatforms;
     }
 
-    return this.extractPlatformsFromInputs(inputs);
+    return [];
   }
 
   private resolvePlatformsForGeneration(
     strategy: StrategyDocument,
     campaign: ContentCampaignDocument,
   ): string[] {
-    const strategyPlatforms = this.extractPlatformsFromStrategy(strategy);
-    if (strategyPlatforms.length > 0) {
-      return strategyPlatforms;
-    }
-
     const inputsPlatforms = this.extractPlatformsFromInputs(campaign.inputs);
     if (inputsPlatforms.length > 0) {
       return inputsPlatforms;
+    }
+
+    const strategyPlatforms = this.extractPlatformsFromStrategy(strategy);
+    if (strategyPlatforms.length > 0) {
+      return strategyPlatforms;
     }
 
     return this.normalizePlatforms(campaign.platforms ?? []);
@@ -594,6 +599,9 @@ export class ContentService {
     if (lower.includes('linkedin')) return 'LinkedIn';
     if (lower === 'x' || lower.includes('twitter')) return 'X';
     if (lower.includes('youtube')) return 'YouTube';
+    if (lower.includes('snapchat') || lower.includes('snap')) return 'Snapchat';
+    if (lower.includes('pinterest')) return 'Pinterest';
+    if (lower.includes('threads')) return 'Threads';
 
     return value
       .split(/\s+/)
@@ -1042,6 +1050,9 @@ export class ContentService {
       caption,
     };
 
+    const description = this.normalizeOptionalString(post.description);
+    if (description) normalized.description = description;
+
     const title = this.normalizeOptionalString(post.title);
     if (title) normalized.title = title;
 
@@ -1118,6 +1129,9 @@ export class ContentService {
     if (lower === 'facebook') return 'post';
     if (lower === 'linkedin') return 'post';
     if (lower === 'youtube') return 'short';
+    if (lower === 'snapchat') return 'story';
+    if (lower === 'pinterest') return 'pin';
+    if (lower === 'threads') return 'thread';
     return 'post';
   }
 

@@ -109,6 +109,13 @@ function PostCard({ index, post }: { index: number; post: GeneratedPost }) {
             <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-900">{post.caption}</p>
           </div>
 
+          {post.description ? (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{post.description}</p>
+            </div>
+          ) : null}
+
           {post.hook ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Hook</p>
