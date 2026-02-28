@@ -22,11 +22,11 @@ export default function LoginPage() {
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const normalizedPassword = password.trim();
+      const normalizedPassword = password;
       const user = await login({ email: normalizedEmail, password: normalizedPassword });
       router.replace(redirectAfterLogin(user));
-    } catch (err: any) {
-      setFormError(err?.message || "Erreur lors de la connexion");
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : "Erreur lors de la connexion");
     } finally {
       setIsSubmitting(false);
     }

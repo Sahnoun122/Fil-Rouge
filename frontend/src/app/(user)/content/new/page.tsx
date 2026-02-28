@@ -196,7 +196,7 @@ export default function NewContentCampaignPage() {
       }
 
       toast.success('Campagne content creee avec succes');
-      router.push(`/content/${createdId}`);
+      router.push(`/user/content/${createdId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la creation');
     } finally {
@@ -208,7 +208,7 @@ export default function NewContentCampaignPage() {
     <div className="space-y-6">
       <section>
         <Link
-          href="/content"
+          href="/user/content"
           className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />

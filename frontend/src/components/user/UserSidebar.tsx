@@ -17,6 +17,34 @@ export default function UserSidebar({ isOpen, setIsOpen }: UserSidebarProps) {
 
   const isActivePath = (path: string) => pathname === path || pathname?.startsWith(`${path}/`);
 
+  const contentNavItem = {
+    name: 'Content',
+    href: '/user/content',
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 8h10M7 12h7m-7 4h10M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"
+        />
+      </svg>
+    ),
+  };
+
+  const baseNavigationItems = userNavigation.filter(
+    (item) => item.href !== '/content' && item.href !== '/user/content',
+  );
+
+  const navigationItems =
+    baseNavigationItems.length >= 2
+      ? [
+          ...baseNavigationItems.slice(0, 2),
+          contentNavItem,
+          ...baseNavigationItems.slice(2),
+        ]
+      : [...baseNavigationItems, contentNavItem];
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -53,9 +81,9 @@ export default function UserSidebar({ isOpen, setIsOpen }: UserSidebarProps) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-5">
-          {userNavigation.map((item) => (
+          {navigationItems.map((item) => (
             <Link
-              key={item.name}
+              key={`${item.name}-${item.href}`}
               href={item.href}
               onClick={() => setIsOpen(false)}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${

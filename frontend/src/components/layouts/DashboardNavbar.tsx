@@ -16,6 +16,33 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
 
   const resolvedRole: AppRole = role ?? (user?.role as AppRole) ?? 'user';
   const navigation = getNavigationForRole(resolvedRole);
+  const contentQuickItem = {
+    name: 'Content',
+    href: '/user/content',
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 8h10M7 12h7m-7 4h10M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"
+        />
+      </svg>
+    ),
+  };
+  const navigationWithoutContent = navigation.filter(
+    (item) => item.href !== '/content' && item.href !== '/user/content',
+  );
+  const renderedNavigation =
+    resolvedRole === 'user'
+      ? navigationWithoutContent.length >= 2
+        ? [
+            ...navigationWithoutContent.slice(0, 2),
+            contentQuickItem,
+            ...navigationWithoutContent.slice(2),
+          ]
+        : [...navigationWithoutContent, contentQuickItem]
+      : navigationWithoutContent;
   const pageTitle = getPageTitleFromPath(pathname, resolvedRole);
   const quickAction =
     resolvedRole === 'admin'
@@ -67,11 +94,11 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {navigation.map((item) => {
+          {renderedNavigation.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
               <Link
-                key={item.name}
+                key={`${item.name}-${item.href}`}
                 href={item.href}
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${
                   isActive

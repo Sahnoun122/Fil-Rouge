@@ -78,7 +78,7 @@ function CampaignCard({
       <div className="mt-5 flex items-center justify-between">
         <span className="text-xs text-slate-500">Maj: {formatDate(campaign.updatedAt)}</span>
         <Link
-          href={`/content/${campaign._id}`}
+          href={`/user/content/${campaign._id}`}
           className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
         >
           Ouvrir
@@ -130,7 +130,7 @@ export default function ContentCampaignsPage() {
         </div>
 
         <Link
-          href="/content/new"
+          href="/user/content/new"
           className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -204,7 +204,7 @@ export default function ContentCampaignsPage() {
             Creez votre premiere campagne Content ou modifiez vos filtres.
           </p>
           <Link
-            href="/content/new"
+            href="/user/content/new"
             className="mt-5 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -256,7 +256,7 @@ export default function ContentCampaignsPage() {
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/content/${campaign._id}`}
+                          href={`/user/content/${campaign._id}`}
                           className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                         >
                           Voir

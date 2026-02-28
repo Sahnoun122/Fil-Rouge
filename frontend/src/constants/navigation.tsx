@@ -107,7 +107,7 @@ const monitoringIcon = (
 export const userNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/user/dashboard", icon: dashboardIcon },
   { name: "Mes strategies", href: "/user/strategies", icon: strategiesIcon },
-  { name: "Content", href: "/content", icon: contentIcon },
+  { name: "Content", href: "/user/content", icon: contentIcon },
   { name: "SWOT", href: "/user/swot", icon: analyticsIcon },
   { name: "Calendrier", href: "/user/calendar", icon: calendarIcon },
   { name: "Profil", href: "/user/profile", icon: profileIcon },
