@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Toaster, toast } from "react-hot-toast";
+import { CalendarClock, Sparkles, Tags, TextQuote } from "lucide-react";
 import { CalendarBoard } from "@/src/components/calendar/CalendarBoard";
 import { FiltersBar } from "@/src/components/calendar/FiltersBar";
 import { PostModal } from "@/src/components/calendar/PostModal";
@@ -149,6 +150,60 @@ export default function CalendarPage() {
       ),
     [scopedPosts],
   );
+
+  const planningCards = useMemo(() => {
+    if (!campaignDetail) {
+      return [];
+    }
+
+    return [...campaignDetail.generatedPosts]
+      .map((post, index) => {
+        const matchingScheduledPost = scopedPosts.find(
+          (scheduledPost) =>
+            scheduledPost.caption.trim() === post.caption.trim() &&
+            scheduledPost.platform.toLowerCase() ===
+              post.platform.toLowerCase(),
+        );
+
+        const scheduleDateTime =
+          post.schedule?.date && post.schedule?.time
+            ? new Date(`${post.schedule.date}T${post.schedule.time}:00`)
+            : null;
+
+        return {
+          ...post,
+          index,
+          scheduleLabel:
+            post.schedule?.date && post.schedule?.time
+              ? `${post.schedule.date} a ${post.schedule.time}`
+              : "Non planifie",
+          scheduleDateTime,
+          status: matchingScheduledPost?.status ?? "draft",
+          timezone:
+            post.schedule?.timezone ||
+            matchingScheduledPost?.timezone ||
+            campaignTimeline[0]?.timezone ||
+            "UTC",
+        };
+      })
+      .sort((left, right) => {
+        if (!left.scheduleDateTime && !right.scheduleDateTime) {
+          return left.index - right.index;
+        }
+
+        if (!left.scheduleDateTime) {
+          return 1;
+        }
+
+        if (!right.scheduleDateTime) {
+          return -1;
+        }
+
+        return (
+          left.scheduleDateTime.getTime() - right.scheduleDateTime.getTime()
+        );
+      });
+  }, [campaignDetail, campaignTimeline, scopedPosts]);
 
   const openCreateModal = (dateIso?: string) => {
     setModalMode("create");
@@ -307,23 +362,25 @@ export default function CalendarPage() {
         </div>
       </section>
 
-      <FiltersBar
-        filters={filters}
-        totalCount={total}
-        onPlatformChange={(platform) =>
-          setFilters((current) => ({ ...current, platform }))
-        }
-        onStatusChange={(status) =>
-          setFilters((current) => ({ ...current, status }))
-        }
-        onSearchChange={(search) =>
-          setFilters((current) => ({ ...current, search }))
-        }
-        onViewChange={(view: CalendarView) =>
-          setFilters((current) => ({ ...current, view }))
-        }
-        onCreateClick={() => openCreateModal()}
-      />
+      {!campaignIdFilter ? (
+        <FiltersBar
+          filters={filters}
+          totalCount={total}
+          onPlatformChange={(platform) =>
+            setFilters((current) => ({ ...current, platform }))
+          }
+          onStatusChange={(status) =>
+            setFilters((current) => ({ ...current, status }))
+          }
+          onSearchChange={(search) =>
+            setFilters((current) => ({ ...current, search }))
+          }
+          onViewChange={(view: CalendarView) =>
+            setFilters((current) => ({ ...current, view }))
+          }
+          onCreateClick={() => openCreateModal()}
+        />
+      ) : null}
 
       {campaignIdFilter ? (
         <section className="grid gap-4 lg:grid-cols-3">
@@ -356,74 +413,157 @@ export default function CalendarPage() {
         </section>
       ) : null}
 
-      <CalendarBoard
-        posts={scopedPosts}
-        view={filters.view}
-        isLoading={isLoading}
-        onRangeChange={(range) => {
-          void setVisibleRange(range);
-        }}
-        onEventClick={openEditModal}
-        onCreateAtDate={openCreateModal}
-        onMovePost={handleMovePost}
-        onRefresh={refresh}
-      />
+      {!campaignIdFilter ? (
+        <CalendarBoard
+          posts={scopedPosts}
+          view={filters.view}
+          isLoading={isLoading}
+          onRangeChange={(range) => {
+            void setVisibleRange(range);
+          }}
+          onEventClick={openEditModal}
+          onCreateAtDate={openCreateModal}
+          onMovePost={handleMovePost}
+          onRefresh={refresh}
+        />
+      ) : null}
 
       {campaignIdFilter ? (
         <section className="rounded-[32px] border border-stone-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
-                Timeline campagne
+                Planning IA
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-stone-950">
-                Planning detaille
+                Cartes editoriales du planning
               </h2>
             </div>
             <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-700">
-              {campaignTimeline.length} publication(s)
+              {planningCards.length} carte(s)
             </span>
           </div>
 
-          {campaignTimeline.length === 0 ? (
+          {planningCards.length === 0 ? (
             <div className="mt-6 rounded-[24px] border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-stone-500">
-              Aucun post planifie pour cette campagne sur la plage visible.
+              Aucun planning disponible pour cette campagne.
             </div>
           ) : (
-            <div className="mt-6 space-y-3">
-              {campaignTimeline.map((post) => (
+            <div className="mt-6 grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+              {planningCards.map((post) => (
                 <article
-                  key={post._id}
-                  className="rounded-[24px] border border-stone-200 bg-stone-50/70 p-4"
+                  key={post._id || `${post.platform}-${post.index}`}
+                  className="overflow-hidden rounded-[26px] border border-stone-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.95))] shadow-sm"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
-                        {post.platform}
-                      </span>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
-                        {post.postType}
-                      </span>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
-                        {post.status}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-stone-950">
-                        {new Date(post.scheduledAt).toLocaleString("fr-FR", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      <p className="text-xs text-stone-500">{post.timezone}</p>
+                  <div className="border-b border-stone-200 bg-stone-50/90 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
+                          {post.platform}
+                        </span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
+                          {post.type || "post"}
+                        </span>
+                        <span className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
+                          {post.status}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-stone-950">
+                          {post.scheduleLabel}
+                        </p>
+                        <p className="text-xs text-stone-500">
+                          {post.timezone}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-stone-700">
-                    {post.caption}
-                  </p>
+
+                  <div className="space-y-4 p-4">
+                    {post.title ? (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                          Angle
+                        </p>
+                        <p className="mt-2 text-base font-semibold leading-6 text-stone-950">
+                          {post.title}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {post.hook ? (
+                      <div className="rounded-[20px] border border-cyan-200 bg-cyan-50/80 p-3">
+                        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-700">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Hook IA
+                        </p>
+                        <p className="mt-2 text-sm font-medium leading-6 text-cyan-950">
+                          {post.hook}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <div>
+                      <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <TextQuote className="h-3.5 w-3.5" />
+                        Caption genere par l'IA
+                      </p>
+                      <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                        {post.caption}
+                      </p>
+                    </div>
+
+                    {post.description ? (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                          Description
+                        </p>
+                        <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-stone-600">
+                          {post.description}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {post.cta ? (
+                      <div className="rounded-[18px] border border-stone-200 bg-stone-50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                          CTA
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-stone-800">
+                          {post.cta}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {(post.hashtags ?? []).length > 0 ? (
+                      <div>
+                        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                          <Tags className="h-3.5 w-3.5" />
+                          Hashtags
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {post.hashtags?.map((tag) => (
+                            <span
+                              key={`${post._id || post.index}-${tag}`}
+                              className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+                      <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        Slot planning
+                      </p>
+                      <p className="text-xs font-medium text-stone-700">
+                        {post.scheduleLabel}
+                      </p>
+                    </div>
+                  </div>
                 </article>
               ))}
             </div>
