@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Toaster, toast } from "react-hot-toast";
@@ -173,6 +174,7 @@ export default function CalendarPage() {
         return {
           ...post,
           index,
+          scheduledPostId: matchingScheduledPost?._id ?? null,
           scheduleLabel:
             post.schedule?.date && post.schedule?.time
               ? `${post.schedule.date} a ${post.schedule.time}`
@@ -559,9 +561,19 @@ export default function CalendarPage() {
                         <CalendarClock className="h-3.5 w-3.5" />
                         Slot planning
                       </p>
-                      <p className="text-xs font-medium text-stone-700">
-                        {post.scheduleLabel}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <p className="text-xs font-medium text-stone-700">
+                          {post.scheduleLabel}
+                        </p>
+                        {post.scheduledPostId ? (
+                          <Link
+                            href={`/calendar/planning/${post.scheduledPostId}`}
+                            className="inline-flex items-center rounded-full border border-stone-300 bg-white px-3 py-1 text-[11px] font-semibold text-stone-700 transition hover:bg-stone-100"
+                          >
+                            Voir details
+                          </Link>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </article>
