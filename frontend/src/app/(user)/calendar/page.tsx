@@ -8,6 +8,7 @@ import { FiltersBar } from "@/src/components/calendar/FiltersBar";
 import { PostModal } from "@/src/components/calendar/PostModal";
 import { useCalendar } from "@/src/hooks/useCalendar";
 import { calendarService } from "@/src/services/calendarService";
+import { contentService } from "@/src/services/contentService";
 import type {
   CampaignOption,
   CalendarFilterState,
@@ -15,6 +16,7 @@ import type {
   ScheduledPost,
   StrategyOption,
 } from "@/src/types/calendar.types";
+import type { ContentCampaign } from "@/src/types/content.types";
 
 const initialFilters: CalendarFilterState = {
   platform: "all",
@@ -29,6 +31,9 @@ export default function CalendarPage() {
   const [filters, setFilters] = useState<CalendarFilterState>(initialFilters);
   const [strategies, setStrategies] = useState<StrategyOption[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
+  const [campaignDetail, setCampaignDetail] = useState<ContentCampaign | null>(
+    null,
+  );
   const [isMetaLoading, setIsMetaLoading] = useState(true);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,6 +81,30 @@ export default function CalendarPage() {
   }, []);
 
   useEffect(() => {
+    if (!campaignIdFilter) {
+      setCampaignDetail(null);
+      return;
+    }
+
+    const loadCampaignDetail = async () => {
+      try {
+        const loadedCampaign =
+          await contentService.getCampaign(campaignIdFilter);
+        setCampaignDetail(loadedCampaign);
+      } catch (requestError) {
+        toast.error(
+          requestError instanceof Error
+            ? requestError.message
+            : "Erreur lors du chargement de la campagne",
+        );
+        setCampaignDetail(null);
+      }
+    };
+
+    void loadCampaignDetail();
+  }, [campaignIdFilter]);
+
+  useEffect(() => {
     if (!error) {
       return;
     }
@@ -102,6 +131,24 @@ export default function CalendarPage() {
 
     return posts.filter((post) => post.campaignId === campaignIdFilter);
   }, [campaignIdFilter, posts]);
+
+  const scopedCampaigns = useMemo(() => {
+    if (!campaignIdFilter) {
+      return campaigns;
+    }
+
+    return campaigns.filter((campaign) => campaign._id === campaignIdFilter);
+  }, [campaignIdFilter, campaigns]);
+
+  const campaignTimeline = useMemo(
+    () =>
+      [...scopedPosts].sort(
+        (left, right) =>
+          new Date(left.scheduledAt).getTime() -
+          new Date(right.scheduledAt).getTime(),
+      ),
+    [scopedPosts],
+  );
 
   const openCreateModal = (dateIso?: string) => {
     setModalMode("create");
@@ -214,9 +261,18 @@ export default function CalendarPage() {
               avec ton backend NestJS.
             </p>
             {campaignIdFilter ? (
-              <p className="mt-3 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">
-                Filtre campagne actif
-              </p>
+              <div className="mt-4 rounded-[22px] border border-cyan-200 bg-cyan-50/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                  Campagne active
+                </p>
+                <p className="mt-2 text-lg font-semibold text-stone-950">
+                  {campaignDetail?.name || "Chargement de la campagne..."}
+                </p>
+                <p className="mt-1 text-sm text-stone-600">
+                  {campaignDetail?.platforms?.join(", ") ||
+                    "Filtre campagne actif"}
+                </p>
+              </div>
             ) : null}
           </div>
 
@@ -234,7 +290,7 @@ export default function CalendarPage() {
                 Loaded
               </p>
               <p className="mt-1 text-2xl font-semibold text-stone-950">
-                {total}
+                {campaignIdFilter ? scopedPosts.length : total}
               </p>
             </div>
             <div>
@@ -269,6 +325,37 @@ export default function CalendarPage() {
         onCreateClick={() => openCreateModal()}
       />
 
+      {campaignIdFilter ? (
+        <section className="grid gap-4 lg:grid-cols-3">
+          <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+              Campagne
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-stone-950">
+              {campaignDetail?.name || "..."}
+            </p>
+          </article>
+          <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+              Posts planifies
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-stone-950">
+              {scopedPosts.length}
+            </p>
+          </article>
+          <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+              Plateformes
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-stone-950">
+              {campaignDetail?.platforms?.length ??
+                scopedCampaigns[0]?.platforms?.length ??
+                0}
+            </p>
+          </article>
+        </section>
+      ) : null}
+
       <CalendarBoard
         posts={scopedPosts}
         view={filters.view}
@@ -281,6 +368,68 @@ export default function CalendarPage() {
         onMovePost={handleMovePost}
         onRefresh={refresh}
       />
+
+      {campaignIdFilter ? (
+        <section className="rounded-[32px] border border-stone-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Timeline campagne
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-stone-950">
+                Planning detaille
+              </h2>
+            </div>
+            <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-700">
+              {campaignTimeline.length} publication(s)
+            </span>
+          </div>
+
+          {campaignTimeline.length === 0 ? (
+            <div className="mt-6 rounded-[24px] border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-stone-500">
+              Aucun post planifie pour cette campagne sur la plage visible.
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {campaignTimeline.map((post) => (
+                <article
+                  key={post._id}
+                  className="rounded-[24px] border border-stone-200 bg-stone-50/70 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
+                        {post.platform}
+                      </span>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
+                        {post.postType}
+                      </span>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
+                        {post.status}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-stone-950">
+                        {new Date(post.scheduledAt).toLocaleString("fr-FR", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      <p className="text-xs text-stone-500">{post.timezone}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-stone-700">
+                    {post.caption}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <PostModal
         open={isModalOpen}
