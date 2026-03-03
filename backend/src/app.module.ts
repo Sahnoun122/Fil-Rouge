@@ -14,6 +14,7 @@ import { AiModule } from './ai/ai.module';
 import { StrategiesModule } from './strategies/strategies.module';
 import { SwotModule } from './swot/swot.module';
 import { ContentModule } from './content/content.module';
+import { CalendarModule } from './calendar/calendar.module';
 
 // Guards globaux
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -31,7 +32,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/marketplan-ia',
+        uri:
+          configService.get<string>('MONGODB_URI') ||
+          'mongodb://localhost:27017/marketplan-ia',
         retryWrites: true,
         w: 'majority',
         // Options de connexion modernes
@@ -49,10 +52,11 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     StrategiesModule,
     SwotModule,
     ContentModule,
+    CalendarModule,
   ],
 
   controllers: [AppController, HealthController],
-  
+
   providers: [
     AppService,
 
