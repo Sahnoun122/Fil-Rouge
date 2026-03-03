@@ -48,7 +48,7 @@ export class ScheduledPost {
   @Prop({ type: String, enum: ScheduledPostType, required: true })
   postType: ScheduledPostType;
 
-  @Prop({ trim: true, maxlength: 160, default: null })
+  @Prop({ type: String, trim: true, maxlength: 160, default: null })
   title?: string | null;
 
   @Prop({ required: true, trim: true, maxlength: 5000 })
@@ -73,7 +73,7 @@ export class ScheduledPost {
   @Prop({ required: true, trim: true, maxlength: 100 })
   timezone: string;
 
-  @Prop({ trim: true, maxlength: 2000, default: null })
+  @Prop({ type: String, trim: true, maxlength: 2000, default: null })
   notes?: string | null;
 
   createdAt?: Date;
