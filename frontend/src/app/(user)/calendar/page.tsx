@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Toaster, toast } from "react-hot-toast";
 import { CalendarBoard } from "@/src/components/calendar/CalendarBoard";
 import { FiltersBar } from "@/src/components/calendar/FiltersBar";
@@ -23,6 +24,8 @@ const initialFilters: CalendarFilterState = {
 };
 
 export default function CalendarPage() {
+  const searchParams = useSearchParams();
+  const campaignIdFilter = searchParams.get("campaignId")?.trim() || "";
   const [filters, setFilters] = useState<CalendarFilterState>(initialFilters);
   const [strategies, setStrategies] = useState<StrategyOption[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
@@ -91,6 +94,14 @@ export default function CalendarPage() {
         campaign._id === selectedPost.campaignId,
     );
   }, [campaigns, selectedPost]);
+
+  const scopedPosts = useMemo(() => {
+    if (!campaignIdFilter) {
+      return posts;
+    }
+
+    return posts.filter((post) => post.campaignId === campaignIdFilter);
+  }, [campaignIdFilter, posts]);
 
   const openCreateModal = (dateIso?: string) => {
     setModalMode("create");
@@ -202,6 +213,11 @@ export default function CalendarPage() {
               mensuelle ou hebdomadaire. Chaque changement reste synchronise
               avec ton backend NestJS.
             </p>
+            {campaignIdFilter ? (
+              <p className="mt-3 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">
+                Filtre campagne actif
+              </p>
+            ) : null}
           </div>
 
           <div className="grid gap-3 rounded-[28px] border border-stone-200 bg-white/70 p-4 text-sm text-stone-700 sm:grid-cols-3">
@@ -210,7 +226,7 @@ export default function CalendarPage() {
                 Visible
               </p>
               <p className="mt-1 text-2xl font-semibold text-stone-950">
-                {posts.length}
+                {scopedPosts.length}
               </p>
             </div>
             <div>
@@ -254,7 +270,7 @@ export default function CalendarPage() {
       />
 
       <CalendarBoard
-        posts={posts}
+        posts={scopedPosts}
         view={filters.view}
         isLoading={isLoading}
         onRangeChange={(range) => {

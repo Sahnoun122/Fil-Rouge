@@ -1,5 +1,6 @@
 import { fetcher } from '@/src/utils/fetcher';
 import {
+  AutoScheduleCampaignDto,
   ContentCampaign,
   ContentCampaignsList,
   CreateContentCampaignDto,
@@ -73,6 +74,26 @@ class ContentService {
 
     if (!response.data) {
       throw new Error('Generation de contenu echouee');
+    }
+
+    return response.data;
+  }
+
+  async autoScheduleCampaign(
+    id: string,
+    payload: AutoScheduleCampaignDto,
+  ): Promise<ContentCampaign> {
+    const response = await fetcher<ContentCampaign>(
+      `/content/campaigns/${id}/auto-schedule`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        requireAuth: true,
+      },
+    );
+
+    if (!response.data) {
+      throw new Error('Generation du planning automatique echouee');
     }
 
     return response.data;

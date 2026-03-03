@@ -359,10 +359,11 @@ const normalizeGeneratedPost = (
     adCopyVariantC: asString(source.adCopyVariantC) || undefined,
     suggestedVisual: asString(source.suggestedVisual) || undefined,
     schedule:
-      asString(schedule.date) || asString(schedule.time)
+      asString(schedule.date) || asString(schedule.time) || asString(schedule.timezone)
         ? {
             date: asString(schedule.date),
             time: asString(schedule.time),
+            timezone: asString(schedule.timezone, "UTC"),
           }
         : undefined,
   };

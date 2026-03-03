@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { contentService } from '@/src/services/contentService';
 import {
+  AutoScheduleCampaignDto,
   ContentCampaign,
   ContentCampaignsList,
   CreateContentCampaignDto,
@@ -195,6 +196,29 @@ export function useContentCampaign(id?: string) {
     [],
   );
 
+  const autoScheduleCampaign = useCallback(
+    async (campaignId: string, payload: AutoScheduleCampaignDto) => {
+      setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
+      try {
+        const data = await contentService.autoScheduleCampaign(campaignId, payload);
+        setCampaign(data);
+        return data;
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Erreur de planification automatique',
+        }));
+        throw error;
+      } finally {
+        setState((prev) => ({ ...prev, isSubmitting: false }));
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (id) {
       void loadCampaign(id);
@@ -208,6 +232,7 @@ export function useContentCampaign(id?: string) {
     createCampaign,
     updateCampaign,
     generateCampaign,
+    autoScheduleCampaign,
     regeneratePlatform,
     regeneratePost,
   };

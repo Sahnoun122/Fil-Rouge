@@ -1,115 +1,306 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
-import { toast } from 'react-hot-toast';
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { Toaster, toast } from "react-hot-toast";
 import {
   ArrowLeft,
   Bot,
+  CalendarDays,
+  Check,
   FileText,
   Loader2,
   RefreshCcw,
   Sparkles,
-  Target,
-} from 'lucide-react';
-import { useContentCampaign } from '@/src/hooks/useContentCampaigns';
+} from "lucide-react";
+import { useContentCampaign } from "@/src/hooks/useContentCampaigns";
+import type {
+  AutoScheduleCampaignDto,
+  ContentCampaign,
+  PostSchedule,
+} from "@/src/types/content.types";
 
-function formatDate(value?: string): string {
-  if (!value) return '-';
-  return new Date(value).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+const DAYS = [
+  { key: "monday", short: "Lun" },
+  { key: "tuesday", short: "Mar" },
+  { key: "wednesday", short: "Mer" },
+  { key: "thursday", short: "Jeu" },
+  { key: "friday", short: "Ven" },
+  { key: "saturday", short: "Sam" },
+  { key: "sunday", short: "Dim" },
+] as const;
+
+const DEFAULT_WINDOWS: Record<string, string[]> = {
+  instagram: ["12:00-14:00", "18:00-21:00"],
+  tiktok: ["19:00-23:00", "12:00-14:00"],
+  facebook: ["12:00-14:00", "18:00-20:00"],
+  linkedin: ["08:00-10:00", "12:00-14:00"],
+  youtube: ["17:00-21:00"],
+  pinterest: ["20:00-23:00"],
+};
+
+type DraftMap = Record<string, PostSchedule>;
+
+function keyFor(postId: string | undefined, index: number) {
+  return postId || String(index);
 }
 
-function DetailSkeleton() {
+function platformKey(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function browserTimezone() {
+  try {
+    return (
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Casablanca"
+    );
+  } catch {
+    return "Africa/Casablanca";
+  }
+}
+
+function mondayOf(dateValue: string) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(dateValue: string, days: number) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function scheduleText(schedule?: PostSchedule) {
+  if (!schedule?.date || !schedule?.time) return "Non planifie";
+  return `${schedule.date} ${schedule.time} (${schedule.timezone})`;
+}
+
+function buildPlannerState(campaign: ContentCampaign | null) {
+  const timezone = browserTimezone();
+  const preferredTimeWindows: Record<string, string[]> = {};
+  (campaign?.platforms ?? []).forEach((platform) => {
+    preferredTimeWindows[platformKey(platform)] = DEFAULT_WINDOWS[
+      platformKey(platform)
+    ] ?? ["11:00-13:00", "17:00-19:00"];
+  });
+
+  return {
+    startDate: campaign?.inputs?.startDate?.slice(0, 10) ?? "",
+    endDate: campaign?.inputs?.endDate?.slice(0, 10) ?? "",
+    frequencyPerWeek:
+      campaign?.inputs?.frequencyPerWeek ??
+      campaign?.campaignSummary?.postingPlan?.frequencyPerWeek ??
+      4,
+    timezone,
+    excludedDays: ["sunday"],
+    preferredTimeWindows,
+    syncToCalendar: true,
+  };
+}
+
+function buildDrafts(
+  campaign: ContentCampaign | null,
+  timezone: string,
+): DraftMap {
+  if (!campaign) return {};
+  return campaign.generatedPosts.reduce<DraftMap>((acc, post, index) => {
+    acc[keyFor(post._id, index)] = {
+      date: post.schedule?.date ?? "",
+      time: post.schedule?.time ?? "",
+      timezone: post.schedule?.timezone ?? timezone,
+    };
+    return acc;
+  }, {});
+}
+
+function Skeleton() {
   return (
-    <div className="space-y-4">
-      <div className="h-28 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
-      <div className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
-      <div className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+    <div className="space-y-5">
+      <div className="h-32 animate-pulse rounded-[28px] border border-stone-200 bg-stone-100" />
+      <div className="h-96 animate-pulse rounded-[28px] border border-stone-200 bg-stone-100" />
+      <div className="h-96 animate-pulse rounded-[28px] border border-stone-200 bg-stone-100" />
     </div>
   );
 }
 
 export default function ContentCampaignDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const campaignId = params.id;
+  const {
+    campaign,
+    isLoading,
+    isSubmitting,
+    error,
+    generateCampaign,
+    autoScheduleCampaign,
+    updateCampaign,
+    regeneratePlatform,
+    regeneratePost,
+  } = useContentCampaign(campaignId);
 
-  const { campaign, isLoading, isSubmitting, error, generateCampaign, regeneratePlatform, regeneratePost } =
-    useContentCampaign(campaignId);
+  const [generateInstruction, setGenerateInstruction] = useState("");
+  const [platformToRegenerate, setPlatformToRegenerate] = useState("");
+  const [platformInstruction, setPlatformInstruction] = useState("");
+  const [postIndexInput, setPostIndexInput] = useState("0");
+  const [postInstruction, setPostInstruction] = useState("");
+  const [planner, setPlanner] = useState(() => buildPlannerState(null));
+  const [drafts, setDrafts] = useState<DraftMap>({});
+  const [savingKey, setSavingKey] = useState<string | null>(null);
 
-  const [generateInstruction, setGenerateInstruction] = useState('');
-  const [platformToRegenerate, setPlatformToRegenerate] = useState('');
-  const [platformInstruction, setPlatformInstruction] = useState('');
-  const [postIndexInput, setPostIndexInput] = useState('0');
-  const [postInstruction, setPostInstruction] = useState('');
+  useEffect(() => {
+    if (!campaign) return;
+    const next = buildPlannerState(campaign);
+    setPlanner(next);
+    setDrafts(buildDrafts(campaign, next.timezone));
+  }, [campaign]);
 
-  const orderedPosts = (campaign?.generatedPosts ?? []).map((post, index) => ({ ...post, index }));
+  const posts = useMemo(
+    () =>
+      (campaign?.generatedPosts ?? []).map((post, index) => ({
+        ...post,
+        index,
+      })),
+    [campaign],
+  );
 
-  const handleGenerate = async () => {
+  const weeks = useMemo(() => {
+    const scheduled = posts.filter(
+      (post) => post.schedule?.date && post.schedule?.time,
+    );
+    const grouped = new Map<string, Array<(typeof scheduled)[number]>>();
+    scheduled.forEach((post) => {
+      const weekKey = mondayOf(post.schedule!.date);
+      const weekPosts = grouped.get(weekKey) ?? [];
+      weekPosts.push(post);
+      grouped.set(weekKey, weekPosts);
+    });
+    return Array.from(grouped.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([weekStart, weekPosts]) => ({
+        weekStart,
+        days: DAYS.map((day, index) => {
+          const date = addDays(weekStart, index);
+          return {
+            ...day,
+            date,
+            posts: weekPosts
+              .filter((post) => post.schedule?.date === date)
+              .sort((a, b) =>
+                `${a.schedule?.time}`.localeCompare(`${b.schedule?.time}`),
+              ),
+          };
+        }),
+      }));
+  }, [posts]);
+
+  const onGenerate = async () => {
     if (!campaignId) return;
     try {
       await generateCampaign(campaignId, {
         instruction: generateInstruction.trim() || undefined,
       });
-      toast.success('Contenu genere avec succes');
-    } catch (requestError) {
-      toast.error(requestError instanceof Error ? requestError.message : 'Erreur de generation');
+      toast.success("Contenu genere avec succes");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de generation");
     }
   };
 
-  const handleRegeneratePlatform = async () => {
-    if (!campaignId || !platformToRegenerate) {
-      toast.error('Selectionnez une plateforme');
-      return;
-    }
+  const onRegeneratePlatform = async () => {
+    if (!campaignId || !platformToRegenerate)
+      return toast.error("Selectionnez une plateforme");
     try {
       await regeneratePlatform(campaignId, {
         platform: platformToRegenerate,
         instruction: platformInstruction.trim() || undefined,
       });
       toast.success(`Posts ${platformToRegenerate} regeneres`);
-    } catch (requestError) {
-      toast.error(requestError instanceof Error ? requestError.message : 'Erreur de regeneration plateforme');
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Erreur de regeneration plateforme",
+      );
     }
   };
 
-  const handleRegeneratePost = async () => {
+  const onRegeneratePost = async () => {
     if (!campaignId) return;
     const index = Number(postIndexInput);
-    if (!Number.isInteger(index) || index < 0) {
-      toast.error('Index de post invalide');
-      return;
-    }
-
+    if (!Number.isInteger(index) || index < 0)
+      return toast.error("Index de post invalide");
     try {
       await regeneratePost(campaignId, {
         index,
         instruction: postInstruction.trim() || undefined,
       });
       toast.success(`Post #${index} regenere`);
-    } catch (requestError) {
-      toast.error(requestError instanceof Error ? requestError.message : 'Erreur de regeneration du post');
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Erreur de regeneration du post",
+      );
     }
   };
 
-  if (isLoading && !campaign) {
-    return <DetailSkeleton />;
-  }
+  const onAutoSchedule = async () => {
+    if (!campaignId || !planner.startDate || !planner.endDate) {
+      return toast.error("Renseignez startDate et endDate");
+    }
+    const payload: AutoScheduleCampaignDto = {
+      startDate: planner.startDate,
+      endDate: planner.endDate,
+      frequencyPerWeek: Number(planner.frequencyPerWeek),
+      timezone: planner.timezone,
+      excludedDays: planner.excludedDays,
+      preferredTimeWindows: planner.preferredTimeWindows,
+      syncToCalendar: planner.syncToCalendar,
+    };
+    try {
+      await autoScheduleCampaign(campaignId, payload);
+      toast.success("Planning automatique genere");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de planification");
+    }
+  };
+
+  const saveInline = async (postId: string | undefined, index: number) => {
+    if (!campaignId) return;
+    const draft = drafts[keyFor(postId, index)];
+    if (!draft?.date || !draft?.time || !draft?.timezone) {
+      return toast.error("Date, heure et timezone sont requises");
+    }
+    const rowKey = keyFor(postId, index);
+    setSavingKey(rowKey);
+    try {
+      await updateCampaign(campaignId, {
+        generatedPosts: [
+          { ...(postId ? { postId } : { index }), schedule: draft },
+        ],
+      });
+      toast.success("Horaire mis a jour");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de sauvegarde");
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  if (isLoading && !campaign) return <Skeleton />;
 
   if (!campaign) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
-        <h1 className="text-xl font-bold text-rose-700">Campagne introuvable</h1>
-        <p className="mt-2 text-sm text-rose-600">{error || 'Cette campagne n existe pas ou nest plus accessible.'}</p>
+      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6">
+        <h1 className="text-xl font-bold text-rose-700">
+          Campagne introuvable
+        </h1>
+        <p className="mt-2 text-sm text-rose-600">
+          {error || "Campagne inaccessible."}
+        </p>
         <Link
           href="/user/content"
-          className="mt-4 inline-flex items-center rounded-lg border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+          className="mt-4 inline-flex items-center rounded-xl border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Retour
@@ -120,112 +311,229 @@ export default function ContentCampaignDetailPage() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link
-            href="/user/content"
-            className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
-          >
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour aux campagnes
-          </Link>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">{campaign.name}</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {campaign.mode} • {campaign.platforms.join(', ') || 'Aucune plateforme'} • {campaign.generatedPosts.length}{' '}
-            post{campaign.generatedPosts.length > 1 ? 's' : ''}
-          </p>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3500,
+          style: {
+            borderRadius: "18px",
+            border: "1px solid #e7e5e4",
+            background: "#fffaf4",
+            color: "#1c1917",
+          },
+        }}
+      />
+
+      <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(245,247,250,0.98)_38%,_rgba(229,231,235,0.92)_100%)] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="max-w-3xl">
+            <Link
+              href="/user/content"
+              className="inline-flex items-center text-sm font-medium text-stone-600 hover:text-stone-950"
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              Retour aux campagnes
+            </Link>
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+              Content operations
+            </p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-950">
+              {campaign.name}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
+              Genere, planifie et ajuste tes contenus depuis une seule vue.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(`/calendar?campaignId=${campaign._id}`)
+              }
+              className="inline-flex items-center justify-center rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-semibold text-stone-800 hover:bg-stone-50"
+            >
+              <CalendarDays className="mr-2 h-4 w-4" />
+              Voir dans le calendrier
+            </button>
+            <Link
+              href={`/user/content/new?strategyId=${campaign.strategyId}`}
+              className="inline-flex items-center justify-center rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white hover:bg-stone-800"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Nouvelle campagne
+            </Link>
+          </div>
         </div>
-
-        <Link
-          href={`/user/content/new?strategyId=${campaign.strategyId}`}
-          className="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          Nouvelle campagne depuis cette strategie
-        </Link>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Frequence</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
-            {campaign.campaignSummary?.postingPlan?.frequencyPerWeek ?? '-'}
-          </p>
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <article className="space-y-4 rounded-[28px] border border-stone-200 bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+              Planification automatique
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-stone-950">
+              Generer un planning automatique
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <input
+              type="date"
+              value={planner.startDate}
+              onChange={(e) =>
+                setPlanner((v) => ({ ...v, startDate: e.target.value }))
+              }
+              className="rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
+            />
+            <input
+              type="date"
+              value={planner.endDate}
+              onChange={(e) =>
+                setPlanner((v) => ({ ...v, endDate: e.target.value }))
+              }
+              className="rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
+            />
+            <input
+              type="number"
+              min={1}
+              max={21}
+              value={planner.frequencyPerWeek}
+              onChange={(e) =>
+                setPlanner((v) => ({
+                  ...v,
+                  frequencyPerWeek: Number(e.target.value || 1),
+                }))
+              }
+              className="rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
+            />
+            <input
+              type="text"
+              value={planner.timezone}
+              onChange={(e) =>
+                setPlanner((v) => ({ ...v, timezone: e.target.value }))
+              }
+              className="rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
+            />
+          </div>
+          <div className="rounded-[24px] border border-stone-200 bg-stone-50/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+              Jours exclus
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DAYS.map((day) => {
+                const active = planner.excludedDays.includes(day.key);
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    onClick={() =>
+                      setPlanner((v) => ({
+                        ...v,
+                        excludedDays: active
+                          ? v.excludedDays.filter((item) => item !== day.key)
+                          : [...v.excludedDays, day.key],
+                      }))
+                    }
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${active ? "border border-amber-300 bg-amber-100 text-amber-900" : "border border-stone-300 bg-white text-stone-700"}`}
+                  >
+                    {day.short}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {campaign.platforms.map((platform) => {
+              const key = platformKey(platform);
+              return (
+                <div
+                  key={platform}
+                  className="rounded-[24px] border border-stone-200 bg-stone-50/70 p-4"
+                >
+                  <p className="text-sm font-semibold text-stone-900">
+                    {platform}
+                  </p>
+                  <input
+                    type="text"
+                    value={(planner.preferredTimeWindows[key] ?? []).join(", ")}
+                    onChange={(e) =>
+                      setPlanner((v) => ({
+                        ...v,
+                        preferredTimeWindows: {
+                          ...v.preferredTimeWindows,
+                          [key]: e.target.value
+                            .split(",")
+                            .map((item) => item.trim())
+                            .filter(Boolean),
+                        },
+                      }))
+                    }
+                    className="mt-3 w-full rounded-2xl border border-stone-300 bg-white px-3 py-2.5 text-sm"
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <label className="inline-flex items-center gap-3 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={planner.syncToCalendar}
+                onChange={(e) =>
+                  setPlanner((v) => ({
+                    ...v,
+                    syncToCalendar: e.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-stone-300"
+              />
+              Synchroniser avec le calendrier
+            </label>
+            <button
+              type="button"
+              onClick={onAutoSchedule}
+              disabled={isSubmitting}
+              className="inline-flex items-center rounded-2xl bg-stone-950 px-5 py-3 text-sm font-semibold text-white hover:bg-stone-800 disabled:opacity-60"
+            >
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CalendarDays className="mr-2 h-4 w-4" />
+              )}
+              Generer un planning automatique
+            </button>
+          </div>
         </article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Duree (semaines)</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
-            {campaign.campaignSummary?.postingPlan?.durationWeeks ?? '-'}
-          </p>
-        </article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Mise a jour</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900">{formatDate(campaign.updatedAt)}</p>
-        </article>
-      </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <article className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-900">Generation globale</h2>
-          <p className="text-sm text-slate-600">
-            Lancez la generation de contenus pour toutes les plateformes de la campagne.
-          </p>
+        <article className="space-y-4 rounded-[28px] border border-stone-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-stone-950">
+            Generation et regeneration
+          </h2>
           <textarea
             value={generateInstruction}
-            onChange={(event) => setGenerateInstruction(event.target.value)}
+            onChange={(e) => setGenerateInstruction(e.target.value)}
             rows={3}
-            placeholder="Instruction optionnelle (ex: accent sur conversion mobile)."
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            placeholder="Instruction de generation globale"
+            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
           />
           <button
             type="button"
-            onClick={handleGenerate}
+            onClick={onGenerate}
             disabled={isSubmitting}
-            className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="inline-flex items-center rounded-2xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-stone-800 disabled:opacity-60"
           >
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Bot className="mr-2 h-4 w-4" />
+            )}
             Generer le contenu
           </button>
-        </article>
-
-        <aside className="space-y-4">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-500">Content pillars</h3>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(campaign.campaignSummary?.contentPillars ?? []).length > 0 ? (
-                campaign.campaignSummary?.contentPillars?.map((pillar) => (
-                  <span
-                    key={pillar}
-                    className="rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-medium text-cyan-800"
-                  >
-                    {pillar}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm text-slate-500">Aucun pillar</span>
-              )}
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5">
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-700">
-              <Target className="h-4 w-4" />
-              Astuce
-            </p>
-            <p className="mt-3 text-sm text-cyan-900">
-              Regénérez seulement une plateforme si les autres sont déjà validées.
-            </p>
-          </article>
-        </aside>
-      </section>
-
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">Regenerer une plateforme</h2>
+          <div className="h-px bg-stone-200" />
           <select
             value={platformToRegenerate}
-            onChange={(event) => setPlatformToRegenerate(event.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            onChange={(e) => setPlatformToRegenerate(e.target.value)}
+            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
           >
             <option value="">Selectionnez une plateforme</option>
             {campaign.platforms.map((platform) => (
@@ -236,44 +544,39 @@ export default function ContentCampaignDetailPage() {
           </select>
           <textarea
             value={platformInstruction}
-            onChange={(event) => setPlatformInstruction(event.target.value)}
+            onChange={(e) => setPlatformInstruction(e.target.value)}
             rows={2}
-            placeholder="Instruction optionnelle de regeneration."
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            placeholder="Instruction optionnelle plateforme"
+            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
           />
           <button
             type="button"
-            onClick={handleRegeneratePlatform}
+            onClick={onRegeneratePlatform}
             disabled={isSubmitting}
-            className="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+            className="inline-flex items-center rounded-2xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-100"
           >
             <RefreshCcw className="mr-2 h-4 w-4" />
             Regenerer la plateforme
           </button>
-        </article>
-
-        <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">Regenerer un post</h2>
           <input
             type="number"
             min={0}
             value={postIndexInput}
-            onChange={(event) => setPostIndexInput(event.target.value)}
-            placeholder="Index du post (0,1,2...)"
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            onChange={(e) => setPostIndexInput(e.target.value)}
+            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
           />
           <textarea
             value={postInstruction}
-            onChange={(event) => setPostInstruction(event.target.value)}
+            onChange={(e) => setPostInstruction(e.target.value)}
             rows={2}
-            placeholder="Instruction optionnelle pour ce post."
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            placeholder="Instruction optionnelle post"
+            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm"
           />
           <button
             type="button"
-            onClick={handleRegeneratePost}
+            onClick={onRegeneratePost}
             disabled={isSubmitting}
-            className="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+            className="inline-flex items-center rounded-2xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-100"
           >
             <RefreshCcw className="mr-2 h-4 w-4" />
             Regenerer le post
@@ -283,61 +586,173 @@ export default function ContentCampaignDetailPage() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900">Resultats</h2>
-          <span className="text-sm text-slate-600">{orderedPosts.length} posts</span>
+          <h2 className="text-2xl font-semibold text-stone-950">
+            Calendrier par semaine
+          </h2>
+          <span className="text-sm text-stone-600">
+            {weeks.length} semaine(s)
+          </span>
         </div>
+        {weeks.length === 0 ? (
+          <article className="rounded-[28px] border border-dashed border-stone-300 bg-white p-10 text-center">
+            <CalendarDays className="mx-auto h-10 w-10 text-stone-400" />
+            <h3 className="mt-3 text-lg font-semibold text-stone-950">
+              Aucun planning genere
+            </h3>
+          </article>
+        ) : (
+          weeks.map((week) => (
+            <article
+              key={week.weekStart}
+              className="overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-sm"
+            >
+              <div className="border-b border-stone-200 bg-stone-50 px-5 py-4 text-sm font-semibold text-stone-900">
+                Semaine du {week.weekStart}
+              </div>
+              <div className="grid gap-px bg-stone-200 lg:grid-cols-7">
+                {week.days.map((day) => (
+                  <div key={day.date} className="min-h-40 bg-white p-4">
+                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+                      <span>{day.short}</span>
+                      <span className="text-sm text-stone-900">
+                        {day.date.slice(8, 10)}/{day.date.slice(5, 7)}
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {day.posts.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-stone-200 px-3 py-4 text-center text-xs text-stone-400">
+                          Aucun post
+                        </div>
+                      ) : (
+                        day.posts.map((post) => (
+                          <div
+                            key={keyFor(post._id, post.index)}
+                            className="rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3"
+                          >
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="font-semibold text-stone-900">
+                                {post.platform}
+                              </span>
+                              <span className="text-stone-500">
+                                {post.schedule?.time}
+                              </span>
+                            </div>
+                            <p className="mt-2 line-clamp-3 text-xs leading-5 text-stone-700">
+                              {post.caption}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))
+        )}
+      </section>
 
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-stone-950">
+            Posts et edition inline
+          </h2>
+          <span className="text-sm text-stone-600">{posts.length} posts</span>
+        </div>
         {error ? (
-          <article className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <article className="rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
           </article>
         ) : null}
-
-        {orderedPosts.length === 0 ? (
-          <article className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <FileText className="mx-auto h-9 w-9 text-slate-400" />
-            <h3 className="mt-3 text-lg font-semibold text-slate-900">Aucun post genere</h3>
-            <p className="mt-1 text-sm text-slate-600">Lancez une generation globale pour remplir cette campagne.</p>
+        {posts.length === 0 ? (
+          <article className="rounded-[28px] border border-dashed border-stone-300 bg-white p-10 text-center">
+            <FileText className="mx-auto h-9 w-9 text-stone-400" />
+            <h3 className="mt-3 text-lg font-semibold text-stone-950">
+              Aucun post genere
+            </h3>
           </article>
         ) : (
-          <div className="space-y-3">
-            {orderedPosts.map((post) => (
-              <article key={post._id || `${post.platform}-${post.index}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+          posts.map((post) => {
+            const rowKey = keyFor(post._id, post.index);
+            const draft = drafts[rowKey] ?? {
+              date: "",
+              time: "",
+              timezone: planner.timezone,
+            };
+            return (
+              <article
+                key={rowKey}
+                className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
                       #{post.index}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
                       {post.platform}
                     </span>
                     <span className="rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-medium text-cyan-800">
                       {post.type}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">{post.schedule ? `${post.schedule.date} ${post.schedule.time}` : '-'}</p>
-                </div>
-
-                {post.hook ? <p className="mt-3 text-sm font-semibold text-slate-900">Hook: {post.hook}</p> : null}
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{post.caption}</p>
-                {post.description ? (
-                  <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">
-                    Description: {post.description}
+                  <p className="text-xs text-stone-500">
+                    {scheduleText(post.schedule)}
                   </p>
-                ) : null}
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(post.hashtags ?? []).map((tag) => (
-                    <span key={`${post._id || post.index}-${tag}`} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
-                      #{tag}
-                    </span>
-                  ))}
                 </div>
-
-                {post.cta ? <p className="mt-3 text-sm font-medium text-slate-800">CTA: {post.cta}</p> : null}
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                  {post.caption}
+                </p>
+                <div className="mt-5 grid gap-3 rounded-[24px] border border-stone-200 bg-stone-50/80 p-4 lg:grid-cols-[1fr_1fr_1.4fr_auto]">
+                  <input
+                    type="date"
+                    value={draft.date}
+                    onChange={(e) =>
+                      setDrafts((v) => ({
+                        ...v,
+                        [rowKey]: { ...draft, date: e.target.value },
+                      }))
+                    }
+                    className="rounded-2xl border border-stone-300 bg-white px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    type="time"
+                    value={draft.time}
+                    onChange={(e) =>
+                      setDrafts((v) => ({
+                        ...v,
+                        [rowKey]: { ...draft, time: e.target.value },
+                      }))
+                    }
+                    className="rounded-2xl border border-stone-300 bg-white px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={draft.timezone}
+                    onChange={(e) =>
+                      setDrafts((v) => ({
+                        ...v,
+                        [rowKey]: { ...draft, timezone: e.target.value },
+                      }))
+                    }
+                    className="rounded-2xl border border-stone-300 bg-white px-3 py-2.5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => saveInline(post._id, post.index)}
+                    disabled={savingKey === rowKey || isSubmitting}
+                    className="inline-flex items-center justify-center rounded-2xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-stone-800 disabled:opacity-60"
+                  >
+                    {savingKey === rowKey ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </article>
-            ))}
-          </div>
+            );
+          })
         )}
       </section>
     </div>

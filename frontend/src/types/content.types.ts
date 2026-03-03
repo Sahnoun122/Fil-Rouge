@@ -18,6 +18,7 @@ export interface ContentCampaignInputs {
 export interface PostSchedule {
   date: string;
   time: string;
+  timezone: string;
 }
 
 export interface GeneratedPost {
@@ -81,6 +82,11 @@ export interface CreateContentCampaignDto {
 export interface UpdateContentCampaignDto {
   name?: string;
   inputs?: ContentCampaignInputs;
+  generatedPosts?: Array<{
+    postId?: string;
+    index?: number;
+    schedule: PostSchedule;
+  }>;
 }
 
 export interface GenerateContentDto {
@@ -96,4 +102,18 @@ export interface RegeneratePostDto {
   postId?: string;
   index?: number;
   instruction?: string;
+}
+
+export interface PreferredTimeWindowsInput {
+  [platform: string]: string[];
+}
+
+export interface AutoScheduleCampaignDto {
+  startDate: string;
+  endDate: string;
+  frequencyPerWeek: number;
+  timezone: string;
+  excludedDays?: string[];
+  preferredTimeWindows?: PreferredTimeWindowsInput;
+  syncToCalendar?: boolean;
 }

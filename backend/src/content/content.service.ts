@@ -53,6 +53,12 @@ interface PostSelector {
   index?: number;
 }
 
+interface GeneratedPostScheduleUpdateInput {
+  postId?: string;
+  index?: number;
+  schedule: SchedulePayload;
+}
+
 @Injectable()
 export class ContentService {
   private readonly logger = new Logger(ContentService.name);
@@ -285,7 +291,29 @@ export class ContentService {
       );
     }
 
+    if (dto.generatedPosts !== undefined) {
+      this.applyGeneratedPostScheduleUpdates(
+        campaign,
+        dto.generatedPosts as GeneratedPostScheduleUpdateInput[],
+      );
+    }
+
     const savedCampaign = await campaign.save();
+
+    if (dto.generatedPosts?.length) {
+      try {
+        await this.calendarService.syncCampaignAutoSchedule(
+          userId,
+          savedCampaign,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to sync campaign ${campaignId} schedule updates to calendar: ${error instanceof Error ? error.message : 'unknown error'}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
+    }
+
     this.logger.log(`Campaign ${campaignId} updated for user ${userId}`);
     return savedCampaign;
   }
@@ -1212,6 +1240,26 @@ export class ContentService {
         post.schedule = schedule;
       }
     });
+  }
+
+  private applyGeneratedPostScheduleUpdates(
+    campaign: ContentCampaignDocument,
+    updates: GeneratedPostScheduleUpdateInput[],
+  ): void {
+    if (!updates.length) {
+      return;
+    }
+
+    for (const update of updates) {
+      const targetIndex = this.resolvePostIndex(campaign, {
+        postId: update.postId,
+        index: update.index,
+      });
+
+      campaign.generatedPosts[targetIndex].schedule = this.normalizeSchedule(
+        update.schedule,
+      );
+    }
   }
 
   private async getAutoScheduleAdvice(
