@@ -364,3 +364,86 @@ Retourne uniquement le JSON final.`;
 }
 
 export const buildRegeneratePostPrompt = buildRegenerateSinglePostPrompt;
+
+export function buildAutoScheduleAdvicePrompt(
+  businessInfo: JsonObject,
+  strategyJson: JsonObject,
+  contentPillars: string[],
+  platforms: string[],
+  frequencyPerWeek: number,
+  startDate: string,
+  endDate: string,
+): string {
+  const normalizedPlatforms = normalizePlatforms(platforms);
+  const normalizedPillars = Array.from(
+    new Set(
+      (contentPillars ?? [])
+        .map((pillar) => String(pillar ?? '').trim())
+        .filter((pillar) => pillar.length > 0),
+    ),
+  );
+
+  return `Tu es un expert senior en social media planning.
+
+Mission:
+- Proposer des conseils de planification concrets pour un calendrier de contenu.
+- Adapter les fenetres horaires et la repartition hebdomadaire selon le contexte business, la strategie et les plateformes.
+
+Contexte business:
+${toPrettyJson(businessInfo)}
+
+Strategie marketing:
+${toPrettyJson(strategyJson)}
+
+Content pillars:
+${toPrettyJson(normalizedPillars)}
+
+Plateformes:
+${toPrettyJson(normalizedPlatforms)}
+
+Cadre de planification:
+${toPrettyJson({
+  frequencyPerWeek,
+  startDate,
+  endDate,
+})}
+
+Regles obligatoires:
+- Francais uniquement.
+- Concret.
+- Pas de blabla.
+- Retourner uniquement du JSON strict.
+- Pas de markdown.
+- Pas de commentaires.
+- Les cles de platformRules doivent etre en minuscules.
+- Utiliser seulement les plateformes fournies.
+- bestWindows doit contenir des strings au format HH:mm-HH:mm.
+- weeklyDistribution doit rester coherent avec frequencyPerWeek.
+- notes doit contenir des remarques courtes et utiles.
+
+Format de sortie strict:
+{
+  "platformRules": {
+    "instagram": { "bestWindows": ["12:00-14:00", "18:00-21:00"] },
+    "tiktok": { "bestWindows": ["19:00-23:00"] }
+  },
+  "weeklyDistribution": {
+    "week1": {
+      "instagram": 2,
+      "tiktok": 1,
+      "facebook": 1
+    },
+    "week2": {
+      "instagram": 1,
+      "linkedin": 2,
+      "youtube": 1
+    }
+  },
+  "notes": [
+    "LinkedIn privilegie les jours ouvrables en matinnee.",
+    "TikTok performe mieux en soiree."
+  ]
+}
+
+Retourne uniquement ce JSON.`;
+}

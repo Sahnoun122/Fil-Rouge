@@ -11,6 +11,7 @@ import { Model, Types } from 'mongoose';
 import { AiService } from '../ai/ai.service';
 import { CalendarService } from '../calendar/calendar.service';
 import {
+  buildAutoScheduleAdvicePrompt,
   buildGenerateContentCampaignPrompt,
   buildRegeneratePlatformPrompt,
   buildRegenerateSinglePostPrompt,
@@ -27,6 +28,7 @@ import {
   UpdateCampaignDto,
 } from './dto';
 import {
+  AutoScheduleAdvice,
   AutoSchedulerService,
   ScheduleAssignment,
 } from './auto-scheduler.service';
@@ -473,6 +475,10 @@ export class ContentService {
     dto: AutoScheduleDto,
   ): Promise<ContentCampaignDocument> {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
+    const strategy = await this.getOwnedStrategyByIdOrThrow(
+      userId,
+      campaign.strategyId.toString(),
+    );
 
     if (campaign.mode !== ContentMode.CONTENT_MARKETING) {
       throw new BadRequestException(
@@ -489,6 +495,17 @@ export class ContentService {
     const platforms = this.mergeUniquePlatforms(campaign.platforms ?? [], [
       ...campaign.generatedPosts.map((post) => post.platform),
     ]);
+    const autoScheduleAdvice = await this.getAutoScheduleAdvice(
+      strategy.businessInfo as unknown as Record<string, unknown>,
+      strategy.generatedStrategy as unknown as Record<string, unknown>,
+      campaign.campaignSummary?.contentPillars ??
+        campaign.inputs?.contentPillars ??
+        [],
+      platforms,
+      dto.frequencyPerWeek,
+      dto.startDate,
+      dto.endDate,
+    );
 
     const assignments = this.autoSchedulerService.createSchedule(
       {
@@ -499,6 +516,7 @@ export class ContentService {
         timezone: dto.timezone,
         preferredTimeWindows: dto.preferredTimeWindows,
         excludedDays: dto.excludedDays,
+        advice: autoScheduleAdvice,
       },
       campaign.generatedPosts,
     );
@@ -1194,6 +1212,75 @@ export class ContentService {
         post.schedule = schedule;
       }
     });
+  }
+
+  private async getAutoScheduleAdvice(
+    businessInfo: Record<string, unknown>,
+    strategyJson: Record<string, unknown>,
+    contentPillars: string[],
+    platforms: string[],
+    frequencyPerWeek: number,
+    startDate: string,
+    endDate: string,
+  ): Promise<AutoScheduleAdvice | undefined> {
+    try {
+      const prompt = buildAutoScheduleAdvicePrompt(
+        businessInfo,
+        strategyJson,
+        contentPillars,
+        platforms,
+        frequencyPerWeek,
+        startDate,
+        endDate,
+      );
+      const advice = await this.aiService.callNemotronAndParseJson(prompt);
+      return this.normalizeAutoScheduleAdvice(advice);
+    } catch (error) {
+      this.logger.warn(
+        `Auto-schedule advice fallback to local heuristics: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
+      return undefined;
+    }
+  }
+
+  private normalizeAutoScheduleAdvice(
+    value: unknown,
+  ): AutoScheduleAdvice | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return undefined;
+    }
+
+    const payload = value as {
+      platformRules?: unknown;
+      weeklyDistribution?: unknown;
+      notes?: unknown;
+    };
+
+    return {
+      platformRules:
+        payload.platformRules &&
+        typeof payload.platformRules === 'object' &&
+        !Array.isArray(payload.platformRules)
+          ? (payload.platformRules as Record<
+              string,
+              { bestWindows?: string[] }
+            >)
+          : undefined,
+      weeklyDistribution:
+        payload.weeklyDistribution &&
+        typeof payload.weeklyDistribution === 'object' &&
+        !Array.isArray(payload.weeklyDistribution)
+          ? (payload.weeklyDistribution as Record<
+              string,
+              Record<string, number>
+            >)
+          : undefined,
+      notes: Array.isArray(payload.notes)
+        ? payload.notes.filter(
+            (note): note is string => typeof note === 'string',
+          )
+        : undefined,
+    };
   }
 
   private extractRequiredString(value: unknown, fieldName: string): string {

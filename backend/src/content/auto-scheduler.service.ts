@@ -14,6 +14,7 @@ interface AutoSchedulerInputs {
   preferredTimeWindows?: PreferredTimeWindowsDto | Record<string, string[]>;
   excludedDays?: AutoScheduleExcludedDay[];
   seed?: number;
+  advice?: AutoScheduleAdvice;
 }
 
 interface ScheduleAssignment {
@@ -58,6 +59,16 @@ interface DateSlot {
   time: string;
   minutes: number;
   priority: number;
+}
+
+interface AutoScheduleAdvicePlatformRule {
+  bestWindows?: string[];
+}
+
+interface AutoScheduleAdvice {
+  platformRules?: Record<string, AutoScheduleAdvicePlatformRule>;
+  weeklyDistribution?: Record<string, Record<string, number>>;
+  notes?: string[];
 }
 
 @Injectable()
@@ -236,6 +247,11 @@ export class AutoSchedulerService {
     const preferredTimeWindows = this.normalizePreferredTimeWindows(
       inputs.preferredTimeWindows,
     );
+    const advice = this.normalizeAdvice(inputs.advice);
+    const effectiveTimeWindows = this.mergeTimeWindowsWithAdvice(
+      preferredTimeWindows,
+      advice,
+    );
     const postsByPlatform = this.groupPostsByPlatform(
       posts,
       normalizedPlatforms,
@@ -244,6 +260,7 @@ export class AutoSchedulerService {
       this.buildBalancedPostOrder(postsByPlatform, normalizedPlatforms),
       inputs.frequencyPerWeek,
       weekBuckets,
+      advice,
     );
 
     return this.applySchedule(
@@ -251,7 +268,7 @@ export class AutoSchedulerService {
       distributedPosts,
       weekBuckets,
       eligibleDates,
-      preferredTimeWindows,
+      effectiveTimeWindows,
       inputs.timezone,
       inputs.seed ?? 0,
     );
@@ -324,16 +341,28 @@ export class AutoSchedulerService {
     posts: OrderedPost[],
     frequencyPerWeek: number,
     weekBuckets: WeekBucket[],
+    advice?: AutoScheduleAdvice,
   ): Map<number, OrderedPost[]> {
     const distributed = new Map<number, OrderedPost[]>();
     const weeklyCounts = Array.from({ length: weekBuckets.length }, () => 0);
+    const weeklyTargets = this.buildWeeklyTargets(
+      advice?.weeklyDistribution,
+      weekBuckets,
+    );
 
     let weekCursor = 0;
     for (const post of posts) {
       let assigned = false;
+      const platformKey = post.platform.toLowerCase();
+      const preferredWeekOrder = this.getPreferredWeeksForPlatform(
+        platformKey,
+        weeklyTargets,
+        weeklyCounts,
+        frequencyPerWeek,
+        weekCursor,
+      );
 
-      for (let attempt = 0; attempt < weekBuckets.length; attempt += 1) {
-        const candidateWeek = (weekCursor + attempt) % weekBuckets.length;
+      for (const candidateWeek of preferredWeekOrder) {
         if (weeklyCounts[candidateWeek] >= frequencyPerWeek) {
           continue;
         }
@@ -675,6 +704,151 @@ export class AutoSchedulerService {
     return normalized;
   }
 
+  private normalizeAdvice(advice?: AutoScheduleAdvice): AutoScheduleAdvice {
+    if (!advice || typeof advice !== 'object' || Array.isArray(advice)) {
+      return {};
+    }
+
+    const platformRules: Record<string, AutoScheduleAdvicePlatformRule> = {};
+    const rawPlatformRules =
+      advice.platformRules &&
+      typeof advice.platformRules === 'object' &&
+      !Array.isArray(advice.platformRules)
+        ? advice.platformRules
+        : {};
+
+    for (const [platform, rule] of Object.entries(rawPlatformRules)) {
+      const normalizedPlatform = this.normalizePlatform(platform);
+      if (!normalizedPlatform || !rule || typeof rule !== 'object') {
+        continue;
+      }
+
+      platformRules[normalizedPlatform.toLowerCase()] = {
+        bestWindows: Array.isArray(rule.bestWindows)
+          ? rule.bestWindows.map((window) => this.normalizeTimeWindow(window))
+          : [],
+      };
+    }
+
+    const weeklyDistribution: Record<string, Record<string, number>> = {};
+    const rawWeeklyDistribution =
+      advice.weeklyDistribution &&
+      typeof advice.weeklyDistribution === 'object' &&
+      !Array.isArray(advice.weeklyDistribution)
+        ? advice.weeklyDistribution
+        : {};
+
+    for (const [weekKey, distribution] of Object.entries(
+      rawWeeklyDistribution,
+    )) {
+      if (
+        !distribution ||
+        typeof distribution !== 'object' ||
+        Array.isArray(distribution)
+      ) {
+        continue;
+      }
+
+      const normalizedDistribution: Record<string, number> = {};
+      for (const [platform, count] of Object.entries(distribution)) {
+        const normalizedPlatform = this.normalizePlatform(platform);
+        const parsedCount = Number(count);
+        if (
+          !normalizedPlatform ||
+          !Number.isInteger(parsedCount) ||
+          parsedCount < 0
+        ) {
+          continue;
+        }
+
+        normalizedDistribution[normalizedPlatform.toLowerCase()] = parsedCount;
+      }
+
+      weeklyDistribution[weekKey.toLowerCase()] = normalizedDistribution;
+    }
+
+    const notes = Array.isArray(advice.notes)
+      ? advice.notes
+          .filter((note): note is string => typeof note === 'string')
+          .map((note) => note.trim())
+          .filter((note) => note.length > 0)
+      : [];
+
+    return {
+      platformRules,
+      weeklyDistribution,
+      notes,
+    };
+  }
+
+  private mergeTimeWindowsWithAdvice(
+    preferredTimeWindows: Record<string, string[]>,
+    advice: AutoScheduleAdvice,
+  ): Record<string, string[]> {
+    const merged = { ...preferredTimeWindows };
+
+    for (const [platform, rule] of Object.entries(advice.platformRules ?? {})) {
+      if (merged[platform]?.length) {
+        continue;
+      }
+
+      if (rule.bestWindows?.length) {
+        merged[platform] = rule.bestWindows;
+      }
+    }
+
+    return merged;
+  }
+
+  private buildWeeklyTargets(
+    weeklyDistribution: Record<string, Record<string, number>> | undefined,
+    weekBuckets: WeekBucket[],
+  ): Array<Record<string, number>> {
+    return weekBuckets.map((_, index) => {
+      const key = `week${index + 1}`;
+      return weeklyDistribution?.[key] ?? {};
+    });
+  }
+
+  private getPreferredWeeksForPlatform(
+    platformKey: string,
+    weeklyTargets: Array<Record<string, number>>,
+    weeklyCounts: number[],
+    frequencyPerWeek: number,
+    weekCursor: number,
+  ): number[] {
+    const indexedWeeks = weeklyTargets.map((weekTarget, index) => ({
+      index,
+      target: weekTarget[platformKey] ?? 0,
+      load: weeklyCounts[index],
+      rotationDistance:
+        (index - weekCursor + weeklyTargets.length) % weeklyTargets.length,
+    }));
+
+    return indexedWeeks
+      .sort((left, right) => {
+        if (right.target > 0 !== left.target > 0) {
+          return Number(right.target > 0) - Number(left.target > 0);
+        }
+
+        if (right.target !== left.target) {
+          return right.target - left.target;
+        }
+
+        if (left.load !== right.load) {
+          return left.load - right.load;
+        }
+
+        if (left.rotationDistance !== right.rotationDistance) {
+          return left.rotationDistance - right.rotationDistance;
+        }
+
+        return left.index - right.index;
+      })
+      .map((entry) => entry.index)
+      .filter((index) => weeklyCounts[index] < frequencyPerWeek);
+  }
+
   private generateWindowMinutes(
     window: TimeWindow,
     isFallback: boolean,
@@ -997,4 +1171,4 @@ export class AutoSchedulerService {
   }
 }
 
-export type { AutoSchedulerInputs, ScheduleAssignment };
+export type { AutoScheduleAdvice, AutoSchedulerInputs, ScheduleAssignment };
