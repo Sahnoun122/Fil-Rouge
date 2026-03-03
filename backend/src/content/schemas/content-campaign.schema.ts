@@ -58,6 +58,9 @@ export class PostSchedule {
 
   @Prop()
   time: string;
+
+  @Prop()
+  timezone: string;
 }
 
 @Schema({ _id: true, id: false })

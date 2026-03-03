@@ -5,3 +5,4 @@ export * from './generate-content.dto';
 export * from './update-campaign.dto';
 export * from './regenerate-platform.dto';
 export * from './regenerate-post.dto';
+export * from './auto-schedule.dto';

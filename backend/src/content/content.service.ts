@@ -9,6 +9,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AiService } from '../ai/ai.service';
+import { CalendarService } from '../calendar/calendar.service';
 import {
   buildGenerateContentCampaignPrompt,
   buildRegeneratePlatformPrompt,
@@ -20,10 +21,15 @@ import {
 } from '../strategies/schemas/strategy.schema';
 import { User, UserDocument } from '../users/entities/user.entity';
 import {
+  AutoScheduleDto,
   ContentCampaignInputsDto,
   CreateContentCampaignDto,
   UpdateCampaignDto,
 } from './dto';
+import {
+  AutoSchedulerService,
+  ScheduleAssignment,
+} from './auto-scheduler.service';
 import {
   CampaignSummary,
   ContentCampaign,
@@ -37,6 +43,7 @@ import {
 interface SchedulePayload {
   date: string;
   time: string;
+  timezone: string;
 }
 
 interface PostSelector {
@@ -56,6 +63,8 @@ export class ContentService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly aiService: AiService,
+    private readonly autoSchedulerService: AutoSchedulerService,
+    private readonly calendarService: CalendarService,
   ) {}
 
   async createCampaign(
@@ -456,6 +465,63 @@ export class ContentService {
     const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
     await this.contentCampaignModel.deleteOne({ _id: campaign._id }).exec();
     this.logger.log(`Campaign ${campaignId} deleted by user ${userId}`);
+  }
+
+  async autoScheduleCampaign(
+    userId: string,
+    campaignId: string,
+    dto: AutoScheduleDto,
+  ): Promise<ContentCampaignDocument> {
+    const campaign = await this.getOwnedCampaignOrThrow(userId, campaignId);
+
+    if (campaign.mode !== ContentMode.CONTENT_MARKETING) {
+      throw new BadRequestException(
+        'La planification automatique est reservee au mode CONTENT_MARKETING',
+      );
+    }
+
+    if (!campaign.generatedPosts?.length) {
+      throw new BadRequestException(
+        'Aucun post genere a planifier pour cette campagne',
+      );
+    }
+
+    const platforms = this.mergeUniquePlatforms(campaign.platforms ?? [], [
+      ...campaign.generatedPosts.map((post) => post.platform),
+    ]);
+
+    const assignments = this.autoSchedulerService.createSchedule(
+      {
+        platforms,
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+        frequencyPerWeek: dto.frequencyPerWeek,
+        timezone: dto.timezone,
+        preferredTimeWindows: dto.preferredTimeWindows,
+        excludedDays: dto.excludedDays,
+      },
+      campaign.generatedPosts,
+    );
+
+    this.applyScheduleAssignments(campaign, assignments);
+    const savedCampaign = await campaign.save();
+
+    if (dto.syncToCalendar === true) {
+      try {
+        await this.calendarService.syncCampaignAutoSchedule(
+          userId,
+          savedCampaign,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to sync campaign ${campaignId} auto-schedule to calendar: ${error instanceof Error ? error.message : 'unknown error'}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
+    }
+
+    this.logger.log(`Campaign ${campaignId} auto-scheduled for user ${userId}`);
+    return savedCampaign;
   }
 
   private async getOwnedCampaignOrThrow(
@@ -1092,9 +1158,14 @@ export class ContentService {
       throw new BadRequestException('schedule invalide: objet attendu');
     }
 
-    const payload = value as { date?: unknown; time?: unknown };
+    const payload = value as {
+      date?: unknown;
+      time?: unknown;
+      timezone?: unknown;
+    };
     const date = this.normalizeOptionalString(payload.date);
     const time = this.normalizeOptionalString(payload.time);
+    const timezone = this.normalizeOptionalString(payload.timezone) ?? 'UTC';
 
     if (!date && !time) {
       return undefined;
@@ -1106,7 +1177,23 @@ export class ContentService {
       );
     }
 
-    return { date, time };
+    return { date, time, timezone };
+  }
+
+  private applyScheduleAssignments(
+    campaign: ContentCampaignDocument,
+    assignments: ScheduleAssignment[],
+  ): void {
+    const assignmentByIndex = new Map(
+      assignments.map((assignment) => [assignment.index, assignment.schedule]),
+    );
+
+    campaign.generatedPosts.forEach((post, index) => {
+      const schedule = assignmentByIndex.get(index);
+      if (schedule) {
+        post.schedule = schedule;
+      }
+    });
   }
 
   private extractRequiredString(value: unknown, fieldName: string): string {

@@ -8,8 +8,11 @@ export enum CalendarPlatform {
   TIKTOK = 'tiktok',
   FACEBOOK = 'facebook',
   LINKEDIN = 'linkedin',
+  X = 'x',
   YOUTUBE = 'youtube',
+  SNAPCHAT = 'snapchat',
   PINTEREST = 'pinterest',
+  THREADS = 'threads',
 }
 
 export enum ScheduledPostType {

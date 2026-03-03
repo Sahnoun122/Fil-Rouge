@@ -17,6 +17,7 @@ import {
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
+  AutoScheduleDto,
   AdminContentQueryDto,
   CreateContentCampaignDto,
   GenerateContentDto,
@@ -74,6 +75,26 @@ export class ContentController {
     return {
       success: true,
       message: 'Campaign content generated successfully',
+      data: campaign,
+    };
+  }
+
+  @Post('campaigns/:id/auto-schedule')
+  async autoScheduleCampaign(
+    @Param('id') campaignId: string,
+    @Body() autoScheduleDto: AutoScheduleDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user.id;
+    const campaign = await this.contentService.autoScheduleCampaign(
+      userId,
+      campaignId,
+      autoScheduleDto,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign auto-scheduled successfully',
       data: campaign,
     };
   }

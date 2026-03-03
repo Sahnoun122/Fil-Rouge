@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AiModule } from '../ai/ai.module';
+import { CalendarModule } from '../calendar/calendar.module';
 import {
   Strategy,
   StrategySchema,
@@ -12,6 +13,7 @@ import {
   ContentCampaign,
   ContentCampaignSchema,
 } from './schemas/content-campaign.schema';
+import { AutoSchedulerService } from './auto-scheduler.service';
 
 @Module({
   imports: [
@@ -21,9 +23,10 @@ import {
       { name: User.name, schema: UserSchema },
     ]),
     AiModule,
+    CalendarModule,
   ],
   controllers: [ContentController],
-  providers: [ContentService],
+  providers: [ContentService, AutoSchedulerService],
   exports: [ContentService],
 })
 export class ContentModule {}
