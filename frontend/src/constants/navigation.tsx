@@ -9,19 +9,34 @@ export interface NavigationItem {
 }
 
 const dashboardIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
       d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
     />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5h8" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 5h8"
+    />
   </svg>
 );
 
 const userIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -32,7 +47,12 @@ const userIcon = (
 );
 
 const strategiesIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -43,7 +63,12 @@ const strategiesIcon = (
 );
 
 const analyticsIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -54,19 +79,34 @@ const analyticsIcon = (
 );
 
 const settingsIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
       d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37Z"
     />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 15a3 3 0 100-6 3 3 0 000 6z"
+    />
   </svg>
 );
 
 const calendarIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -77,7 +117,12 @@ const calendarIcon = (
 );
 
 const contentIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -88,7 +133,12 @@ const contentIcon = (
 );
 
 const profileIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -99,8 +149,18 @@ const profileIcon = (
 );
 
 const monitoringIcon = (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13h4l3-8 4 16 3-8h4" />
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 13h4l3-8 4 16 3-8h4"
+    />
   </svg>
 );
 
@@ -109,7 +169,7 @@ export const userNavigation: NavigationItem[] = [
   { name: "Mes strategies", href: "/user/strategies", icon: strategiesIcon },
   { name: "Content", href: "/user/content", icon: contentIcon },
   { name: "SWOT", href: "/user/swot", icon: analyticsIcon },
-  { name: "Calendrier", href: "/user/calendar", icon: calendarIcon },
+  { name: "Calendrier", href: "/calendar", icon: calendarIcon },
   { name: "Profil", href: "/user/profile", icon: profileIcon },
   { name: "Parametres", href: "/user/settings", icon: settingsIcon },
 ];
@@ -119,7 +179,11 @@ export const adminNavigation: NavigationItem[] = [
   { name: "Utilisateurs", href: "/admin/users", icon: userIcon },
   { name: "Strategies", href: "/admin/strategies", icon: strategiesIcon },
   { name: "Content", href: "/admin/content", icon: contentIcon },
-  { name: "SWOT Analytics", href: "/admin/swot-analytics", icon: analyticsIcon },
+  {
+    name: "SWOT Analytics",
+    href: "/admin/swot-analytics",
+    icon: analyticsIcon,
+  },
   { name: "Analytics", href: "/admin/analytics", icon: analyticsIcon },
   { name: "AI monitoring", href: "/admin/ai-monitoring", icon: monitoringIcon },
   { name: "Parametres", href: "/admin/settings", icon: settingsIcon },
@@ -129,7 +193,10 @@ export const getNavigationForRole = (role: AppRole): NavigationItem[] => {
   return role === "admin" ? adminNavigation : userNavigation;
 };
 
-export const getPageTitleFromPath = (pathname: string | null, role: AppRole): string => {
+export const getPageTitleFromPath = (
+  pathname: string | null,
+  role: AppRole,
+): string => {
   if (!pathname) {
     return role === "admin" ? "Admin dashboard" : "Dashboard";
   }
@@ -138,7 +205,9 @@ export const getPageTitleFromPath = (pathname: string | null, role: AppRole): st
     .slice()
     .sort((a, b) => b.href.length - a.href.length);
 
-  const activeItem = navigation.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+  const activeItem = navigation.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
   if (activeItem) {
     return activeItem.name;
   }

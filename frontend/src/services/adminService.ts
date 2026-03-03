@@ -1,4 +1,4 @@
-import { api } from '../utils/fetcher';
+import { api } from "../utils/fetcher";
 import {
   AdminContent,
   AdminContentDetail,
@@ -21,7 +21,7 @@ import {
   AdminUsersResult,
   AdminUpdateUserPayload,
   SetUserBanPayload,
-} from '../types/admin.types';
+} from "../types/admin.types";
 
 type ApiEnvelope<T> = {
   success?: boolean;
@@ -53,27 +53,27 @@ type RawContentsData = {
 };
 
 const asRecord = (value: unknown): Record<string, unknown> => {
-  if (typeof value === 'object' && value !== null) {
+  if (typeof value === "object" && value !== null) {
     return value as Record<string, unknown>;
   }
 
   return {};
 };
 
-const asString = (value: unknown, fallback = ''): string => {
-  return typeof value === 'string' ? value : fallback;
+const asString = (value: unknown, fallback = ""): string => {
+  return typeof value === "string" ? value : fallback;
 };
 
 const asBoolean = (value: unknown, fallback = false): boolean => {
-  return typeof value === 'boolean' ? value : fallback;
+  return typeof value === "boolean" ? value : fallback;
 };
 
 const asNumber = (value: unknown, fallback = 0): number => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (typeof value === "number" && Number.isFinite(value)) {
     return value;
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
       return parsed;
@@ -85,7 +85,7 @@ const asNumber = (value: unknown, fallback = 0): number => {
 
 const asStringArray = (value: unknown): string[] => {
   return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
+    ? value.filter((item): item is string => typeof item === "string")
     : [];
 };
 
@@ -106,7 +106,8 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
   const source = asRecord(payload);
 
   const rawId = source.id ?? source._id;
-  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+  const id =
+    typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
 
   const createdAt = toIso(source.createdAt);
   const updatedAt = toIso(source.updatedAt, createdAt);
@@ -115,7 +116,7 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
     id,
     fullName: asString(source.fullName),
     email: asString(source.email),
-    role: source.role === 'admin' ? 'admin' : 'user',
+    role: source.role === "admin" ? "admin" : "user",
     isBanned: asBoolean(source.isBanned, false),
     bannedAt: source.bannedAt ? toIso(source.bannedAt) : undefined,
     banReason: asString(source.banReason) || undefined,
@@ -131,12 +132,15 @@ const normalizeAdminUser = (payload: unknown): AdminUser => {
 const normalizeAdminStrategy = (payload: unknown): AdminStrategy => {
   const source = asRecord(payload);
   const rawId = source.id ?? source._id;
-  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+  const id =
+    typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
 
   const userSource = asRecord(source.userId);
   const rawUserId = userSource._id ?? userSource.id ?? source.userId;
   const userId =
-    typeof rawUserId === 'string' ? rawUserId : asString(rawUserId?.toString?.(), '');
+    typeof rawUserId === "string"
+      ? rawUserId
+      : asString(rawUserId?.toString?.(), "");
 
   const businessSource = asRecord(source.businessInfo);
   const createdAt = toIso(source.createdAt);
@@ -147,37 +151,49 @@ const normalizeAdminStrategy = (payload: unknown): AdminStrategy => {
     userId,
     user: {
       id: userId,
-      fullName: asString(userSource.fullName, 'Utilisateur inconnu'),
-      email: asString(userSource.email, '-'),
+      fullName: asString(userSource.fullName, "Utilisateur inconnu"),
+      email: asString(userSource.email, "-"),
       companyName: asString(userSource.companyName) || undefined,
-      role: userSource.role === 'admin' ? 'admin' : 'user',
+      role: userSource.role === "admin" ? "admin" : "user",
     },
     businessInfo: {
-      businessName: asString(businessSource.businessName, 'Sans nom'),
-      industry: asString(businessSource.industry, '-'),
-      productOrService: asString(businessSource.productOrService, '-'),
-      targetAudience: asString(businessSource.targetAudience, '-'),
-      location: asString(businessSource.location, '-'),
-      mainObjective: asString(businessSource.mainObjective, '-'),
-      tone: asString(businessSource.tone, '-'),
+      businessName: asString(businessSource.businessName, "Sans nom"),
+      industry: asString(businessSource.industry, "-"),
+      productOrService: asString(businessSource.productOrService, "-"),
+      targetAudience: asString(businessSource.targetAudience, "-"),
+      location: asString(businessSource.location, "-"),
+      mainObjective: asString(businessSource.mainObjective, "-"),
+      tone: asString(businessSource.tone, "-"),
       budget:
-        typeof businessSource.budget === 'number' ? businessSource.budget : undefined,
+        typeof businessSource.budget === "number"
+          ? businessSource.budget
+          : undefined,
     },
     createdAt,
     updatedAt,
   };
 };
 
-const normalizeGeneratedStrategy = (value: unknown): AdminStrategyDetail['generatedStrategy'] => {
+const normalizeGeneratedStrategy = (
+  value: unknown,
+): AdminStrategyDetail["generatedStrategy"] => {
   const source = asRecord(value);
   return {
-    avant: asRecord(source.avant) as AdminStrategyDetail['generatedStrategy']['avant'],
-    pendant: asRecord(source.pendant) as AdminStrategyDetail['generatedStrategy']['pendant'],
-    apres: asRecord(source.apres) as AdminStrategyDetail['generatedStrategy']['apres'],
+    avant: asRecord(
+      source.avant,
+    ) as unknown as AdminStrategyDetail["generatedStrategy"]["avant"],
+    pendant: asRecord(
+      source.pendant,
+    ) as unknown as AdminStrategyDetail["generatedStrategy"]["pendant"],
+    apres: asRecord(
+      source.apres,
+    ) as unknown as AdminStrategyDetail["generatedStrategy"]["apres"],
   };
 };
 
-const normalizeAdminStrategyDetail = (payload: unknown): AdminStrategyDetail => {
+const normalizeAdminStrategyDetail = (
+  payload: unknown,
+): AdminStrategyDetail => {
   const base = normalizeAdminStrategy(payload);
   const source = asRecord(payload);
 
@@ -190,7 +206,9 @@ const normalizeAdminStrategyDetail = (payload: unknown): AdminStrategyDetail => 
 const normalizeSwotMatrix = (value: unknown): AdminSwotMatrix => {
   const source = asRecord(value);
   const toList = (raw: unknown): string[] =>
-    Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
+    Array.isArray(raw)
+      ? raw.filter((item): item is string => typeof item === "string")
+      : [];
 
   return {
     strengths: toList(source.strengths),
@@ -203,16 +221,23 @@ const normalizeSwotMatrix = (value: unknown): AdminSwotMatrix => {
 const normalizeAdminSwot = (payload: unknown): AdminSwot => {
   const source = asRecord(payload);
   const rawId = source.id ?? source._id;
-  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+  const id =
+    typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
 
   const userSource = asRecord(source.userId);
   const rawUserId = userSource._id ?? userSource.id ?? source.userId;
-  const userId = typeof rawUserId === 'string' ? rawUserId : asString(rawUserId?.toString?.(), '');
+  const userId =
+    typeof rawUserId === "string"
+      ? rawUserId
+      : asString(rawUserId?.toString?.(), "");
 
   const strategySource = asRecord(source.strategyId);
-  const rawStrategyId = strategySource._id ?? strategySource.id ?? source.strategyId;
+  const rawStrategyId =
+    strategySource._id ?? strategySource.id ?? source.strategyId;
   const strategyId =
-    typeof rawStrategyId === 'string' ? rawStrategyId : asString(rawStrategyId?.toString?.(), '');
+    typeof rawStrategyId === "string"
+      ? rawStrategyId
+      : asString(rawStrategyId?.toString?.(), "");
 
   const strategyBusinessInfo = asRecord(strategySource.businessInfo);
   const createdAt = toIso(source.createdAt);
@@ -222,18 +247,21 @@ const normalizeAdminSwot = (payload: unknown): AdminSwot => {
     id,
     userId,
     strategyId,
-    title: asString(source.title, 'SWOT'),
+    title: asString(source.title, "SWOT"),
     user: {
       id: userId,
-      fullName: asString(userSource.fullName, 'Utilisateur inconnu'),
-      email: asString(userSource.email, '-'),
+      fullName: asString(userSource.fullName, "Utilisateur inconnu"),
+      email: asString(userSource.email, "-"),
       companyName: asString(userSource.companyName) || undefined,
-      role: userSource.role === 'admin' ? 'admin' : 'user',
+      role: userSource.role === "admin" ? "admin" : "user",
     },
     strategy: {
       id: strategyId,
-      businessName: asString(strategyBusinessInfo.businessName, 'Strategie inconnue'),
-      industry: asString(strategyBusinessInfo.industry, '-'),
+      businessName: asString(
+        strategyBusinessInfo.businessName,
+        "Strategie inconnue",
+      ),
+      industry: asString(strategyBusinessInfo.industry, "-"),
     },
     swot: normalizeSwotMatrix(source.swot),
     isAiGenerated: asBoolean(source.isAiGenerated, false),
@@ -247,7 +275,9 @@ const normalizeAdminSwotDetail = (payload: unknown): AdminSwotDetail => {
   const source = asRecord(payload);
   const inputsSource = asRecord(source.inputs);
   const toList = (raw: unknown): string[] =>
-    Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
+    Array.isArray(raw)
+      ? raw.filter((item): item is string => typeof item === "string")
+      : [];
 
   return {
     ...base,
@@ -261,7 +291,9 @@ const normalizeAdminSwotDetail = (payload: unknown): AdminSwotDetail => {
   };
 };
 
-const normalizeContentInputs = (value: unknown): AdminContentDetail['inputs'] => {
+const normalizeContentInputs = (
+  value: unknown,
+): AdminContentDetail["inputs"] => {
   const source = asRecord(value);
 
   return {
@@ -270,16 +302,21 @@ const normalizeContentInputs = (value: unknown): AdminContentDetail['inputs'] =>
     tone: asString(source.tone) || undefined,
     callToAction: asString(source.callToAction) || undefined,
     promoDetails: asString(source.promoDetails) || undefined,
-    budget: typeof source.budget === 'number' ? source.budget : undefined,
+    budget: typeof source.budget === "number" ? source.budget : undefined,
     contentPillars: asStringArray(source.contentPillars),
-    frequencyPerWeek: typeof source.frequencyPerWeek === 'number' ? source.frequencyPerWeek : undefined,
+    frequencyPerWeek:
+      typeof source.frequencyPerWeek === "number"
+        ? source.frequencyPerWeek
+        : undefined,
     startDate: source.startDate ? toIso(source.startDate) : undefined,
     endDate: source.endDate ? toIso(source.endDate) : undefined,
     platforms: asStringArray(source.platforms),
   };
 };
 
-const normalizeCampaignSummary = (value: unknown): AdminContentDetail['campaignSummary'] => {
+const normalizeCampaignSummary = (
+  value: unknown,
+): AdminContentDetail["campaignSummary"] => {
   const source = asRecord(value);
   const postingPlan = asRecord(source.postingPlan);
 
@@ -287,17 +324,24 @@ const normalizeCampaignSummary = (value: unknown): AdminContentDetail['campaignS
     contentPillars: asStringArray(source.contentPillars),
     postingPlan: {
       frequencyPerWeek:
-        typeof postingPlan.frequencyPerWeek === 'number' ? postingPlan.frequencyPerWeek : undefined,
+        typeof postingPlan.frequencyPerWeek === "number"
+          ? postingPlan.frequencyPerWeek
+          : undefined,
       durationWeeks:
-        typeof postingPlan.durationWeeks === 'number' ? postingPlan.durationWeeks : undefined,
+        typeof postingPlan.durationWeeks === "number"
+          ? postingPlan.durationWeeks
+          : undefined,
     },
   };
 };
 
-const normalizeGeneratedPost = (value: unknown): AdminContentDetail['generatedPosts'][number] => {
+const normalizeGeneratedPost = (
+  value: unknown,
+): AdminContentDetail["generatedPosts"][number] => {
   const source = asRecord(value);
   const rawId = source._id ?? source.id;
-  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+  const id =
+    typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
   const schedule = asRecord(source.schedule);
 
   return {
@@ -327,48 +371,56 @@ const normalizeGeneratedPost = (value: unknown): AdminContentDetail['generatedPo
 const normalizeAdminContent = (payload: unknown): AdminContent => {
   const source = asRecord(payload);
   const rawId = source.id ?? source._id;
-  const id = typeof rawId === 'string' ? rawId : asString(rawId?.toString?.(), '');
+  const id =
+    typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
 
   const userSource = asRecord(source.userId);
   const rawUserId = userSource._id ?? userSource.id ?? source.userId;
   const userId =
-    typeof rawUserId === 'string' ? rawUserId : asString(rawUserId?.toString?.(), '');
+    typeof rawUserId === "string"
+      ? rawUserId
+      : asString(rawUserId?.toString?.(), "");
 
   const strategySource = asRecord(source.strategyId);
-  const rawStrategyId = strategySource._id ?? strategySource.id ?? source.strategyId;
+  const rawStrategyId =
+    strategySource._id ?? strategySource.id ?? source.strategyId;
   const strategyId =
-    typeof rawStrategyId === 'string' ? rawStrategyId : asString(rawStrategyId?.toString?.(), '');
+    typeof rawStrategyId === "string"
+      ? rawStrategyId
+      : asString(rawStrategyId?.toString?.(), "");
 
   const businessInfo = asRecord(strategySource.businessInfo);
   const createdAt = toIso(source.createdAt);
   const updatedAt = toIso(source.updatedAt, createdAt);
-  const generatedPosts = Array.isArray(source.generatedPosts) ? source.generatedPosts : [];
+  const generatedPosts = Array.isArray(source.generatedPosts)
+    ? source.generatedPosts
+    : [];
 
   return {
     id,
     userId,
     strategyId,
-    name: asString(source.name, 'Campagne sans nom'),
-    mode: source.mode === 'ADS' ? 'ADS' : 'CONTENT_MARKETING',
+    name: asString(source.name, "Campagne sans nom"),
+    mode: source.mode === "ADS" ? "ADS" : "CONTENT_MARKETING",
     objective:
-      source.objective === 'leads' ||
-      source.objective === 'sales' ||
-      source.objective === 'engagement'
+      source.objective === "leads" ||
+      source.objective === "sales" ||
+      source.objective === "engagement"
         ? source.objective
-        : 'awareness',
+        : "awareness",
     platforms: asStringArray(source.platforms),
     generatedPostsCount: generatedPosts.length,
     user: {
       id: userId,
-      fullName: asString(userSource.fullName, 'Utilisateur inconnu'),
-      email: asString(userSource.email, '-'),
+      fullName: asString(userSource.fullName, "Utilisateur inconnu"),
+      email: asString(userSource.email, "-"),
       companyName: asString(userSource.companyName) || undefined,
-      role: userSource.role === 'admin' ? 'admin' : 'user',
+      role: userSource.role === "admin" ? "admin" : "user",
     },
     strategy: {
       id: strategyId,
-      businessName: asString(businessInfo.businessName, 'Strategie inconnue'),
-      industry: asString(businessInfo.industry, '-'),
+      businessName: asString(businessInfo.businessName, "Strategie inconnue"),
+      industry: asString(businessInfo.industry, "-"),
     },
     createdAt,
     updatedAt,
@@ -378,7 +430,9 @@ const normalizeAdminContent = (payload: unknown): AdminContent => {
 const normalizeAdminContentDetail = (payload: unknown): AdminContentDetail => {
   const base = normalizeAdminContent(payload);
   const source = asRecord(payload);
-  const generatedPosts = Array.isArray(source.generatedPosts) ? source.generatedPosts : [];
+  const generatedPosts = Array.isArray(source.generatedPosts)
+    ? source.generatedPosts
+    : [];
 
   return {
     ...base,
@@ -392,96 +446,103 @@ const buildUsersQuery = (filters: AdminUsersFilters): string => {
   const params = new URLSearchParams();
 
   if (filters.page) {
-    params.set('page', String(filters.page));
+    params.set("page", String(filters.page));
   }
 
   if (filters.limit) {
-    params.set('limit', String(filters.limit));
+    params.set("limit", String(filters.limit));
   }
 
   if (filters.search?.trim()) {
-    params.set('search', filters.search.trim());
+    params.set("search", filters.search.trim());
   }
 
-  if (filters.role && filters.role !== 'all') {
-    params.set('role', filters.role);
+  if (filters.role && filters.role !== "all") {
+    params.set("role", filters.role);
   }
 
   const query = params.toString();
-  return query ? `?${query}` : '';
+  return query ? `?${query}` : "";
 };
 
 const buildStrategiesQuery = (filters: AdminStrategiesFilters): string => {
   const params = new URLSearchParams();
 
   if (filters.page) {
-    params.set('page', String(filters.page));
+    params.set("page", String(filters.page));
   }
 
   if (filters.limit) {
-    params.set('limit', String(filters.limit));
+    params.set("limit", String(filters.limit));
   }
 
   if (filters.search?.trim()) {
-    params.set('search', filters.search.trim());
+    params.set("search", filters.search.trim());
   }
 
   const query = params.toString();
-  return query ? `?${query}` : '';
+  return query ? `?${query}` : "";
 };
 
 const buildSwotsQuery = (filters: AdminSwotFilters): string => {
   const params = new URLSearchParams();
 
   if (filters.page) {
-    params.set('page', String(filters.page));
+    params.set("page", String(filters.page));
   }
 
   if (filters.limit) {
-    params.set('limit', String(filters.limit));
+    params.set("limit", String(filters.limit));
   }
 
   if (filters.search?.trim()) {
-    params.set('search', filters.search.trim());
+    params.set("search", filters.search.trim());
   }
 
   const query = params.toString();
-  return query ? `?${query}` : '';
+  return query ? `?${query}` : "";
 };
 
 const buildContentsQuery = (filters: AdminContentsFilters): string => {
   const params = new URLSearchParams();
 
   if (filters.page) {
-    params.set('page', String(filters.page));
+    params.set("page", String(filters.page));
   }
 
   if (filters.limit) {
-    params.set('limit', String(filters.limit));
+    params.set("limit", String(filters.limit));
   }
 
   if (filters.search?.trim()) {
-    params.set('search', filters.search.trim());
+    params.set("search", filters.search.trim());
   }
 
   const query = params.toString();
-  return query ? `?${query}` : '';
+  return query ? `?${query}` : "";
 };
 
 export class AdminService {
-  static async getUsers(filters: AdminUsersFilters = {}): Promise<AdminUsersResult> {
+  static async getUsers(
+    filters: AdminUsersFilters = {},
+  ): Promise<AdminUsersResult> {
     const query = buildUsersQuery(filters);
-    const response = (await api.get(`/users/admin/all${query}`, true)) as ApiEnvelope<RawUsersData>;
+    const response = (await api.get(
+      `/users/admin/all${query}`,
+      true,
+    )) as ApiEnvelope<RawUsersData>;
 
     if (!response?.success) {
-      throw new Error(response?.message || 'Impossible de recuperer les utilisateurs');
+      throw new Error(
+        response?.message || "Impossible de recuperer les utilisateurs",
+      );
     }
 
     const data = response.data;
     const usersValue = data?.users;
 
     if (!Array.isArray(usersValue)) {
-      throw new Error('Reponse utilisateurs invalide');
+      throw new Error("Reponse utilisateurs invalide");
     }
 
     return {
@@ -494,10 +555,14 @@ export class AdminService {
   }
 
   static async getStats(): Promise<AdminUserStats> {
-    const response = (await api.get('/users/admin/stats', true)) as ApiEnvelope<Record<string, unknown>>;
+    const response = (await api.get("/users/admin/stats", true)) as ApiEnvelope<
+      Record<string, unknown>
+    >;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer les statistiques');
+      throw new Error(
+        response?.message || "Impossible de recuperer les statistiques",
+      );
     }
 
     return {
@@ -508,17 +573,24 @@ export class AdminService {
     };
   }
 
-  static async getStrategies(filters: AdminStrategiesFilters = {}): Promise<AdminStrategiesResult> {
+  static async getStrategies(
+    filters: AdminStrategiesFilters = {},
+  ): Promise<AdminStrategiesResult> {
     const query = buildStrategiesQuery(filters);
-    const response = (await api.get(`/strategies/admin/all${query}`, true)) as ApiEnvelope<RawStrategiesData>;
+    const response = (await api.get(
+      `/strategies/admin/all${query}`,
+      true,
+    )) as ApiEnvelope<RawStrategiesData>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer les strategies');
+      throw new Error(
+        response?.message || "Impossible de recuperer les strategies",
+      );
     }
 
     const strategiesValue = response.data.strategies;
     if (!Array.isArray(strategiesValue)) {
-      throw new Error('Reponse strategies invalide');
+      throw new Error("Reponse strategies invalide");
     }
 
     const paginationSource = asRecord(response.data.pagination);
@@ -532,27 +604,39 @@ export class AdminService {
     };
   }
 
-  static async getStrategyById(strategyId: string): Promise<AdminStrategyDetail> {
-    const response = (await api.get(`/strategies/admin/${strategyId}`, true)) as ApiEnvelope<unknown>;
+  static async getStrategyById(
+    strategyId: string,
+  ): Promise<AdminStrategyDetail> {
+    const response = (await api.get(
+      `/strategies/admin/${strategyId}`,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer la strategie');
+      throw new Error(
+        response?.message || "Impossible de recuperer la strategie",
+      );
     }
 
     return normalizeAdminStrategyDetail(response.data);
   }
 
-  static async getSwots(filters: AdminSwotFilters = {}): Promise<AdminSwotsResult> {
+  static async getSwots(
+    filters: AdminSwotFilters = {},
+  ): Promise<AdminSwotsResult> {
     const query = buildSwotsQuery(filters);
-    const response = (await api.get(`/swot/admin/all${query}`, true)) as ApiEnvelope<RawSwotsData>;
+    const response = (await api.get(
+      `/swot/admin/all${query}`,
+      true,
+    )) as ApiEnvelope<RawSwotsData>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer les SWOT');
+      throw new Error(response?.message || "Impossible de recuperer les SWOT");
     }
 
     const swotsValue = response.data.swots;
     if (!Array.isArray(swotsValue)) {
-      throw new Error('Reponse SWOT invalide');
+      throw new Error("Reponse SWOT invalide");
     }
 
     const paginationSource = asRecord(response.data.pagination);
@@ -567,26 +651,36 @@ export class AdminService {
   }
 
   static async getSwotById(swotId: string): Promise<AdminSwotDetail> {
-    const response = (await api.get(`/swot/admin/${swotId}`, true)) as ApiEnvelope<unknown>;
+    const response = (await api.get(
+      `/swot/admin/${swotId}`,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer le SWOT');
+      throw new Error(response?.message || "Impossible de recuperer le SWOT");
     }
 
     return normalizeAdminSwotDetail(response.data);
   }
 
-  static async getContents(filters: AdminContentsFilters = {}): Promise<AdminContentsResult> {
+  static async getContents(
+    filters: AdminContentsFilters = {},
+  ): Promise<AdminContentsResult> {
     const query = buildContentsQuery(filters);
-    const response = (await api.get(`/content/admin/all${query}`, true)) as ApiEnvelope<RawContentsData>;
+    const response = (await api.get(
+      `/content/admin/all${query}`,
+      true,
+    )) as ApiEnvelope<RawContentsData>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer les contenus');
+      throw new Error(
+        response?.message || "Impossible de recuperer les contenus",
+      );
     }
 
     const campaignsValue = response.data.campaigns;
     if (!Array.isArray(campaignsValue)) {
-      throw new Error('Reponse contenus invalide');
+      throw new Error("Reponse contenus invalide");
     }
 
     const paginationSource = asRecord(response.data.pagination);
@@ -601,68 +695,116 @@ export class AdminService {
   }
 
   static async getContentById(contentId: string): Promise<AdminContentDetail> {
-    const response = (await api.get(`/content/admin/${contentId}`, true)) as ApiEnvelope<unknown>;
+    const response = (await api.get(
+      `/content/admin/${contentId}`,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer ce contenu');
+      throw new Error(
+        response?.message || "Impossible de recuperer ce contenu",
+      );
     }
 
     return normalizeAdminContentDetail(response.data);
   }
 
-  static async updateUserRole(userId: string, role: AdminUserRole): Promise<AdminUser> {
-    const response = (await api.put(`/users/admin/${userId}/role`, { role }, true)) as ApiEnvelope<unknown>;
+  static async updateUserRole(
+    userId: string,
+    role: AdminUserRole,
+  ): Promise<AdminUser> {
+    const response = (await api.put(
+      `/users/admin/${userId}/role`,
+      { role },
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de modifier le role utilisateur');
+      throw new Error(
+        response?.message || "Impossible de modifier le role utilisateur",
+      );
     }
 
     return normalizeAdminUser(response.data);
   }
 
   static async getUserById(userId: string): Promise<AdminUser> {
-    const response = (await api.get(`/users/admin/${userId}`, true)) as ApiEnvelope<unknown>;
+    const response = (await api.get(
+      `/users/admin/${userId}`,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de recuperer cet utilisateur');
+      throw new Error(
+        response?.message || "Impossible de recuperer cet utilisateur",
+      );
     }
 
     return normalizeAdminUser(response.data);
   }
 
   static async createUser(payload: AdminCreateUserPayload): Promise<AdminUser> {
-    const response = (await api.post('/users/admin', payload, true)) as ApiEnvelope<unknown>;
+    const response = (await api.post(
+      "/users/admin",
+      payload,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de creer cet utilisateur');
+      throw new Error(
+        response?.message || "Impossible de creer cet utilisateur",
+      );
     }
 
     return normalizeAdminUser(response.data);
   }
 
-  static async updateUser(userId: string, payload: AdminUpdateUserPayload): Promise<AdminUser> {
-    const response = (await api.put(`/users/admin/${userId}`, payload, true)) as ApiEnvelope<unknown>;
+  static async updateUser(
+    userId: string,
+    payload: AdminUpdateUserPayload,
+  ): Promise<AdminUser> {
+    const response = (await api.put(
+      `/users/admin/${userId}`,
+      payload,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de mettre a jour cet utilisateur');
+      throw new Error(
+        response?.message || "Impossible de mettre a jour cet utilisateur",
+      );
     }
 
     return normalizeAdminUser(response.data);
   }
 
   static async deleteUser(userId: string): Promise<void> {
-    const response = (await api.delete(`/users/admin/${userId}`, true)) as ApiEnvelope<unknown>;
+    const response = (await api.delete(
+      `/users/admin/${userId}`,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success) {
-      throw new Error(response?.message || 'Impossible de supprimer cet utilisateur');
+      throw new Error(
+        response?.message || "Impossible de supprimer cet utilisateur",
+      );
     }
   }
 
-  static async setUserBanStatus(userId: string, payload: SetUserBanPayload): Promise<AdminUser> {
-    const response = (await api.put(`/users/admin/${userId}/ban`, payload, true)) as ApiEnvelope<unknown>;
+  static async setUserBanStatus(
+    userId: string,
+    payload: SetUserBanPayload,
+  ): Promise<AdminUser> {
+    const response = (await api.put(
+      `/users/admin/${userId}/ban`,
+      payload,
+      true,
+    )) as ApiEnvelope<unknown>;
 
     if (!response?.success || !response?.data) {
-      throw new Error(response?.message || 'Impossible de modifier le statut de bannissement');
+      throw new Error(
+        response?.message || "Impossible de modifier le statut de bannissement",
+      );
     }
 
     return normalizeAdminUser(response.data);

@@ -1,0 +1,290 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Toaster, toast } from "react-hot-toast";
+import { CalendarBoard } from "@/src/components/calendar/CalendarBoard";
+import { FiltersBar } from "@/src/components/calendar/FiltersBar";
+import { PostModal } from "@/src/components/calendar/PostModal";
+import { useCalendar } from "@/src/hooks/useCalendar";
+import { calendarService } from "@/src/services/calendarService";
+import type {
+  CampaignOption,
+  CalendarFilterState,
+  CalendarView,
+  ScheduledPost,
+  StrategyOption,
+} from "@/src/types/calendar.types";
+
+const initialFilters: CalendarFilterState = {
+  platform: "all",
+  status: "all",
+  search: "",
+  view: "dayGridMonth",
+};
+
+export default function CalendarPage() {
+  const [filters, setFilters] = useState<CalendarFilterState>(initialFilters);
+  const [strategies, setStrategies] = useState<StrategyOption[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
+  const [isMetaLoading, setIsMetaLoading] = useState(true);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
+  const [draftDate, setDraftDate] = useState<string | null>(null);
+
+  const {
+    posts,
+    total,
+    isLoading,
+    isMutating,
+    error,
+    setVisibleRange,
+    refresh,
+    createPost,
+    updatePost,
+    movePost,
+    deletePost,
+  } = useCalendar(filters);
+
+  useEffect(() => {
+    const loadMeta = async () => {
+      setIsMetaLoading(true);
+
+      try {
+        const [loadedStrategies, loadedCampaigns] = await Promise.all([
+          calendarService.listStrategies(),
+          calendarService.listCampaigns(),
+        ]);
+
+        setStrategies(loadedStrategies);
+        setCampaigns(loadedCampaigns);
+      } catch (requestError) {
+        toast.error(
+          requestError instanceof Error
+            ? requestError.message
+            : "Erreur lors du chargement des references",
+        );
+      } finally {
+        setIsMetaLoading(false);
+      }
+    };
+
+    void loadMeta();
+  }, []);
+
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
+    toast.error(error);
+  }, [error]);
+
+  const matchingCampaigns = useMemo(() => {
+    if (!selectedPost?.strategyId) {
+      return campaigns;
+    }
+
+    return campaigns.filter(
+      (campaign) =>
+        campaign.strategyId === selectedPost.strategyId ||
+        campaign._id === selectedPost.campaignId,
+    );
+  }, [campaigns, selectedPost]);
+
+  const openCreateModal = (dateIso?: string) => {
+    setModalMode("create");
+    setSelectedPost(null);
+    setDraftDate(dateIso ?? new Date().toISOString());
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (post: ScheduledPost) => {
+    setModalMode("edit");
+    setSelectedPost(post);
+    setDraftDate(post.scheduledAt);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedPost(null);
+    setDraftDate(null);
+  };
+
+  const handleMovePost = async (postId: string, scheduledAt: string) => {
+    try {
+      await movePost(postId, scheduledAt);
+      toast.success("Publication deplacee");
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors du deplacement",
+      );
+      throw requestError;
+    }
+  };
+
+  const handleCreatePost = async (
+    payload: Parameters<typeof createPost>[0],
+  ) => {
+    try {
+      await createPost(payload);
+      toast.success("Publication planifiee");
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors de la creation",
+      );
+      throw requestError;
+    }
+  };
+
+  const handleUpdatePost = async (
+    id: string,
+    payload: Parameters<typeof updatePost>[1],
+  ) => {
+    try {
+      await updatePost(id, payload);
+      toast.success("Publication mise a jour");
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors de la mise a jour",
+      );
+      throw requestError;
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      await deletePost(id);
+      toast.success("Publication supprimee");
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors de la suppression",
+      );
+      throw requestError;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3500,
+          style: {
+            borderRadius: "18px",
+            border: "1px solid #e7e5e4",
+            background: "#fffaf4",
+            color: "#1c1917",
+          },
+        }}
+      />
+
+      <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_rgba(248,242,232,0.95)_40%,_rgba(231,229,228,0.85)_100%)] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+              Metricool style planner
+            </p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-950">
+              Calendrier de publications
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
+              Organise, deplace et ajuste tes publications depuis une vue
+              mensuelle ou hebdomadaire. Chaque changement reste synchronise
+              avec ton backend NestJS.
+            </p>
+          </div>
+
+          <div className="grid gap-3 rounded-[28px] border border-stone-200 bg-white/70 p-4 text-sm text-stone-700 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+                Visible
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-stone-950">
+                {posts.length}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+                Loaded
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-stone-950">
+                {total}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+                Refs
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-stone-950">
+                {isMetaLoading
+                  ? "..."
+                  : `${strategies.length}/${campaigns.length}`}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <FiltersBar
+        filters={filters}
+        totalCount={total}
+        onPlatformChange={(platform) =>
+          setFilters((current) => ({ ...current, platform }))
+        }
+        onStatusChange={(status) =>
+          setFilters((current) => ({ ...current, status }))
+        }
+        onSearchChange={(search) =>
+          setFilters((current) => ({ ...current, search }))
+        }
+        onViewChange={(view: CalendarView) =>
+          setFilters((current) => ({ ...current, view }))
+        }
+        onCreateClick={() => openCreateModal()}
+      />
+
+      <CalendarBoard
+        posts={posts}
+        view={filters.view}
+        isLoading={isLoading}
+        onRangeChange={(range) => {
+          void setVisibleRange(range);
+        }}
+        onEventClick={openEditModal}
+        onCreateAtDate={openCreateModal}
+        onMovePost={handleMovePost}
+        onRefresh={refresh}
+      />
+
+      <PostModal
+        open={isModalOpen}
+        mode={modalMode}
+        post={selectedPost}
+        draftDate={draftDate}
+        strategies={strategies}
+        campaigns={selectedPost ? matchingCampaigns : campaigns}
+        onClose={closeModal}
+        onCreate={handleCreatePost}
+        onUpdate={handleUpdatePost}
+        onDelete={handleDeletePost}
+      />
+
+      {isMutating ? (
+        <div className="fixed bottom-5 right-5 z-40 inline-flex items-center rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-lg">
+          <span className="mr-2 h-2.5 w-2.5 animate-pulse rounded-full bg-stone-950" />
+          Synchronisation...
+        </div>
+      ) : null}
+    </div>
+  );
+}

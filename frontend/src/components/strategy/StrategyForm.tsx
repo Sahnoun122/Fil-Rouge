@@ -1,52 +1,61 @@
-﻿'use client';
+﻿"use client";
 
 // Composant de formulaire pour créer une stratégie marketing
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { 
-  Building, 
-  Users, 
-  Target, 
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Building,
+  Users,
+  Target,
   DollarSign,
   Sparkles,
-  AlertCircle
-} from 'lucide-react';
-import { 
-  GenerateStrategyDto, 
-  MainObjective, 
+  AlertCircle,
+} from "lucide-react";
+import {
+  GenerateStrategyDto,
+  MainObjective,
   Tone,
   OBJECTIVE_OPTIONS,
-  TONE_OPTIONS 
-} from '../../types/strategy.types';
+  TONE_OPTIONS,
+} from "../../types/strategy.types";
 
 // Schema de validation Zod
 const strategySchema = z.object({
-  businessName: z.string()
-    .min(1, 'Le nom de l\'entreprise est requis')
-    .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
-  industry: z.string()
-    .min(1, 'Le secteur d\'activité est requis')
-    .max(50, 'Le secteur ne peut pas dépasser 50 caractères'),
-  productOrService: z.string()
-    .min(10, 'La description du produit/service doit contenir au moins 10 caractères')
-    .max(500, 'La description ne peut pas dépasser 500 caractères'),
-  targetAudience: z.string()
-    .min(1, 'L\'audience cible est requise')
-    .max(100, 'L\'audience cible ne peut pas dépasser 100 caractères'),
-  location: z.string()
-    .min(1, 'La localisation est requise')
-    .max(50, 'La localisation ne peut pas dépasser 50 caractères'),
+  businessName: z
+    .string()
+    .min(1, "Le nom de l'entreprise est requis")
+    .max(100, "Le nom ne peut pas dépasser 100 caractères"),
+  industry: z
+    .string()
+    .min(1, "Le secteur d'activité est requis")
+    .max(50, "Le secteur ne peut pas dépasser 50 caractères"),
+  productOrService: z
+    .string()
+    .min(
+      10,
+      "La description du produit/service doit contenir au moins 10 caractères",
+    )
+    .max(500, "La description ne peut pas dépasser 500 caractères"),
+  targetAudience: z
+    .string()
+    .min(1, "L'audience cible est requise")
+    .max(100, "L'audience cible ne peut pas dépasser 100 caractères"),
+  location: z
+    .string()
+    .min(1, "La localisation est requise")
+    .max(50, "La localisation ne peut pas dépasser 50 caractères"),
   mainObjective: z.nativeEnum(MainObjective, {
-    errorMap: () => ({ message: 'Veuillez sélectionner un objectif principal' })
+    error: "Veuillez sélectionner un objectif principal",
   }),
   tone: z.nativeEnum(Tone, {
-    errorMap: () => ({ message: 'Veuillez sélectionner un ton de communication' })
+    error: "Veuillez sélectionner un ton de communication",
   }),
-  budget: z.number()
-    .min(0, 'Le budget doit être supérieur ou égal à 0')
-    .max(10000000, 'Le budget ne peut pas dépasser 10 millions')
+  budget: z
+    .number()
+    .min(0, "Le budget doit être supérieur ou égal à 0")
+    .max(10000000, "Le budget ne peut pas dépasser 10 millions")
     .optional(),
 });
 
@@ -59,31 +68,31 @@ interface StrategyFormProps {
   className?: string;
 }
 
-export default function StrategyForm({ 
-  onSubmit, 
+export default function StrategyForm({
+  onSubmit,
   isLoading = false,
   initialData,
-  className = ''
+  className = "",
 }: StrategyFormProps) {
   const {
     register,
     handleSubmit,
     formState: { errors, isValid, isDirty },
     reset,
-    watch
+    watch,
   } = useForm<StrategyFormData>({
     resolver: zodResolver(strategySchema),
     defaultValues: {
-      businessName: initialData?.businessName || '',
-      industry: initialData?.industry || '',
-      productOrService: initialData?.productOrService || '',
-      targetAudience: initialData?.targetAudience || '',
-      location: initialData?.location || '',
+      businessName: initialData?.businessName || "",
+      industry: initialData?.industry || "",
+      productOrService: initialData?.productOrService || "",
+      targetAudience: initialData?.targetAudience || "",
+      location: initialData?.location || "",
       mainObjective: initialData?.mainObjective || MainObjective.LEADS,
       tone: initialData?.tone || Tone.PROFESSIONAL,
       budget: initialData?.budget || undefined,
     },
-    mode: 'onChange'
+    mode: "onChange",
   });
 
   // Surveiller les changements pour afficher un résumé
@@ -95,7 +104,7 @@ export default function StrategyForm({
       // Optionnel : reset du formulaire après soumission réussie
       // reset();
     } catch (error) {
-      console.error('Erreur lors de la soumission du formulaire:', error);
+      console.error("Erreur lors de la soumission du formulaire:", error);
     }
   };
 
@@ -106,7 +115,6 @@ export default function StrategyForm({
   return (
     <div className={`w-full max-w-4xl mx-auto ${className}`}>
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
-        
         {/* Section Informations Business */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center mb-6">
@@ -125,12 +133,12 @@ export default function StrategyForm({
                 Nom de l'entreprise *
               </label>
               <input
-                {...register('businessName')}
+                {...register("businessName")}
                 type="text"
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.businessName 
-                    ? 'border-red-300 bg-red-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                  errors.businessName
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
                 placeholder="Ex: TechCorp Solutions"
                 disabled={isLoading}
@@ -149,12 +157,12 @@ export default function StrategyForm({
                 Secteur d'activité *
               </label>
               <input
-                {...register('industry')}
+                {...register("industry")}
                 type="text"
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.industry 
-                    ? 'border-red-300 bg-red-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                  errors.industry
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
                 placeholder="Ex: Technologie, Santé, Finance..."
                 disabled={isLoading}
@@ -173,12 +181,12 @@ export default function StrategyForm({
                 Localisation *
               </label>
               <input
-                {...register('location')}
+                {...register("location")}
                 type="text"
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.location 
-                    ? 'border-red-300 bg-red-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                  errors.location
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
                 placeholder="Ex: Paris, France"
                 disabled={isLoading}
@@ -199,14 +207,14 @@ export default function StrategyForm({
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  {...register('budget', { valueAsNumber: true })}
+                  {...register("budget", { valueAsNumber: true })}
                   type="number"
                   min="0"
                   step="100"
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.budget 
-                      ? 'border-red-300 bg-red-50' 
-                      : 'border-gray-300 hover:border-gray-400'
+                    errors.budget
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-300 hover:border-gray-400"
                   }`}
                   placeholder="5000"
                   disabled={isLoading}
@@ -227,12 +235,12 @@ export default function StrategyForm({
               Description du produit/service *
             </label>
             <textarea
-              {...register('productOrService')}
+              {...register("productOrService")}
               rows={4}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-vertical ${
-                errors.productOrService 
-                  ? 'border-red-300 bg-red-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                errors.productOrService
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300 hover:border-gray-400"
               }`}
               placeholder="Décrivez en détail votre produit ou service, ses avantages et ce qui le rend unique..."
               disabled={isLoading}
@@ -265,12 +273,12 @@ export default function StrategyForm({
               Description de l'audience cible *
             </label>
             <input
-              {...register('targetAudience')}
+              {...register("targetAudience")}
               type="text"
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                errors.targetAudience 
-                  ? 'border-red-300 bg-red-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                errors.targetAudience
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300 hover:border-gray-400"
               }`}
               placeholder="Ex: Entrepreneurs entre 25-45 ans, dirigeants de PME..."
               disabled={isLoading}
@@ -302,11 +310,11 @@ export default function StrategyForm({
                 Objectif principal *
               </label>
               <select
-                {...register('mainObjective')}
+                {...register("mainObjective")}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.mainObjective 
-                    ? 'border-red-300 bg-red-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                  errors.mainObjective
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
                 disabled={isLoading}
               >
@@ -330,11 +338,11 @@ export default function StrategyForm({
                 Ton de communication *
               </label>
               <select
-                {...register('tone')}
+                {...register("tone")}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.tone 
-                    ? 'border-red-300 bg-red-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                  errors.tone
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
                 disabled={isLoading}
               >
@@ -364,25 +372,32 @@ export default function StrategyForm({
               <div>
                 <span className="font-medium text-blue-900">Entreprise:</span>
                 <span className="ml-2 text-blue-700">
-                  {watchedData.businessName || 'Non renseigné'}
+                  {watchedData.businessName || "Non renseigné"}
                 </span>
               </div>
               <div>
                 <span className="font-medium text-blue-900">Secteur:</span>
                 <span className="ml-2 text-blue-700">
-                  {watchedData.industry || 'Non renseigné'}
+                  {watchedData.industry || "Non renseigné"}
                 </span>
               </div>
               <div>
                 <span className="font-medium text-blue-900">Objectif:</span>
                 <span className="ml-2 text-blue-700">
-                  {OBJECTIVE_OPTIONS.find(opt => opt.value === watchedData.mainObjective)?.label}
+                  {
+                    OBJECTIVE_OPTIONS.find(
+                      (opt) => opt.value === watchedData.mainObjective,
+                    )?.label
+                  }
                 </span>
               </div>
               <div>
                 <span className="font-medium text-blue-900">Ton:</span>
                 <span className="ml-2 text-blue-700">
-                  {TONE_OPTIONS.find(opt => opt.value === watchedData.tone)?.label}
+                  {
+                    TONE_OPTIONS.find((opt) => opt.value === watchedData.tone)
+                      ?.label
+                  }
                 </span>
               </div>
             </div>
@@ -407,8 +422,8 @@ export default function StrategyForm({
             disabled={isLoading || !isValid}
             className={`inline-flex items-center px-8 py-3 text-white font-semibold rounded-lg transition-all duration-200 ${
               isLoading || !isValid
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
             }`}
           >
             {isLoading ? (
