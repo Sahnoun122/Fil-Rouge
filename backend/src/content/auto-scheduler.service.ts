@@ -13,6 +13,7 @@ interface AutoSchedulerInputs {
   timezone: string;
   preferredTimeWindows?: PreferredTimeWindowsDto | Record<string, string[]>;
   excludedDays?: AutoScheduleExcludedDay[];
+  seed?: number;
 }
 
 interface ScheduleAssignment {
@@ -38,6 +39,7 @@ interface WeekBucket {
 interface PlatformProfile {
   defaultWindows: string[];
   preferredDays: AutoScheduleExcludedDay[];
+  weekdayOnly?: boolean;
 }
 
 interface ParsedDate {
@@ -51,8 +53,18 @@ interface TimeWindow {
   endMinutes: number;
 }
 
+interface DateSlot {
+  date: string;
+  time: string;
+  minutes: number;
+  priority: number;
+}
+
 @Injectable()
 export class AutoSchedulerService {
+  private readonly minSpacingMinutes = 90;
+  private readonly fallbackWindow = '09:00-21:00';
+
   private readonly defaultProfile: PlatformProfile = {
     defaultWindows: ['11:00-13:00', '17:00-19:00'],
     preferredDays: [
@@ -62,6 +74,7 @@ export class AutoSchedulerService {
       AutoScheduleExcludedDay.FRIDAY,
       AutoScheduleExcludedDay.MONDAY,
       AutoScheduleExcludedDay.SATURDAY,
+      AutoScheduleExcludedDay.SUNDAY,
     ],
   };
 
@@ -75,6 +88,7 @@ export class AutoSchedulerService {
         AutoScheduleExcludedDay.FRIDAY,
         AutoScheduleExcludedDay.MONDAY,
         AutoScheduleExcludedDay.SATURDAY,
+        AutoScheduleExcludedDay.SUNDAY,
       ],
     },
     tiktok: {
@@ -85,6 +99,8 @@ export class AutoSchedulerService {
         AutoScheduleExcludedDay.SATURDAY,
         AutoScheduleExcludedDay.SUNDAY,
         AutoScheduleExcludedDay.WEDNESDAY,
+        AutoScheduleExcludedDay.TUESDAY,
+        AutoScheduleExcludedDay.MONDAY,
       ],
     },
     facebook: {
@@ -95,6 +111,8 @@ export class AutoSchedulerService {
         AutoScheduleExcludedDay.THURSDAY,
         AutoScheduleExcludedDay.FRIDAY,
         AutoScheduleExcludedDay.MONDAY,
+        AutoScheduleExcludedDay.SATURDAY,
+        AutoScheduleExcludedDay.SUNDAY,
       ],
     },
     linkedin: {
@@ -106,42 +124,54 @@ export class AutoSchedulerService {
         AutoScheduleExcludedDay.MONDAY,
         AutoScheduleExcludedDay.FRIDAY,
       ],
+      weekdayOnly: true,
     },
     x: {
-      defaultWindows: ['08:00-10:00', '12:00-13:00', '17:00-19:00'],
+      defaultWindows: ['09:00-11:00', '12:00-14:00', '17:00-19:00'],
       preferredDays: [
         AutoScheduleExcludedDay.TUESDAY,
         AutoScheduleExcludedDay.WEDNESDAY,
         AutoScheduleExcludedDay.THURSDAY,
         AutoScheduleExcludedDay.MONDAY,
         AutoScheduleExcludedDay.FRIDAY,
+        AutoScheduleExcludedDay.SATURDAY,
+        AutoScheduleExcludedDay.SUNDAY,
       ],
     },
     youtube: {
-      defaultWindows: ['17:00-20:00', '12:00-14:00'],
+      defaultWindows: ['17:00-21:00'],
       preferredDays: [
         AutoScheduleExcludedDay.THURSDAY,
-        AutoScheduleExcludedDay.FRIDAY,
-        AutoScheduleExcludedDay.SATURDAY,
-        AutoScheduleExcludedDay.SUNDAY,
-      ],
-    },
-    snapchat: {
-      defaultWindows: ['17:00-20:00', '20:00-22:00'],
-      preferredDays: [
-        AutoScheduleExcludedDay.FRIDAY,
-        AutoScheduleExcludedDay.SATURDAY,
-        AutoScheduleExcludedDay.SUNDAY,
-        AutoScheduleExcludedDay.THURSDAY,
-      ],
-    },
-    pinterest: {
-      defaultWindows: ['20:00-22:00', '12:00-14:00'],
-      preferredDays: [
         AutoScheduleExcludedDay.FRIDAY,
         AutoScheduleExcludedDay.SATURDAY,
         AutoScheduleExcludedDay.SUNDAY,
         AutoScheduleExcludedDay.WEDNESDAY,
+        AutoScheduleExcludedDay.TUESDAY,
+        AutoScheduleExcludedDay.MONDAY,
+      ],
+    },
+    snapchat: {
+      defaultWindows: ['17:00-21:00'],
+      preferredDays: [
+        AutoScheduleExcludedDay.FRIDAY,
+        AutoScheduleExcludedDay.SATURDAY,
+        AutoScheduleExcludedDay.SUNDAY,
+        AutoScheduleExcludedDay.THURSDAY,
+        AutoScheduleExcludedDay.WEDNESDAY,
+        AutoScheduleExcludedDay.TUESDAY,
+        AutoScheduleExcludedDay.MONDAY,
+      ],
+    },
+    pinterest: {
+      defaultWindows: ['20:00-23:00'],
+      preferredDays: [
+        AutoScheduleExcludedDay.FRIDAY,
+        AutoScheduleExcludedDay.SATURDAY,
+        AutoScheduleExcludedDay.SUNDAY,
+        AutoScheduleExcludedDay.THURSDAY,
+        AutoScheduleExcludedDay.WEDNESDAY,
+        AutoScheduleExcludedDay.TUESDAY,
+        AutoScheduleExcludedDay.MONDAY,
       ],
     },
     threads: {
@@ -151,6 +181,9 @@ export class AutoSchedulerService {
         AutoScheduleExcludedDay.WEDNESDAY,
         AutoScheduleExcludedDay.THURSDAY,
         AutoScheduleExcludedDay.FRIDAY,
+        AutoScheduleExcludedDay.MONDAY,
+        AutoScheduleExcludedDay.SATURDAY,
+        AutoScheduleExcludedDay.SUNDAY,
       ],
     },
   };
@@ -166,6 +199,7 @@ export class AutoSchedulerService {
     }
 
     this.assertValidTimezone(inputs.timezone);
+    this.assertValidFrequency(inputs.frequencyPerWeek);
 
     const normalizedPlatforms = this.normalizePlatforms([
       ...(inputs.platforms ?? []),
@@ -175,15 +209,6 @@ export class AutoSchedulerService {
     if (!normalizedPlatforms.length) {
       throw new BadRequestException(
         'Aucune plateforme valide disponible pour la planification',
-      );
-    }
-
-    if (
-      !Number.isInteger(inputs.frequencyPerWeek) ||
-      inputs.frequencyPerWeek < 1
-    ) {
-      throw new BadRequestException(
-        'frequencyPerWeek invalide: entier superieur ou egal a 1 attendu',
       );
     }
 
@@ -201,94 +226,411 @@ export class AutoSchedulerService {
     }
 
     const weekBuckets = this.buildWeekBuckets(eligibleDates);
-    const capacity = weekBuckets.length * inputs.frequencyPerWeek;
-    if (posts.length > capacity) {
+    const maxPosts = weekBuckets.length * inputs.frequencyPerWeek;
+    if (posts.length > maxPosts) {
       throw new BadRequestException(
-        `Planification impossible: ${posts.length} posts a placer pour une capacite de ${capacity} slots entre ${inputs.startDate} et ${inputs.endDate} avec frequencyPerWeek=${inputs.frequencyPerWeek}`,
+        `Planification impossible: ${posts.length} posts pour ${maxPosts} slots hebdomadaires maximum sur la periode`,
       );
     }
 
     const preferredTimeWindows = this.normalizePreferredTimeWindows(
       inputs.preferredTimeWindows,
     );
-    const orderedPosts = this.buildBalancedPostOrder(
+    const postsByPlatform = this.groupPostsByPlatform(
       posts,
       normalizedPlatforms,
     );
-    const weekQuotas = this.distributeAcrossWeeks(
-      orderedPosts.length,
-      weekBuckets.length,
+    const distributedPosts = this.distributePostsAcrossWeeks(
+      this.buildBalancedPostOrder(postsByPlatform, normalizedPlatforms),
       inputs.frequencyPerWeek,
+      weekBuckets,
     );
 
-    const assignments: ScheduleAssignment[] = [];
-    const usedDateTimes = new Set<string>();
-    const scheduledCountByDate = new Map<string, number>();
-    const platformUsageByDate = new Map<string, number>();
-    const lastPlatformDate = new Map<string, string>();
+    return this.applySchedule(
+      postsByPlatform,
+      distributedPosts,
+      weekBuckets,
+      eligibleDates,
+      preferredTimeWindows,
+      inputs.timezone,
+      inputs.seed ?? 0,
+    );
+  }
 
-    let postCursor = 0;
-    for (let weekIndex = 0; weekIndex < weekBuckets.length; weekIndex += 1) {
-      const quota = weekQuotas[weekIndex];
-      const bucket = weekBuckets[weekIndex];
+  private generateSlotsForPlatform(
+    platform: string,
+    date: string,
+    windows: string[],
+    allowWeekendOverride = false,
+  ): DateSlot[] {
+    const profile = this.getPlatformProfile(platform);
+    if (profile.weekdayOnly && !allowWeekendOverride && this.isWeekend(date)) {
+      return [];
+    }
 
-      for (let offset = 0; offset < quota; offset += 1) {
-        const post = orderedPosts[postCursor];
-        if (!post) {
-          break;
+    const sourceWindows = windows.length ? windows : profile.defaultWindows;
+    const uniqueSlots = new Map<string, DateSlot>();
+
+    sourceWindows.forEach((window, windowIndex) => {
+      const parsedWindow = this.parseTimeWindow(window);
+      const preferredMinutes = this.generateWindowMinutes(
+        parsedWindow,
+        false,
+        windowIndex,
+      );
+
+      preferredMinutes.forEach((slot, slotIndex) => {
+        const key = this.toDateTimeKey(date, slot.time);
+        if (!uniqueSlots.has(key)) {
+          uniqueSlots.set(key, {
+            date,
+            time: slot.time,
+            minutes: slot.minutes,
+            priority: windowIndex * 100 + slotIndex,
+          });
+        }
+      });
+    });
+
+    const fallbackWindow = this.parseTimeWindow(this.fallbackWindow);
+    const fallbackSlots = this.generateWindowMinutes(
+      fallbackWindow,
+      true,
+      sourceWindows.length,
+    );
+
+    fallbackSlots.forEach((slot, slotIndex) => {
+      const key = this.toDateTimeKey(date, slot.time);
+      if (!uniqueSlots.has(key)) {
+        uniqueSlots.set(key, {
+          date,
+          time: slot.time,
+          minutes: slot.minutes,
+          priority: 1000 + slotIndex,
+        });
+      }
+    });
+
+    return Array.from(uniqueSlots.values()).sort((left, right) => {
+      if (left.priority !== right.priority) {
+        return left.priority - right.priority;
+      }
+
+      return left.minutes - right.minutes;
+    });
+  }
+
+  private distributePostsAcrossWeeks(
+    posts: OrderedPost[],
+    frequencyPerWeek: number,
+    weekBuckets: WeekBucket[],
+  ): Map<number, OrderedPost[]> {
+    const distributed = new Map<number, OrderedPost[]>();
+    const weeklyCounts = Array.from({ length: weekBuckets.length }, () => 0);
+
+    let weekCursor = 0;
+    for (const post of posts) {
+      let assigned = false;
+
+      for (let attempt = 0; attempt < weekBuckets.length; attempt += 1) {
+        const candidateWeek = (weekCursor + attempt) % weekBuckets.length;
+        if (weeklyCounts[candidateWeek] >= frequencyPerWeek) {
+          continue;
         }
 
-        const schedule = this.findBestScheduleForPost(
-          post,
-          bucket,
-          eligibleDates,
-          usedDateTimes,
-          scheduledCountByDate,
-          platformUsageByDate,
-          lastPlatformDate,
-          inputs.timezone,
-          preferredTimeWindows,
-          assignments.length,
+        const weekPosts = distributed.get(candidateWeek) ?? [];
+        weekPosts.push(post);
+        distributed.set(candidateWeek, weekPosts);
+        weeklyCounts[candidateWeek] += 1;
+        weekCursor = (candidateWeek + 1) % weekBuckets.length;
+        assigned = true;
+        break;
+      }
+
+      if (!assigned) {
+        throw new BadRequestException(
+          'La frequence hebdomadaire ne permet pas de repartir tous les posts',
         );
+      }
+    }
+
+    return distributed;
+  }
+
+  private pickNextAvailableSlot(
+    dateSlots: DateSlot[],
+    usedSlots: DateSlot[],
+  ): DateSlot | null {
+    for (const candidate of dateSlots) {
+      const hasCollision = usedSlots.some(
+        (usedSlot) =>
+          Math.abs(usedSlot.minutes - candidate.minutes) <
+          this.minSpacingMinutes,
+      );
+
+      if (!hasCollision) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private applySchedule(
+    postsByPlatform: Map<string, OrderedPost[]>,
+    distributedPosts: Map<number, OrderedPost[]>,
+    weekBuckets: WeekBucket[],
+    eligibleDates: string[],
+    preferredTimeWindows: Record<string, string[]>,
+    timezone: string,
+    seed: number,
+  ): ScheduleAssignment[] {
+    if (postsByPlatform.size === 0) {
+      return [];
+    }
+
+    const assignments: ScheduleAssignment[] = [];
+    const usedSlotsByDate = new Map<string, DateSlot[]>();
+    const lastScheduledDateByPlatform = new Map<string, string>();
+
+    for (let weekIndex = 0; weekIndex < weekBuckets.length; weekIndex += 1) {
+      const bucket = weekBuckets[weekIndex];
+      const weekPosts = distributedPosts.get(weekIndex) ?? [];
+
+      for (const post of weekPosts) {
+        const platformKey = post.platform.toLowerCase();
+        const hasUserOverride = Boolean(
+          preferredTimeWindows[platformKey]?.length,
+        );
+        const rankedWeekDates = this.rankDatesForPlatform(
+          bucket.dates,
+          post.platform,
+          usedSlotsByDate,
+          lastScheduledDateByPlatform,
+          hasUserOverride,
+          seed + assignments.length,
+        );
+
+        let pickedSlot = this.tryPickSlotForDates(
+          post.platform,
+          rankedWeekDates,
+          preferredTimeWindows,
+          usedSlotsByDate,
+          hasUserOverride,
+        );
+
+        if (!pickedSlot) {
+          const rankedFallbackDates = this.rankDatesForPlatform(
+            eligibleDates,
+            post.platform,
+            usedSlotsByDate,
+            lastScheduledDateByPlatform,
+            hasUserOverride,
+            seed + assignments.length + weekIndex,
+          );
+
+          pickedSlot = this.tryPickSlotForDates(
+            post.platform,
+            rankedFallbackDates,
+            preferredTimeWindows,
+            usedSlotsByDate,
+            hasUserOverride,
+          );
+        }
+
+        if (!pickedSlot) {
+          throw new BadRequestException(
+            `Aucun slot disponible pour ${post.platform} dans la periode demandee`,
+          );
+        }
+
+        const usedSlots = usedSlotsByDate.get(pickedSlot.date) ?? [];
+        usedSlots.push(pickedSlot);
+        usedSlots.sort((left, right) => left.minutes - right.minutes);
+        usedSlotsByDate.set(pickedSlot.date, usedSlots);
+        lastScheduledDateByPlatform.set(platformKey, pickedSlot.date);
 
         assignments.push({
           index: post.index,
           platform: post.platform,
-          schedule,
+          schedule: {
+            date: pickedSlot.date,
+            time: pickedSlot.time,
+            timezone,
+          },
         });
-
-        usedDateTimes.add(this.toDateTimeKey(schedule.date, schedule.time));
-        scheduledCountByDate.set(
-          schedule.date,
-          (scheduledCountByDate.get(schedule.date) ?? 0) + 1,
-        );
-        const platformDateKey = this.toPlatformDateKey(
-          post.platform,
-          schedule.date,
-        );
-        platformUsageByDate.set(
-          platformDateKey,
-          (platformUsageByDate.get(platformDateKey) ?? 0) + 1,
-        );
-        lastPlatformDate.set(post.platform.toLowerCase(), schedule.date);
-        postCursor += 1;
       }
-    }
-
-    if (assignments.length !== posts.length) {
-      throw new BadRequestException(
-        'La planification automatique n a pas pu attribuer un horaire a tous les posts',
-      );
     }
 
     return assignments.sort((left, right) => left.index - right.index);
   }
 
+  private tryPickSlotForDates(
+    platform: string,
+    dates: string[],
+    preferredTimeWindows: Record<string, string[]>,
+    usedSlotsByDate: Map<string, DateSlot[]>,
+    hasUserOverride: boolean,
+  ): DateSlot | null {
+    const platformKey = this.normalizePlatform(platform).toLowerCase();
+    const windows =
+      preferredTimeWindows[platformKey] ??
+      this.getPlatformProfile(platform).defaultWindows;
+
+    for (const date of dates) {
+      const dateSlots = this.generateSlotsForPlatform(
+        platform,
+        date,
+        windows,
+        hasUserOverride,
+      );
+      if (!dateSlots.length) {
+        continue;
+      }
+
+      const pickedSlot = this.pickNextAvailableSlot(
+        dateSlots,
+        usedSlotsByDate.get(date) ?? [],
+      );
+      if (pickedSlot) {
+        return pickedSlot;
+      }
+    }
+
+    return null;
+  }
+
+  private rankDatesForPlatform(
+    dates: string[],
+    platform: string,
+    usedSlotsByDate: Map<string, DateSlot[]>,
+    lastScheduledDateByPlatform: Map<string, string>,
+    hasUserOverride: boolean,
+    seed: number,
+  ): string[] {
+    const platformKey = this.normalizePlatform(platform).toLowerCase();
+    const profile = this.getPlatformProfile(platform);
+
+    return [...dates].sort((left, right) => {
+      const leftScore = this.scoreDate(
+        left,
+        platformKey,
+        profile,
+        usedSlotsByDate,
+        lastScheduledDateByPlatform,
+        hasUserOverride,
+        seed,
+      );
+      const rightScore = this.scoreDate(
+        right,
+        platformKey,
+        profile,
+        usedSlotsByDate,
+        lastScheduledDateByPlatform,
+        hasUserOverride,
+        seed,
+      );
+
+      if (leftScore !== rightScore) {
+        return rightScore - leftScore;
+      }
+
+      return left.localeCompare(right);
+    });
+  }
+
+  private scoreDate(
+    date: string,
+    platformKey: string,
+    profile: PlatformProfile,
+    usedSlotsByDate: Map<string, DateSlot[]>,
+    lastScheduledDateByPlatform: Map<string, string>,
+    hasUserOverride: boolean,
+    seed: number,
+  ): number {
+    const weekday = this.getWeekday(date);
+    const preferredDayIndex = profile.preferredDays.indexOf(weekday);
+    const preferredDayScore =
+      preferredDayIndex >= 0 ? 70 - preferredDayIndex * 8 : 8;
+
+    const dailyLoadPenalty = (usedSlotsByDate.get(date)?.length ?? 0) * 14;
+    const lastDate = lastScheduledDateByPlatform.get(platformKey);
+    const spacingScore = lastDate
+      ? Math.min(Math.abs(this.diffInDays(lastDate, date)), 4) * 7
+      : 14;
+
+    const weekendPenalty =
+      profile.weekdayOnly && !hasUserOverride && this.isWeekend(date) ? 200 : 0;
+
+    const deterministicBias = this.computeDeterministicBias(
+      date,
+      platformKey,
+      seed,
+    );
+
+    return (
+      preferredDayScore +
+      spacingScore +
+      deterministicBias -
+      dailyLoadPenalty -
+      weekendPenalty
+    );
+  }
+
   private buildBalancedPostOrder(
-    posts: GeneratedPost[],
+    postsByPlatform: Map<string, OrderedPost[]>,
     platformOrder: string[],
   ): OrderedPost[] {
-    const buckets = new Map<string, OrderedPost[]>();
+    const order = platformOrder
+      .map((platform) => this.normalizePlatform(platform).toLowerCase())
+      .filter((platform, index, source) => source.indexOf(platform) === index);
+
+    const clonedBuckets = new Map<string, OrderedPost[]>();
+    postsByPlatform.forEach((posts, platform) => {
+      clonedBuckets.set(platform, [...posts]);
+    });
+
+    const orderedPosts: OrderedPost[] = [];
+    while (orderedPosts.length < this.countPosts(postsByPlatform)) {
+      const nextPlatforms = order
+        .map((platform) => ({
+          platform,
+          remaining: clonedBuckets.get(platform)?.length ?? 0,
+        }))
+        .filter((entry) => entry.remaining > 0)
+        .sort((left, right) => {
+          if (right.remaining !== left.remaining) {
+            return right.remaining - left.remaining;
+          }
+
+          return order.indexOf(left.platform) - order.indexOf(right.platform);
+        });
+
+      if (!nextPlatforms.length) {
+        break;
+      }
+
+      for (const entry of nextPlatforms) {
+        const bucket = clonedBuckets.get(entry.platform);
+        const post = bucket?.shift();
+        if (post) {
+          orderedPosts.push(post);
+        }
+      }
+    }
+
+    return orderedPosts;
+  }
+
+  private groupPostsByPlatform(
+    posts: GeneratedPost[],
+    platformOrder: string[],
+  ): Map<string, OrderedPost[]> {
+    const grouped = new Map<string, OrderedPost[]>();
+
+    platformOrder.forEach((platform) => {
+      grouped.set(this.normalizePlatform(platform).toLowerCase(), []);
+    });
 
     posts.forEach((post, index) => {
       const platform = this.normalizePlatform(post.platform);
@@ -299,221 +641,12 @@ export class AutoSchedulerService {
       }
 
       const key = platform.toLowerCase();
-      const existingBucket = buckets.get(key) ?? [];
-      existingBucket.push({ index, platform });
-      buckets.set(key, existingBucket);
+      const platformPosts = grouped.get(key) ?? [];
+      platformPosts.push({ index, platform });
+      grouped.set(key, platformPosts);
     });
 
-    const normalizedOrder = platformOrder
-      .map((platform) => this.normalizePlatform(platform).toLowerCase())
-      .filter((platform, index, source) => source.indexOf(platform) === index);
-
-    const ordered: OrderedPost[] = [];
-    while (ordered.length < posts.length) {
-      const currentPlatforms = normalizedOrder
-        .map((platform) => ({
-          platform,
-          remaining: buckets.get(platform)?.length ?? 0,
-        }))
-        .filter((entry) => entry.remaining > 0)
-        .sort((left, right) => {
-          if (right.remaining !== left.remaining) {
-            return right.remaining - left.remaining;
-          }
-          return (
-            normalizedOrder.indexOf(left.platform) -
-            normalizedOrder.indexOf(right.platform)
-          );
-        });
-
-      if (!currentPlatforms.length) {
-        break;
-      }
-
-      for (const entry of currentPlatforms) {
-        const bucket = buckets.get(entry.platform);
-        if (!bucket?.length) {
-          continue;
-        }
-
-        const nextPost = bucket.shift();
-        if (nextPost) {
-          ordered.push(nextPost);
-        }
-      }
-    }
-
-    return ordered;
-  }
-
-  private findBestScheduleForPost(
-    post: OrderedPost,
-    weekBucket: WeekBucket,
-    allEligibleDates: string[],
-    usedDateTimes: Set<string>,
-    scheduledCountByDate: Map<string, number>,
-    platformUsageByDate: Map<string, number>,
-    lastPlatformDate: Map<string, string>,
-    timezone: string,
-    preferredTimeWindows: Record<string, string[]>,
-    seed: number,
-  ): { date: string; time: string; timezone: string } {
-    const candidateDates = [...weekBucket.dates].sort((left, right) => {
-      const scoreRight = this.scoreDateForPlatform(
-        right,
-        post.platform,
-        scheduledCountByDate,
-        platformUsageByDate,
-        lastPlatformDate,
-      );
-      const scoreLeft = this.scoreDateForPlatform(
-        left,
-        post.platform,
-        scheduledCountByDate,
-        platformUsageByDate,
-        lastPlatformDate,
-      );
-
-      if (scoreRight !== scoreLeft) {
-        return scoreRight - scoreLeft;
-      }
-
-      return left.localeCompare(right);
-    });
-
-    const windows = this.resolveTimeWindows(
-      post.platform,
-      preferredTimeWindows,
-    );
-
-    for (const date of candidateDates) {
-      const time = this.findAvailableTime(
-        date,
-        windows,
-        usedDateTimes,
-        seed,
-        scheduledCountByDate.get(date) ?? 0,
-      );
-
-      if (time) {
-        return { date, time, timezone };
-      }
-    }
-
-    for (const date of allEligibleDates) {
-      const time = this.findAvailableTime(
-        date,
-        windows,
-        usedDateTimes,
-        seed + candidateDates.length,
-        scheduledCountByDate.get(date) ?? 0,
-      );
-
-      if (time) {
-        return { date, time, timezone };
-      }
-    }
-
-    throw new BadRequestException(
-      `Aucun horaire disponible pour la plateforme ${post.platform}`,
-    );
-  }
-
-  private scoreDateForPlatform(
-    date: string,
-    platform: string,
-    scheduledCountByDate: Map<string, number>,
-    platformUsageByDate: Map<string, number>,
-    lastPlatformDate: Map<string, string>,
-  ): number {
-    const profile = this.getPlatformProfile(platform);
-    const weekday = this.getWeekday(date);
-    const preferredDayIndex = profile.preferredDays.indexOf(weekday);
-    const weekdayScore =
-      preferredDayIndex >= 0 ? 40 - preferredDayIndex * 5 : 8;
-    const dateLoadPenalty = (scheduledCountByDate.get(date) ?? 0) * 10;
-    const samePlatformPenalty =
-      (platformUsageByDate.get(this.toPlatformDateKey(platform, date)) ?? 0) *
-      24;
-
-    const previousDate = lastPlatformDate.get(platform.toLowerCase());
-    let spacingScore = 12;
-    if (previousDate) {
-      const diffDays = Math.abs(this.diffInDays(previousDate, date));
-      spacingScore = Math.min(diffDays, 4) * 6;
-    }
-
-    return weekdayScore + spacingScore - dateLoadPenalty - samePlatformPenalty;
-  }
-
-  private resolveTimeWindows(
-    platform: string,
-    preferredTimeWindows: Record<string, string[]>,
-  ): TimeWindow[] {
-    const platformKey = this.normalizePlatform(platform).toLowerCase();
-    const rawWindows =
-      preferredTimeWindows[platformKey] ??
-      this.getPlatformProfile(platform).defaultWindows;
-
-    return rawWindows.map((window) => this.parseTimeWindow(window));
-  }
-
-  private findAvailableTime(
-    date: string,
-    windows: TimeWindow[],
-    usedDateTimes: Set<string>,
-    seed: number,
-    dailyLoad: number,
-  ): string | null {
-    const seedOffsets = [10, 25, 40, 55, 15, 30, 45, 5, 20, 35, 50, 0];
-
-    for (const window of windows) {
-      const rotation = (seed + dailyLoad) % seedOffsets.length;
-      for (let index = 0; index < seedOffsets.length; index += 1) {
-        const offset = seedOffsets[(index + rotation) % seedOffsets.length];
-        const candidateMinutes = this.roundToFiveMinutes(
-          window.startMinutes + offset,
-        );
-
-        if (candidateMinutes > window.endMinutes) {
-          continue;
-        }
-
-        const candidateTime = this.formatMinutes(candidateMinutes);
-        if (!usedDateTimes.has(this.toDateTimeKey(date, candidateTime))) {
-          return candidateTime;
-        }
-      }
-
-      for (
-        let minute = this.roundToFiveMinutes(window.startMinutes);
-        minute <= window.endMinutes;
-        minute += 5
-      ) {
-        const candidateTime = this.formatMinutes(minute);
-        if (!usedDateTimes.has(this.toDateTimeKey(date, candidateTime))) {
-          return candidateTime;
-        }
-      }
-    }
-
-    const fallbackWindow: TimeWindow = {
-      startMinutes: 8 * 60,
-      endMinutes: 21 * 60 + 55,
-    };
-
-    for (
-      let minute = this.roundToFiveMinutes(fallbackWindow.startMinutes);
-      minute <= fallbackWindow.endMinutes;
-      minute += 5
-    ) {
-      const candidateTime = this.formatMinutes(minute);
-      if (!usedDateTimes.has(this.toDateTimeKey(date, candidateTime))) {
-        return candidateTime;
-      }
-    }
-
-    return null;
+    return grouped;
   }
 
   private normalizePreferredTimeWindows(
@@ -540,6 +673,228 @@ export class AutoSchedulerService {
     }
 
     return normalized;
+  }
+
+  private generateWindowMinutes(
+    window: TimeWindow,
+    isFallback: boolean,
+    windowIndex: number,
+  ): Array<{ time: string; minutes: number }> {
+    const step = 30;
+    const minutes: number[] = [];
+
+    for (
+      let current = this.roundUpToStep(window.startMinutes, step);
+      current <= window.endMinutes;
+      current += step
+    ) {
+      minutes.push(current);
+    }
+
+    const midpoint = Math.floor((window.startMinutes + window.endMinutes) / 2);
+    return minutes
+      .sort((left, right) => {
+        const leftDistance = Math.abs(left - midpoint);
+        const rightDistance = Math.abs(right - midpoint);
+
+        if (leftDistance !== rightDistance) {
+          return leftDistance - rightDistance;
+        }
+
+        if (isFallback) {
+          return left - right;
+        }
+
+        return left - right + windowIndex;
+      })
+      .map((minute) => ({
+        time: this.formatMinutes(minute),
+        minutes: minute,
+      }));
+  }
+
+  private buildEligibleDates(
+    startDate: string,
+    endDate: string,
+    excludedDays: Set<AutoScheduleExcludedDay>,
+  ): string[] {
+    const start = this.parseDate(startDate);
+    const end = this.parseDate(endDate);
+    const startTimestamp = Date.UTC(start.year, start.month - 1, start.day);
+    const endTimestamp = Date.UTC(end.year, end.month - 1, end.day);
+
+    if (endTimestamp < startTimestamp) {
+      throw new BadRequestException(
+        'endDate doit etre posterieure ou egale a startDate',
+      );
+    }
+
+    const dates: string[] = [];
+    for (
+      let current = startTimestamp;
+      current <= endTimestamp;
+      current += 24 * 60 * 60 * 1000
+    ) {
+      const currentDate = new Date(current);
+      const date = this.formatDate({
+        year: currentDate.getUTCFullYear(),
+        month: currentDate.getUTCMonth() + 1,
+        day: currentDate.getUTCDate(),
+      });
+
+      if (!excludedDays.has(this.getWeekday(date))) {
+        dates.push(date);
+      }
+    }
+
+    return dates;
+  }
+
+  private buildWeekBuckets(dates: string[]): WeekBucket[] {
+    const buckets = new Map<string, string[]>();
+
+    for (const date of dates) {
+      const weekKey = this.getWeekStart(date);
+      const weekDates = buckets.get(weekKey) ?? [];
+      weekDates.push(date);
+      buckets.set(weekKey, weekDates);
+    }
+
+    return Array.from(buckets.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([weekKey, weekDates]) => ({
+        weekKey,
+        dates: weekDates.sort((left, right) => left.localeCompare(right)),
+      }));
+  }
+
+  private countPosts(postsByPlatform: Map<string, OrderedPost[]>): number {
+    let total = 0;
+    postsByPlatform.forEach((posts) => {
+      total += posts.length;
+    });
+    return total;
+  }
+
+  private getWeekStart(date: string): string {
+    const parsed = this.parseDate(date);
+    const utcDate = new Date(
+      Date.UTC(parsed.year, parsed.month - 1, parsed.day),
+    );
+    const diffToMonday = (utcDate.getUTCDay() + 6) % 7;
+    utcDate.setUTCDate(utcDate.getUTCDate() - diffToMonday);
+
+    return this.formatDate({
+      year: utcDate.getUTCFullYear(),
+      month: utcDate.getUTCMonth() + 1,
+      day: utcDate.getUTCDate(),
+    });
+  }
+
+  private getWeekday(date: string): AutoScheduleExcludedDay {
+    const parsed = this.parseDate(date);
+    const dayIndex = new Date(
+      Date.UTC(parsed.year, parsed.month - 1, parsed.day),
+    ).getUTCDay();
+
+    const dayMap: AutoScheduleExcludedDay[] = [
+      AutoScheduleExcludedDay.SUNDAY,
+      AutoScheduleExcludedDay.MONDAY,
+      AutoScheduleExcludedDay.TUESDAY,
+      AutoScheduleExcludedDay.WEDNESDAY,
+      AutoScheduleExcludedDay.THURSDAY,
+      AutoScheduleExcludedDay.FRIDAY,
+      AutoScheduleExcludedDay.SATURDAY,
+    ];
+
+    return dayMap[dayIndex];
+  }
+
+  private isWeekend(date: string): boolean {
+    const weekday = this.getWeekday(date);
+    return (
+      weekday === AutoScheduleExcludedDay.SATURDAY ||
+      weekday === AutoScheduleExcludedDay.SUNDAY
+    );
+  }
+
+  private diffInDays(left: string, right: string): number {
+    const leftDate = this.parseDate(left);
+    const rightDate = this.parseDate(right);
+    const leftTimestamp = Date.UTC(
+      leftDate.year,
+      leftDate.month - 1,
+      leftDate.day,
+    );
+    const rightTimestamp = Date.UTC(
+      rightDate.year,
+      rightDate.month - 1,
+      rightDate.day,
+    );
+
+    return Math.round((rightTimestamp - leftTimestamp) / (24 * 60 * 60 * 1000));
+  }
+
+  private assertValidTimezone(timezone: string): void {
+    try {
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: '2-digit',
+      }).format(new Date());
+    } catch {
+      throw new BadRequestException(`Timezone invalide: ${timezone}`);
+    }
+  }
+
+  private assertValidFrequency(frequencyPerWeek: number): void {
+    if (!Number.isInteger(frequencyPerWeek) || frequencyPerWeek < 1) {
+      throw new BadRequestException(
+        'frequencyPerWeek invalide: entier superieur ou egal a 1 attendu',
+      );
+    }
+  }
+
+  private computeDeterministicBias(
+    date: string,
+    platformKey: string,
+    seed: number,
+  ): number {
+    const raw = `${platformKey}|${date}|${seed}`;
+    let hash = 0;
+
+    for (let index = 0; index < raw.length; index += 1) {
+      hash = (hash * 31 + raw.charCodeAt(index)) % 997;
+    }
+
+    return hash % 5;
+  }
+
+  private parseDate(value: string): ParsedDate {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+    if (!match) {
+      throw new BadRequestException(
+        `Date invalide: ${value}. Format attendu YYYY-MM-DD`,
+      );
+    }
+
+    const parsed: ParsedDate = {
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+    };
+
+    const candidate = new Date(
+      Date.UTC(parsed.year, parsed.month - 1, parsed.day),
+    );
+    if (
+      candidate.getUTCFullYear() !== parsed.year ||
+      candidate.getUTCMonth() + 1 !== parsed.month ||
+      candidate.getUTCDate() !== parsed.day
+    ) {
+      throw new BadRequestException(`Date invalide: ${value}`);
+    }
+
+    return parsed;
   }
 
   private normalizeTimeWindow(value: string): string {
@@ -574,171 +929,6 @@ export class AutoSchedulerService {
     };
   }
 
-  private distributeAcrossWeeks(
-    totalPosts: number,
-    weekCount: number,
-    frequencyPerWeek: number,
-  ): number[] {
-    const quotas = Array.from({ length: weekCount }, () => 0);
-
-    for (let index = 0; index < totalPosts; index += 1) {
-      const weekIndex = index % weekCount;
-      quotas[weekIndex] += 1;
-    }
-
-    if (quotas.some((quota) => quota > frequencyPerWeek)) {
-      throw new BadRequestException(
-        'La frequence hebdomadaire ne permet pas de repartir tous les posts sur la plage demandee',
-      );
-    }
-
-    return quotas;
-  }
-
-  private buildEligibleDates(
-    startDate: string,
-    endDate: string,
-    excludedDays: Set<AutoScheduleExcludedDay>,
-  ): string[] {
-    const start = this.parseDate(startDate);
-    const end = this.parseDate(endDate);
-    const startTimestamp = Date.UTC(start.year, start.month - 1, start.day);
-    const endTimestamp = Date.UTC(end.year, end.month - 1, end.day);
-
-    if (endTimestamp < startTimestamp) {
-      throw new BadRequestException(
-        'endDate doit etre posterieure ou egale a startDate',
-      );
-    }
-
-    const dates: string[] = [];
-    for (
-      let current = startTimestamp;
-      current <= endTimestamp;
-      current += 24 * 60 * 60 * 1000
-    ) {
-      const currentDate = new Date(current);
-      const date = this.formatDate({
-        year: currentDate.getUTCFullYear(),
-        month: currentDate.getUTCMonth() + 1,
-        day: currentDate.getUTCDate(),
-      });
-      const weekday = this.getWeekday(date);
-      if (!excludedDays.has(weekday)) {
-        dates.push(date);
-      }
-    }
-
-    return dates;
-  }
-
-  private buildWeekBuckets(dates: string[]): WeekBucket[] {
-    const buckets = new Map<string, string[]>();
-
-    for (const date of dates) {
-      const weekKey = this.getWeekStart(date);
-      const existingDates = buckets.get(weekKey) ?? [];
-      existingDates.push(date);
-      buckets.set(weekKey, existingDates);
-    }
-
-    return Array.from(buckets.entries())
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([weekKey, weekDates]) => ({
-        weekKey,
-        dates: weekDates.sort((left, right) => left.localeCompare(right)),
-      }));
-  }
-
-  private getWeekStart(date: string): string {
-    const parsed = this.parseDate(date);
-    const utcDate = new Date(
-      Date.UTC(parsed.year, parsed.month - 1, parsed.day),
-    );
-    const diffToMonday = (utcDate.getUTCDay() + 6) % 7;
-    utcDate.setUTCDate(utcDate.getUTCDate() - diffToMonday);
-
-    return this.formatDate({
-      year: utcDate.getUTCFullYear(),
-      month: utcDate.getUTCMonth() + 1,
-      day: utcDate.getUTCDate(),
-    });
-  }
-
-  private getWeekday(date: string): AutoScheduleExcludedDay {
-    const parsed = this.parseDate(date);
-    const dayIndex = new Date(
-      Date.UTC(parsed.year, parsed.month - 1, parsed.day),
-    ).getUTCDay();
-    const dayMap: AutoScheduleExcludedDay[] = [
-      AutoScheduleExcludedDay.SUNDAY,
-      AutoScheduleExcludedDay.MONDAY,
-      AutoScheduleExcludedDay.TUESDAY,
-      AutoScheduleExcludedDay.WEDNESDAY,
-      AutoScheduleExcludedDay.THURSDAY,
-      AutoScheduleExcludedDay.FRIDAY,
-      AutoScheduleExcludedDay.SATURDAY,
-    ];
-
-    return dayMap[dayIndex];
-  }
-
-  private diffInDays(left: string, right: string): number {
-    const leftDate = this.parseDate(left);
-    const rightDate = this.parseDate(right);
-    const leftTimestamp = Date.UTC(
-      leftDate.year,
-      leftDate.month - 1,
-      leftDate.day,
-    );
-    const rightTimestamp = Date.UTC(
-      rightDate.year,
-      rightDate.month - 1,
-      rightDate.day,
-    );
-
-    return Math.round((rightTimestamp - leftTimestamp) / (24 * 60 * 60 * 1000));
-  }
-
-  private assertValidTimezone(timezone: string): void {
-    try {
-      new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        hour: '2-digit',
-      }).format(new Date());
-    } catch {
-      throw new BadRequestException(`Timezone invalide: ${timezone}`);
-    }
-  }
-
-  private parseDate(value: string): ParsedDate {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-    if (!match) {
-      throw new BadRequestException(
-        `Date invalide: ${value}. Format attendu YYYY-MM-DD`,
-      );
-    }
-
-    const parsed: ParsedDate = {
-      year: Number(match[1]),
-      month: Number(match[2]),
-      day: Number(match[3]),
-    };
-
-    const candidate = new Date(
-      Date.UTC(parsed.year, parsed.month - 1, parsed.day),
-    );
-    if (
-      candidate.getUTCFullYear() !== parsed.year ||
-      candidate.getUTCMonth() + 1 !== parsed.month ||
-      candidate.getUTCDate() !== parsed.day
-    ) {
-      throw new BadRequestException(`Date invalide: ${value}`);
-    }
-
-    return parsed;
-  }
-
   private formatDate(date: ParsedDate): string {
     return `${String(date.year).padStart(4, '0')}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
   }
@@ -754,21 +944,17 @@ export class AutoSchedulerService {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
-  private roundToFiveMinutes(value: number): number {
-    return Math.ceil(value / 5) * 5;
+  private roundUpToStep(value: number, step: number): number {
+    return Math.ceil(value / step) * step;
   }
 
   private toDateTimeKey(date: string, time: string): string {
     return `${date} ${time}`;
   }
 
-  private toPlatformDateKey(platform: string, date: string): string {
-    return `${platform.toLowerCase()}|${date}`;
-  }
-
   private getPlatformProfile(platform: string): PlatformProfile {
-    const normalizedPlatform = this.normalizePlatform(platform).toLowerCase();
-    return this.platformProfiles[normalizedPlatform] ?? this.defaultProfile;
+    const platformKey = this.normalizePlatform(platform).toLowerCase();
+    return this.platformProfiles[platformKey] ?? this.defaultProfile;
   }
 
   private normalizePlatforms(platforms: string[]): string[] {
