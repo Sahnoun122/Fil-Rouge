@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Toaster, toast } from "react-hot-toast";
-import { CalendarClock, Sparkles, Tags, TextQuote } from "lucide-react";
+import {
+  ArrowUpRight,
+  CalendarClock,
+  Sparkles,
+  Tags,
+  TextQuote,
+} from "lucide-react";
 import { CalendarBoard } from "@/src/components/calendar/CalendarBoard";
 import { FiltersBar } from "@/src/components/calendar/FiltersBar";
 import { PostModal } from "@/src/components/calendar/PostModal";
@@ -175,6 +181,9 @@ export default function CalendarPage() {
           ...post,
           index,
           scheduledPostId: matchingScheduledPost?._id ?? null,
+          detailHref: campaignIdFilter
+            ? `/calendar/planning/campaign/${campaignIdFilter}/${index}`
+            : null,
           scheduleLabel:
             post.schedule?.date && post.schedule?.time
               ? `${post.schedule.date} a ${post.schedule.time}`
@@ -451,13 +460,19 @@ export default function CalendarPage() {
               Aucun planning disponible pour cette campagne.
             </div>
           ) : (
-            <div className="mt-6 grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {planningCards.map((post) => (
-                <article
+                <Link
                   key={post._id || `${post.platform}-${post.index}`}
-                  className="overflow-hidden rounded-[26px] border border-stone-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.95))] shadow-sm"
+                  href={
+                    post.detailHref ||
+                    (post.scheduledPostId
+                      ? `/calendar/planning/${post.scheduledPostId}`
+                      : "#")
+                  }
+                  className="group overflow-hidden rounded-[24px] border border-stone-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_22px_50px_-30px_rgba(15,23,42,0.45)]"
                 >
-                  <div className="border-b border-stone-200 bg-stone-50/90 p-4">
+                  <div className="border-b border-stone-200 bg-stone-50/90 p-3">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
@@ -470,113 +485,90 @@ export default function CalendarPage() {
                           {post.status}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-stone-950">
-                          {post.scheduleLabel}
-                        </p>
-                        <p className="text-xs text-stone-500">
-                          {post.timezone}
-                        </p>
+                      <div className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700 transition group-hover:border-stone-300 group-hover:text-stone-950">
+                        Ouvrir
+                        <ArrowUpRight className="h-3.5 w-3.5" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4 p-4">
+                  <div className="space-y-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          Slot planning
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-stone-950">
+                          {post.scheduleLabel}
+                        </p>
+                        <p className="text-xs text-stone-500">{post.timezone}</p>
+                      </div>
+                      {(post.hashtags ?? []).length > 0 ? (
+                        <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700">
+                          {(post.hashtags ?? []).length} tag(s)
+                        </span>
+                      ) : null}
+                    </div>
+
                     {post.title ? (
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                           Angle
                         </p>
-                        <p className="mt-2 text-base font-semibold leading-6 text-stone-950">
+                        <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-stone-950">
                           {post.title}
                         </p>
                       </div>
                     ) : null}
 
                     {post.hook ? (
-                      <div className="rounded-[20px] border border-cyan-200 bg-cyan-50/80 p-3">
-                        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-700">
+                      <div className="rounded-[18px] border border-cyan-200 bg-cyan-50/80 p-3">
+                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-700">
                           <Sparkles className="h-3.5 w-3.5" />
                           Hook IA
                         </p>
-                        <p className="mt-2 text-sm font-medium leading-6 text-cyan-950">
+                        <p className="mt-1 line-clamp-2 text-sm font-medium leading-6 text-cyan-950">
                           {post.hook}
                         </p>
                       </div>
                     ) : null}
 
                     <div>
-                      <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                      <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                         <TextQuote className="h-3.5 w-3.5" />
-                        Caption genere par l'IA
+                        Caption IA
                       </p>
-                      <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                      <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
                         {post.caption}
                       </p>
                     </div>
 
-                    {post.description ? (
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                          Description
-                        </p>
-                        <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-stone-600">
-                          {post.description}
-                        </p>
-                      </div>
-                    ) : null}
-
-                    {post.cta ? (
-                      <div className="rounded-[18px] border border-stone-200 bg-stone-50 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                          CTA
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-stone-800">
-                          {post.cta}
-                        </p>
-                      </div>
-                    ) : null}
-
                     {(post.hashtags ?? []).length > 0 ? (
                       <div>
-                        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                           <Tags className="h-3.5 w-3.5" />
                           Hashtags
                         </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {post.hashtags?.map((tag) => (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {post.hashtags?.slice(0, 4).map((tag) => (
                             <span
                               key={`${post._id || post.index}-${tag}`}
-                              className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700"
+                              className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700"
                             >
                               #{tag}
                             </span>
                           ))}
+                          {(post.hashtags?.length ?? 0) > 4 ? (
+                            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700">
+                              +{(post.hashtags?.length ?? 0) - 4}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     ) : null}
-
-                    <div className="flex items-center justify-between border-t border-stone-200 pt-3">
-                      <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                        <CalendarClock className="h-3.5 w-3.5" />
-                        Slot planning
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <p className="text-xs font-medium text-stone-700">
-                          {post.scheduleLabel}
-                        </p>
-                        {post.scheduledPostId ? (
-                          <Link
-                            href={`/calendar/planning/${post.scheduledPostId}`}
-                            className="inline-flex items-center rounded-full border border-stone-300 bg-white px-3 py-1 text-[11px] font-semibold text-stone-700 transition hover:bg-stone-100"
-                          >
-                            Voir details
-                          </Link>
-                        ) : null}
-                      </div>
-                    </div>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}
