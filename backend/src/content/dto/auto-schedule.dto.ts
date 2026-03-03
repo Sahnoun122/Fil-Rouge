@@ -9,10 +9,8 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  Matches,
   Max,
   MaxLength,
-  ValidateNested,
 } from 'class-validator';
 
 export enum AutoScheduleExcludedDay {
@@ -25,55 +23,7 @@ export enum AutoScheduleExcludedDay {
   SUNDAY = 'sunday',
 }
 
-const TIME_WINDOW_PATTERN =
-  /^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/;
-
-export class PreferredTimeWindowsDto {
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  instagram?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  tiktok?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  facebook?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  linkedin?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  x?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  youtube?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  snapchat?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  pinterest?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @Matches(TIME_WINDOW_PATTERN, { each: true })
-  threads?: string[];
-}
+export type PreferredTimeWindowsDto = Record<string, string[]>;
 
 export class AutoScheduleDto {
   @IsDateString()
@@ -99,8 +49,6 @@ export class AutoScheduleDto {
 
   @IsOptional()
   @IsObject()
-  @ValidateNested()
-  @Type(() => PreferredTimeWindowsDto)
   preferredTimeWindows?: PreferredTimeWindowsDto;
 
   @IsOptional()
