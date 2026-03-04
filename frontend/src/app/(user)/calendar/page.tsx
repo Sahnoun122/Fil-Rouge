@@ -155,7 +155,7 @@ export default function CalendarPage() {
           index,
           scheduledPostId: matchingScheduledPost?._id ?? null,
           detailHref: campaignIdFilter
-            ? `/calendar/planning/campaign/${campaignIdFilter}/${index}`
+            ? `/calendar/planning/campaign/${campaignIdFilter}/${post._id || index}`
             : null,
           scheduleLabel:
             post.schedule?.date && post.schedule?.time
@@ -467,6 +467,16 @@ export default function CalendarPage() {
                         </div>
                       </div>
                     ) : null}
+
+                    <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500">
+                        Details du planning
+                      </p>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-stone-950 px-3 py-1.5 text-[11px] font-semibold text-white">
+                        Voir le detail
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
                   </div>
                 </Link>
               ))}

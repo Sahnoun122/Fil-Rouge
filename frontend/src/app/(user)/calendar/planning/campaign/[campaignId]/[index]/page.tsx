@@ -48,6 +48,14 @@ function formatStatusLabel(status?: ScheduledPost["status"]) {
   return "Planifie";
 }
 
+function formatPostTypeLabel(value?: string | null) {
+  if (!value) {
+    return "post";
+  }
+
+  return value;
+}
+
 function resolveRange(campaign: ContentCampaign) {
   const scheduledDates = campaign.generatedPosts
     .map((post) => post.schedule?.date)
@@ -87,6 +95,40 @@ function matchScheduledPost(
   );
 }
 
+function matchGeneratedPostFromScheduledPost(
+  campaign: ContentCampaign,
+  scheduledPost: ScheduledPost,
+) {
+  const noteMatch = /^AUTO_SCHEDULE:[^:]+:(\d+)$/.exec(
+    scheduledPost.notes?.trim() || "",
+  );
+
+  if (noteMatch) {
+    const index = Number(noteMatch[1]);
+    if (Number.isInteger(index) && index >= 0) {
+      return {
+        generatedPost: campaign.generatedPosts[index] ?? null,
+        resolvedIndex: campaign.generatedPosts[index] ? index : null,
+      };
+    }
+  }
+
+  const matchedIndex = campaign.generatedPosts.findIndex(
+    (post) =>
+      post.platform.toLowerCase() === scheduledPost.platform.toLowerCase() &&
+      post.caption.trim() === scheduledPost.caption.trim(),
+  );
+
+  if (matchedIndex >= 0) {
+    return {
+      generatedPost: campaign.generatedPosts[matchedIndex] ?? null,
+      resolvedIndex: matchedIndex,
+    };
+  }
+
+  return { generatedPost: null, resolvedIndex: null as number | null };
+}
+
 function DetailSkeleton() {
   return (
     <div className="space-y-4">
@@ -108,22 +150,23 @@ function DetailSkeleton() {
 export default function CampaignPlanningDetailPage() {
   const params = useParams<{ campaignId: string | string[]; index: string | string[] }>();
   const campaignId = normalizeRouteParam(params.campaignId);
-  const indexParam = normalizeRouteParam(params.index);
-  const postIndex =
-    /^\d+$/.test(indexParam) && Number.isInteger(Number(indexParam))
-      ? Number(indexParam)
+  const postKey = normalizeRouteParam(params.index);
+  const fallbackIndex =
+    /^\d+$/.test(postKey) && Number.isInteger(Number(postKey))
+      ? Number(postKey)
       : null;
   const [campaign, setCampaign] = useState<ContentCampaign | null>(null);
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
+  const [directScheduledPost, setDirectScheduledPost] = useState<ScheduledPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInvalidRoute, setIsInvalidRoute] = useState(false);
 
   useEffect(() => {
-    if (!campaignId && !indexParam) {
+    if (!campaignId && !postKey) {
       return;
     }
 
-    if (!campaignId || postIndex === null || postIndex < 0) {
+    if (!campaignId || !postKey) {
       setIsInvalidRoute(true);
       setIsLoading(false);
       return;
@@ -136,12 +179,32 @@ export default function CampaignPlanningDetailPage() {
       try {
         const loadedCampaign = await contentService.getCampaign(campaignId);
         setCampaign(loadedCampaign);
+        setDirectScheduledPost(null);
 
         const { rangeStart, rangeEnd } = resolveRange(loadedCampaign);
         const response = await calendarService.listPosts({ rangeStart, rangeEnd, limit: 200 });
-        setScheduledPosts(
-          response.posts.filter((post) => post.campaignId === loadedCampaign._id),
+        const campaignPosts = response.posts.filter(
+          (post) => post.campaignId === loadedCampaign._id,
         );
+        setScheduledPosts(campaignPosts);
+
+        const hasGeneratedPostById = loadedCampaign.generatedPosts.some(
+          (post) => post._id?.trim() === postKey,
+        );
+
+        if (!hasGeneratedPostById && postKey && fallbackIndex === null) {
+          try {
+            const scheduledPost = await calendarService.getPost(postKey);
+            if (scheduledPost.campaignId === loadedCampaign._id) {
+              setDirectScheduledPost(scheduledPost);
+              if (!campaignPosts.some((post) => post._id === scheduledPost._id)) {
+                setScheduledPosts((current) => [...current, scheduledPost]);
+              }
+            }
+          } catch {
+            setDirectScheduledPost(null);
+          }
+        }
       } catch (requestError) {
         toast.error(
           requestError instanceof Error
@@ -150,35 +213,87 @@ export default function CampaignPlanningDetailPage() {
         );
         setCampaign(null);
         setScheduledPosts([]);
+        setDirectScheduledPost(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     void loadDetail();
-  }, [campaignId, indexParam, postIndex]);
+  }, [campaignId, postKey]);
 
-  const generatedPost = useMemo(() => {
-    if (!campaign || postIndex === null || postIndex < 0) {
-      return null;
+  const resolvedPost = useMemo(() => {
+    if (!campaign || !postKey) {
+      return { generatedPost: null, resolvedIndex: null as number | null };
     }
 
-    return campaign.generatedPosts[postIndex] ?? null;
-  }, [campaign, postIndex]);
+    const byId = campaign.generatedPosts.findIndex(
+      (post) => post._id?.trim() === postKey,
+    );
+    if (byId >= 0) {
+      return {
+        generatedPost: campaign.generatedPosts[byId] ?? null,
+        resolvedIndex: byId,
+      };
+    }
+
+    if (fallbackIndex !== null && fallbackIndex >= 0) {
+      return {
+        generatedPost: campaign.generatedPosts[fallbackIndex] ?? null,
+        resolvedIndex: fallbackIndex,
+      };
+    }
+
+    const scheduledPostById =
+      scheduledPosts.find((post) => post._id === postKey) || directScheduledPost;
+    if (scheduledPostById) {
+      return matchGeneratedPostFromScheduledPost(campaign, scheduledPostById);
+    }
+
+    return { generatedPost: null, resolvedIndex: null as number | null };
+  }, [campaign, directScheduledPost, fallbackIndex, postKey, scheduledPosts]);
+
+  const { generatedPost, resolvedIndex } = resolvedPost;
 
   const scheduledPost = useMemo(() => {
-    if (!generatedPost || !campaign || postIndex === null) {
+    if (directScheduledPost) {
+      return directScheduledPost;
+    }
+
+    if (!generatedPost || !campaign || resolvedIndex === null) {
       return null;
     }
 
-    return matchScheduledPost(campaign._id, postIndex, generatedPost, scheduledPosts);
-  }, [campaign, generatedPost, postIndex, scheduledPosts]);
+    return matchScheduledPost(
+      campaign._id,
+      resolvedIndex,
+      generatedPost,
+      scheduledPosts,
+    );
+  }, [campaign, directScheduledPost, generatedPost, resolvedIndex, scheduledPosts]);
+
+  const detailTitle =
+    generatedPost?.title ||
+    generatedPost?.hook ||
+    scheduledPost?.title ||
+    `Publication ${generatedPost?.platform || scheduledPost?.platform || ""}`.trim() ||
+    "Publication";
+  const detailCaption = generatedPost?.caption || scheduledPost?.caption || "";
+  const detailDescription = generatedPost?.description || null;
+  const detailCta = generatedPost?.cta || null;
+  const detailHashtags = generatedPost?.hashtags || scheduledPost?.hashtags || [];
+  const detailPlatform = generatedPost?.platform || scheduledPost?.platform || "-";
+  const detailType = generatedPost?.type || scheduledPost?.postType || "post";
+  const detailTimezone =
+    generatedPost?.schedule?.timezone || scheduledPost?.timezone || "UTC";
+  const detailDate = generatedPost?.schedule?.date || null;
+  const detailTime = generatedPost?.schedule?.time || null;
 
   if (isLoading) {
     return <DetailSkeleton />;
   }
 
-  if (isInvalidRoute || !campaign || !generatedPost) {
+  if (isInvalidRoute || !campaign || (!generatedPost && !scheduledPost)) {
     return (
       <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6">
         <h1 className="text-xl font-bold text-rose-700">Planning introuvable</h1>
@@ -225,10 +340,10 @@ export default function CampaignPlanningDetailPage() {
               Planning detail
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-stone-950">
-              {generatedPost.title || generatedPost.hook || "Publication IA"}
+              {detailTitle}
             </h1>
             <p className="mt-2 text-sm leading-6 text-stone-600">
-              Detail professionnel du planning avec son contenu genere par l IA et son slot editorial.
+              Detail professionnel du planning avec son contenu editorial et son slot de publication.
             </p>
           </div>
 
@@ -250,10 +365,10 @@ export default function CampaignPlanningDetailPage() {
             Planification
           </p>
           <p className="mt-2 text-base font-semibold text-stone-950">
-            {formatSchedule(generatedPost.schedule?.date, generatedPost.schedule?.time)}
+            {formatSchedule(detailDate ?? undefined, detailTime ?? undefined)}
           </p>
           <p className="mt-1 text-xs text-stone-500">
-            {generatedPost.schedule?.timezone || scheduledPost?.timezone || "UTC"}
+            {detailTimezone}
           </p>
         </article>
 
@@ -263,7 +378,7 @@ export default function CampaignPlanningDetailPage() {
             Plateforme
           </p>
           <p className="mt-2 text-base font-semibold text-stone-950">
-            {generatedPost.platform}
+            {detailPlatform}
           </p>
         </article>
 
@@ -273,7 +388,7 @@ export default function CampaignPlanningDetailPage() {
             Type
           </p>
           <p className="mt-2 text-base font-semibold text-stone-950">
-            {generatedPost.type || scheduledPost?.postType || "post"}
+            {formatPostTypeLabel(detailType)}
           </p>
         </article>
 
@@ -293,14 +408,14 @@ export default function CampaignPlanningDetailPage() {
           <div>
             <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-700">
               <Sparkles className="h-3.5 w-3.5" />
-              Contenu genere par l IA
+              Contenu de la publication
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-stone-950">
-              {generatedPost.title || "Sans titre"}
+              {detailTitle}
             </h2>
           </div>
 
-          {generatedPost.hook ? (
+          {generatedPost?.hook ? (
             <div className="rounded-[20px] border border-cyan-200 bg-cyan-50/80 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-700">
                 Hook
@@ -317,28 +432,28 @@ export default function CampaignPlanningDetailPage() {
               Caption
             </p>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-stone-700">
-              {generatedPost.caption}
+              {detailCaption || "Aucun caption disponible"}
             </p>
           </div>
 
-          {generatedPost.description ? (
+          {detailDescription ? (
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                 Description
               </p>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-stone-600">
-                {generatedPost.description}
+                {detailDescription}
               </p>
             </div>
           ) : null}
 
-          {generatedPost.cta ? (
+          {detailCta ? (
             <div className="rounded-[18px] border border-stone-200 bg-stone-50 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                 CTA
               </p>
               <p className="mt-2 text-sm font-medium text-stone-800">
-                {generatedPost.cta}
+                {detailCta}
               </p>
             </div>
           ) : null}
@@ -354,19 +469,19 @@ export default function CampaignPlanningDetailPage() {
               <div className="flex items-start justify-between gap-4">
                 <dt>Date</dt>
                 <dd className="text-right font-semibold text-stone-950">
-                  {generatedPost.schedule?.date || "Non definie"}
+                  {detailDate || "Non definie"}
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <dt>Heure</dt>
                 <dd className="text-right font-semibold text-stone-950">
-                  {generatedPost.schedule?.time || "Non definie"}
+                  {detailTime || "Non definie"}
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <dt>Timezone</dt>
                 <dd className="text-right font-semibold text-stone-950">
-                  {generatedPost.schedule?.timezone || scheduledPost?.timezone || "UTC"}
+                  {detailTimezone}
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
@@ -394,8 +509,8 @@ export default function CampaignPlanningDetailPage() {
               Hashtags
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {(generatedPost.hashtags || []).length > 0 ? (
-                generatedPost.hashtags?.map((tag) => (
+              {detailHashtags.length > 0 ? (
+                detailHashtags.map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700"
@@ -409,14 +524,14 @@ export default function CampaignPlanningDetailPage() {
             </div>
           </article>
 
-          {(generatedPost.suggestedVisual || scheduledPost?.notes) ? (
+          {(generatedPost?.suggestedVisual || scheduledPost?.notes) ? (
             <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
               <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                 <FileText className="h-3.5 w-3.5" />
                 Notes
               </p>
 
-              {generatedPost.suggestedVisual ? (
+              {generatedPost?.suggestedVisual ? (
                 <div>
                   <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                     Suggestion visuelle
