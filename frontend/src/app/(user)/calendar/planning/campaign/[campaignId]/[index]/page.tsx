@@ -22,6 +22,14 @@ import { contentService } from "@/src/services/contentService";
 import type { ScheduledPost } from "@/src/types/calendar.types";
 import type { ContentCampaign, GeneratedPost } from "@/src/types/content.types";
 
+function normalizeRouteParam(value?: string | string[]) {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() || "";
+  }
+
+  return value?.trim() || "";
+}
+
 function toIsoRange(date: string, endOfDay = false) {
   return new Date(`${date}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`).toISOString();
 }
@@ -98,21 +106,32 @@ function DetailSkeleton() {
 }
 
 export default function CampaignPlanningDetailPage() {
-  const params = useParams<{ campaignId: string; index: string }>();
-  const campaignId = params.campaignId;
-  const postIndex = Number(params.index);
+  const params = useParams<{ campaignId: string | string[]; index: string | string[] }>();
+  const campaignId = normalizeRouteParam(params.campaignId);
+  const indexParam = normalizeRouteParam(params.index);
+  const postIndex =
+    /^\d+$/.test(indexParam) && Number.isInteger(Number(indexParam))
+      ? Number(indexParam)
+      : null;
   const [campaign, setCampaign] = useState<ContentCampaign | null>(null);
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInvalidRoute, setIsInvalidRoute] = useState(false);
 
   useEffect(() => {
-    if (!campaignId || !Number.isInteger(postIndex) || postIndex < 0) {
+    if (!campaignId && !indexParam) {
+      return;
+    }
+
+    if (!campaignId || postIndex === null || postIndex < 0) {
+      setIsInvalidRoute(true);
       setIsLoading(false);
       return;
     }
 
     const loadDetail = async () => {
       setIsLoading(true);
+      setIsInvalidRoute(false);
 
       try {
         const loadedCampaign = await contentService.getCampaign(campaignId);
@@ -137,10 +156,10 @@ export default function CampaignPlanningDetailPage() {
     };
 
     void loadDetail();
-  }, [campaignId, postIndex]);
+  }, [campaignId, indexParam, postIndex]);
 
   const generatedPost = useMemo(() => {
-    if (!campaign || !Number.isInteger(postIndex) || postIndex < 0) {
+    if (!campaign || postIndex === null || postIndex < 0) {
       return null;
     }
 
@@ -148,7 +167,7 @@ export default function CampaignPlanningDetailPage() {
   }, [campaign, postIndex]);
 
   const scheduledPost = useMemo(() => {
-    if (!generatedPost || !campaign) {
+    if (!generatedPost || !campaign || postIndex === null) {
       return null;
     }
 
@@ -159,7 +178,7 @@ export default function CampaignPlanningDetailPage() {
     return <DetailSkeleton />;
   }
 
-  if (!campaign || !generatedPost) {
+  if (isInvalidRoute || !campaign || !generatedPost) {
     return (
       <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6">
         <h1 className="text-xl font-bold text-rose-700">Planning introuvable</h1>

@@ -11,17 +11,12 @@ import {
   Tags,
   TextQuote,
 } from "lucide-react";
-import { CalendarBoard } from "@/src/components/calendar/CalendarBoard";
-import { FiltersBar } from "@/src/components/calendar/FiltersBar";
-import { PostModal } from "@/src/components/calendar/PostModal";
 import { useCalendar } from "@/src/hooks/useCalendar";
 import { calendarService } from "@/src/services/calendarService";
 import { contentService } from "@/src/services/contentService";
 import type {
   CampaignOption,
   CalendarFilterState,
-  CalendarView,
-  ScheduledPost,
   StrategyOption,
 } from "@/src/types/calendar.types";
 import type { ContentCampaign } from "@/src/types/content.types";
@@ -43,23 +38,13 @@ export default function CalendarPage() {
     null,
   );
   const [isMetaLoading, setIsMetaLoading] = useState(true);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
-  const [draftDate, setDraftDate] = useState<string | null>(null);
 
   const {
     posts,
     total,
-    isLoading,
     isMutating,
     error,
-    setVisibleRange,
     refresh,
-    createPost,
-    updatePost,
-    movePost,
-    deletePost,
   } = useCalendar(filters);
 
   useEffect(() => {
@@ -119,18 +104,6 @@ export default function CalendarPage() {
 
     toast.error(error);
   }, [error]);
-
-  const matchingCampaigns = useMemo(() => {
-    if (!selectedPost?.strategyId) {
-      return campaigns;
-    }
-
-    return campaigns.filter(
-      (campaign) =>
-        campaign.strategyId === selectedPost.strategyId ||
-        campaign._id === selectedPost.campaignId,
-    );
-  }, [campaigns, selectedPost]);
 
   const scopedPosts = useMemo(() => {
     if (!campaignIdFilter) {
@@ -216,87 +189,6 @@ export default function CalendarPage() {
       });
   }, [campaignDetail, campaignTimeline, scopedPosts]);
 
-  const openCreateModal = (dateIso?: string) => {
-    setModalMode("create");
-    setSelectedPost(null);
-    setDraftDate(dateIso ?? new Date().toISOString());
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (post: ScheduledPost) => {
-    setModalMode("edit");
-    setSelectedPost(post);
-    setDraftDate(post.scheduledAt);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedPost(null);
-    setDraftDate(null);
-  };
-
-  const handleMovePost = async (postId: string, scheduledAt: string) => {
-    try {
-      await movePost(postId, scheduledAt);
-      toast.success("Publication deplacee");
-    } catch (requestError) {
-      toast.error(
-        requestError instanceof Error
-          ? requestError.message
-          : "Erreur lors du deplacement",
-      );
-      throw requestError;
-    }
-  };
-
-  const handleCreatePost = async (
-    payload: Parameters<typeof createPost>[0],
-  ) => {
-    try {
-      await createPost(payload);
-      toast.success("Publication planifiee");
-    } catch (requestError) {
-      toast.error(
-        requestError instanceof Error
-          ? requestError.message
-          : "Erreur lors de la creation",
-      );
-      throw requestError;
-    }
-  };
-
-  const handleUpdatePost = async (
-    id: string,
-    payload: Parameters<typeof updatePost>[1],
-  ) => {
-    try {
-      await updatePost(id, payload);
-      toast.success("Publication mise a jour");
-    } catch (requestError) {
-      toast.error(
-        requestError instanceof Error
-          ? requestError.message
-          : "Erreur lors de la mise a jour",
-      );
-      throw requestError;
-    }
-  };
-
-  const handleDeletePost = async (id: string) => {
-    try {
-      await deletePost(id);
-      toast.success("Publication supprimee");
-    } catch (requestError) {
-      toast.error(
-        requestError instanceof Error
-          ? requestError.message
-          : "Erreur lors de la suppression",
-      );
-      throw requestError;
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Toaster
@@ -316,15 +208,15 @@ export default function CalendarPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-              Metricool style planner
+              Planning editorial
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-950">
-              Calendrier de publications
+              Planning de contenu
             </h1>
             <p className="mt-3 text-sm leading-6 text-stone-600">
-              Organise, deplace et ajuste tes publications depuis une vue
-              mensuelle ou hebdomadaire. Chaque changement reste synchronise
-              avec ton backend NestJS.
+              Consulte les plannings de campagne sous forme de cards
+              editoriales avec les contenus generes par l IA et leurs slots de
+              publication.
             </p>
             {campaignIdFilter ? (
               <div className="mt-4 rounded-[22px] border border-cyan-200 bg-cyan-50/80 p-4">
@@ -373,26 +265,6 @@ export default function CalendarPage() {
         </div>
       </section>
 
-      {!campaignIdFilter ? (
-        <FiltersBar
-          filters={filters}
-          totalCount={total}
-          onPlatformChange={(platform) =>
-            setFilters((current) => ({ ...current, platform }))
-          }
-          onStatusChange={(status) =>
-            setFilters((current) => ({ ...current, status }))
-          }
-          onSearchChange={(search) =>
-            setFilters((current) => ({ ...current, search }))
-          }
-          onViewChange={(view: CalendarView) =>
-            setFilters((current) => ({ ...current, view }))
-          }
-          onCreateClick={() => openCreateModal()}
-        />
-      ) : null}
-
       {campaignIdFilter ? (
         <section className="grid gap-4 lg:grid-cols-3">
           <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
@@ -425,18 +297,46 @@ export default function CalendarPage() {
       ) : null}
 
       {!campaignIdFilter ? (
-        <CalendarBoard
-          posts={scopedPosts}
-          view={filters.view}
-          isLoading={isLoading}
-          onRangeChange={(range) => {
-            void setVisibleRange(range);
-          }}
-          onEventClick={openEditModal}
-          onCreateAtDate={openCreateModal}
-          onMovePost={handleMovePost}
-          onRefresh={refresh}
-        />
+        <section className="rounded-[32px] border border-stone-200 bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+              Vue campagne
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-stone-950">
+              Ouvre une campagne pour voir son planning detaille
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
+              La grande vue calendrier a ete retiree. Le planning se consulte
+              maintenant depuis les cards de campagne pour un rendu plus propre
+              et plus professionnel.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {campaigns.slice(0, 12).map((campaign) => (
+              <Link
+                key={campaign._id}
+                href={`/calendar?campaignId=${campaign._id}`}
+                className="group rounded-[24px] border border-stone-200 bg-stone-50/70 p-5 transition hover:-translate-y-0.5 hover:border-stone-300 hover:bg-white hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-semibold text-stone-950">
+                      {campaign.name}
+                    </p>
+                    <p className="mt-1 text-sm text-stone-600">
+                      {campaign.platforms.join(", ") || "Sans plateforme"}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700">
+                    Ouvrir
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       {campaignIdFilter ? (
@@ -574,19 +474,6 @@ export default function CalendarPage() {
           )}
         </section>
       ) : null}
-
-      <PostModal
-        open={isModalOpen}
-        mode={modalMode}
-        post={selectedPost}
-        draftDate={draftDate}
-        strategies={strategies}
-        campaigns={selectedPost ? matchingCampaigns : campaigns}
-        onClose={closeModal}
-        onCreate={handleCreatePost}
-        onUpdate={handleUpdatePost}
-        onDelete={handleDeletePost}
-      />
 
       {isMutating ? (
         <div className="fixed bottom-5 right-5 z-40 inline-flex items-center rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-lg">
