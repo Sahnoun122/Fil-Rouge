@@ -75,6 +75,38 @@ export class CalendarService {
   ): Promise<{
     posts: ScheduledPostDocument[];
     total: number;
+      page?: number;
+      limit?: number;
+      pages?: number;
+  }> {
+    return this.listScheduledPostsForOwner(
+      this.toObjectId(userId, 'userId'),
+      query,
+    );
+  }
+
+  async listScheduledPostsForAdmin(
+    userId: string,
+    query: ListScheduledPostsDto,
+  ): Promise<{
+    posts: ScheduledPostDocument[];
+    total: number;
+    page?: number;
+    limit?: number;
+    pages?: number;
+  }> {
+    return this.listScheduledPostsForOwner(
+      this.toObjectId(userId, 'userId'),
+      query,
+    );
+  }
+
+  private async listScheduledPostsForOwner(
+    ownerId: Types.ObjectId,
+    query: ListScheduledPostsDto,
+  ): Promise<{
+    posts: ScheduledPostDocument[];
+    total: number;
     page?: number;
     limit?: number;
     pages?: number;
@@ -82,7 +114,7 @@ export class CalendarService {
     this.assertValidRange(query.rangeStart, query.rangeEnd);
 
     const filters: Record<string, unknown> = {
-      userId: this.toObjectId(userId, 'userId'),
+      userId: ownerId,
       scheduledAt: {
         $gte: query.rangeStart,
         $lte: query.rangeEnd,

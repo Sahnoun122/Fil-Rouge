@@ -15,6 +15,8 @@ import {
   AdminSwot,
   AdminSwotMatrix,
   AdminUser,
+  AdminUserCalendarFilters,
+  AdminUserCalendarResult,
   AdminUserRole,
   AdminUserStats,
   AdminUsersFilters,
@@ -22,6 +24,7 @@ import {
   AdminUpdateUserPayload,
   SetUserBanPayload,
 } from "../types/admin.types";
+import type { ScheduledPost } from "../types/calendar.types";
 
 type ApiEnvelope<T> = {
   success?: boolean;
@@ -49,6 +52,12 @@ type RawSwotsData = {
 
 type RawContentsData = {
   campaigns?: unknown;
+  pagination?: unknown;
+};
+
+type RawScheduledPostsData = {
+  posts?: unknown;
+  total?: unknown;
   pagination?: unknown;
 };
 
@@ -369,6 +378,32 @@ const normalizeGeneratedPost = (
   };
 };
 
+const normalizeScheduledPost = (value: unknown): ScheduledPost => {
+  const source = asRecord(value);
+  const rawId = source._id ?? source.id;
+  const id =
+    typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
+
+  return {
+    _id: id,
+    userId: asString(source.userId),
+    strategyId: asString(source.strategyId) || null,
+    campaignId: asString(source.campaignId) || null,
+    platform: asString(source.platform) as ScheduledPost["platform"],
+    postType: asString(source.postType) as ScheduledPost["postType"],
+    title: asString(source.title) || null,
+    caption: asString(source.caption),
+    hashtags: asStringArray(source.hashtags),
+    mediaUrls: asStringArray(source.mediaUrls),
+    scheduledAt: toIso(source.scheduledAt),
+    status: asString(source.status, "planned") as ScheduledPost["status"],
+    timezone: asString(source.timezone, "UTC"),
+    notes: asString(source.notes) || null,
+    createdAt: toIso(source.createdAt),
+    updatedAt: toIso(source.updatedAt),
+  };
+};
+
 const normalizeAdminContent = (payload: unknown): AdminContent => {
   const source = asRecord(payload);
   const rawId = source.id ?? source._id;
@@ -521,6 +556,31 @@ const buildContentsQuery = (filters: AdminContentsFilters): string => {
 
   const query = params.toString();
   return query ? `?${query}` : "";
+};
+
+const buildUserCalendarQuery = (filters: AdminUserCalendarFilters): string => {
+  const params = new URLSearchParams({
+    rangeStart: filters.rangeStart,
+    rangeEnd: filters.rangeEnd,
+  });
+
+  if (filters.platform) {
+    params.set("platform", filters.platform);
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.page) {
+    params.set("page", String(filters.page));
+  }
+
+  if (filters.limit) {
+    params.set("limit", String(filters.limit));
+  }
+
+  return `?${params.toString()}`;
 };
 
 export class AdminService {
@@ -742,6 +802,38 @@ export class AdminService {
     }
 
     return normalizeAdminUser(response.data);
+  }
+
+  static async getUserCalendar(
+    userId: string,
+    filters: AdminUserCalendarFilters,
+  ): Promise<AdminUserCalendarResult> {
+    const query = buildUserCalendarQuery(filters);
+    const response = (await api.get(
+      `/calendar/posts/admin/users/${userId}${query}`,
+      true,
+    )) as ApiEnvelope<RawScheduledPostsData>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(
+        response?.message || "Impossible de recuperer le calendrier utilisateur",
+      );
+    }
+
+    const postsValue = response.data.posts;
+    if (!Array.isArray(postsValue)) {
+      throw new Error("Reponse calendrier admin invalide");
+    }
+
+    const paginationSource = asRecord(response.data.pagination);
+
+    return {
+      posts: postsValue.map((item) => normalizeScheduledPost(item)),
+      total: asNumber(response.data.total, 0),
+      page: asNumber(paginationSource.page, filters.page ?? 1),
+      limit: asNumber(paginationSource.limit, filters.limit ?? 50),
+      totalPages: asNumber(paginationSource.pages, 1),
+    };
   }
 
   static async createUser(payload: AdminCreateUserPayload): Promise<AdminUser> {

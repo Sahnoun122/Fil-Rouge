@@ -17,6 +17,8 @@ import {
   AdminSwotsResult,
   AdminSwot,
   AdminUser,
+  AdminUserCalendarFilters,
+  AdminUserCalendarResult,
   AdminUserRole,
   AdminUserStats,
   AdminUsersFilters,
@@ -321,6 +323,48 @@ export function useAdminUser() {
     error,
     isLoadingUser,
     loadUser,
+    clearError: () => setError(null),
+  };
+}
+
+export function useAdminUserCalendar(initialFilters: AdminUserCalendarFilters) {
+  const [calendar, setCalendar] = useState<AdminUserCalendarResult | null>(null);
+  const [filters, setFilters] = useState<AdminUserCalendarFilters>(initialFilters);
+  const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCalendar = useCallback(
+    async (userId: string, overrides?: Partial<AdminUserCalendarFilters>) => {
+      const nextFilters = {
+        ...filters,
+        ...overrides,
+      };
+
+      setFilters(nextFilters);
+      setIsLoadingCalendar(true);
+      setError(null);
+
+      try {
+        const data = await AdminService.getUserCalendar(userId, nextFilters);
+        setCalendar(data);
+        return data;
+      } catch (err: unknown) {
+        const message = getErrorMessage(err, 'Erreur de chargement du calendrier utilisateur');
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoadingCalendar(false);
+      }
+    },
+    [filters],
+  );
+
+  return {
+    calendar,
+    filters,
+    error,
+    isLoadingCalendar,
+    loadCalendar,
     clearError: () => setError(null),
   };
 }

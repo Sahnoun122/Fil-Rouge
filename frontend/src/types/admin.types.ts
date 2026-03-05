@@ -1,5 +1,10 @@
 import type { GeneratedStrategy } from './strategy.types';
 import type {
+  CalendarPlatform,
+  ScheduledPost,
+  ScheduledPostStatus,
+} from './calendar.types';
+import type {
   CampaignSummary,
   ContentCampaignInputs,
   ContentMode,
@@ -209,4 +214,21 @@ export interface AdminUpdateUserPayload {
 export interface SetUserBanPayload {
   ban: boolean;
   reason?: string;
+}
+
+export interface AdminUserCalendarFilters {
+  rangeStart: string;
+  rangeEnd: string;
+  platform?: CalendarPlatform;
+  status?: ScheduledPostStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminUserCalendarResult {
+  posts: ScheduledPost[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

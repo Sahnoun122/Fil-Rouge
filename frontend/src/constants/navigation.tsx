@@ -177,6 +177,7 @@ export const userNavigation: NavigationItem[] = [
 export const adminNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/admin/dashboard", icon: dashboardIcon },
   { name: "Utilisateurs", href: "/admin/users", icon: userIcon },
+  { name: "Calendrier", href: "/admin/calendar", icon: calendarIcon },
   { name: "Strategies", href: "/admin/strategies", icon: strategiesIcon },
   { name: "Content", href: "/admin/content", icon: contentIcon },
   {

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import {
   CreateScheduledPostDto,
   ListScheduledPostsDto,
@@ -48,6 +49,37 @@ export class CalendarController {
   async findAll(@Query() query: ListScheduledPostsDto, @Req() req: Request) {
     const userId = this.getAuthenticatedUserId(req);
     const result = await this.calendarService.listScheduledPosts(userId, query);
+
+    return {
+      success: true,
+      data: {
+        posts: result.posts,
+        total: result.total,
+        ...(result.page !== undefined
+          ? {
+              pagination: {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                pages: result.pages,
+              },
+            }
+          : {}),
+      },
+    };
+  }
+
+  @Get('admin/users/:userId')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async findAllForAdmin(
+    @Param('userId') userId: string,
+    @Query() query: ListScheduledPostsDto,
+  ) {
+    const result = await this.calendarService.listScheduledPostsForAdmin(
+      userId,
+      query,
+    );
 
     return {
       success: true,

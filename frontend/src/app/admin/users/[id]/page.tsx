@@ -199,6 +199,14 @@ export default function AdminUserDetailPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Retour a la liste
             </Link>
+
+            <Link
+              href={`/admin/users/${user.id}/calendar`}
+              className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Voir le calendrier
+            </Link>
           </div>
         </section>
 
