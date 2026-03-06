@@ -2,103 +2,99 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Menu, X, Zap } from 'lucide-react';
+
+const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Pricing', href: '/pricing' },
+];
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-white/95 backdrop-blur-sm fixed w-full z-50 border-b border-slate-200">
+    <nav className="bg-white/95 backdrop-blur-sm fixed w-full z-50 border-b border-slate-200/70 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="font-bold text-xl text-slate-900">
-              <span className="text-violet-500">MarketPlan</span> IA
-            </Link>
-          </div>
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm">
+              <Zap className="w-4.5 h-4.5 text-white" />
+            </div>
+            <span className="font-bold text-base text-slate-900">MarketPlan IA</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              <Link href="#features" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
-                Fonctionnalités
+          <div className="hidden md:flex items-center gap-1">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              >
+                {link.label}
               </Link>
-              <Link href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
-                Comment ça marche
-              </Link>
-              <Link href="#swot" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
-                SWOT
-              </Link>
-              <Link href="#pricing" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
-                Tarifs
-              </Link>
-              <Link href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
-                FAQ
-              </Link>
-            </div>
+            ))}
           </div>
 
           {/* Desktop CTA Buttons */}
-          <div className="hidden md:flex space-x-4">
-            <Link href="/login" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
-              Connexion
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-4 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              Login
             </Link>
             <Link
               href="/register"
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200"
+              className="px-4 py-2.5 text-sm font-bold text-white rounded-xl bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-violet-700 transition-all shadow-sm"
             >
-              Commencer
+              Start Free
             </Link>
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-slate-600 hover:text-slate-900"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-b border-slate-200">
-            <Link href="#features" className="block px-3 py-2 text-slate-600 hover:text-slate-900">
-              Fonctionnalités
-            </Link>
-            <Link href="#how-it-works" className="block px-3 py-2 text-slate-600 hover:text-slate-900">
-              Comment ça marche
-            </Link>
-            <Link href="#swot" className="block px-3 py-2 text-slate-600 hover:text-slate-900">
-              SWOT
-            </Link>
-            <Link href="#pricing" className="block px-3 py-2 text-slate-600 hover:text-slate-900">
-              Tarifs
-            </Link>
-            <Link href="#faq" className="block px-3 py-2 text-slate-600 hover:text-slate-900">
-              FAQ
-            </Link>
-            <div className="mt-4 space-y-2">
-              <Link href="/login" className="block px-3 py-2 text-slate-600 hover:text-slate-900">
-                Connexion
-              </Link>
+        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4">
+          <div className="flex flex-col gap-1">
+            {NAV_LINKS.map((link) => (
               <Link
-                href="/register"
-                className="block px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-center"
+                key={link.label}
+                href={link.href}
+                className="px-4 py-3 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-100"
+                onClick={() => setIsMenuOpen(false)}
               >
-                Commencer
+                {link.label}
               </Link>
-            </div>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link
+              href="/login"
+              className="px-4 py-2.5 text-sm font-medium text-center text-slate-700 rounded-lg border border-slate-300 hover:bg-slate-50"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              className="px-4 py-2.5 text-sm font-bold text-center text-white rounded-lg bg-linear-to-r from-violet-600 to-purple-600"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Start Free
+            </Link>
           </div>
         </div>
       )}
