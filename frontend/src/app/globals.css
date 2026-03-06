@@ -18,26 +18,26 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #080812;
+  background-color: #05050F;
   color: #ffffff;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d0d1e;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #7c3aed;
-  border-radius: 3px;
+  background: #6d28d9;
+  border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b5cf6;
+  background: #7c3aed;
 }
 
 /* Animations */

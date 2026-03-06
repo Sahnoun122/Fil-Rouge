@@ -1,13 +1,22 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
+type Theme = 'dark' | 'light';
+
 export default function HomePage() {
+  const [theme, setTheme] = useState<Theme>('dark');
   const [scrolled, setScrolled] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem('mp-theme') as Theme | null;
+    if (saved === 'light' || saved === 'dark') setTheme(saved);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -16,17 +25,17 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % 3);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Lock body scroll when mobile menu is open
-  useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('mp-theme', next);
+  };
+
+  const dk = theme === 'dark';
 
   const navLinks = [
     { label: 'Fonctionnalités', href: '#fonctionnalites' },
@@ -45,60 +54,103 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: '🧠',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+        </svg>
+      ),
       title: 'IA Stratégique',
       desc: 'Générez une stratégie marketing complète en quelques minutes grâce à notre IA avancée.',
-      color: 'from-violet-500 to-purple-600',
-      glow: 'shadow-violet-500/25',
+      darkIcon: 'bg-violet-500/15 text-violet-400 ring-1 ring-violet-500/20',
+      lightIcon: 'bg-violet-50 text-violet-600 ring-1 ring-violet-200',
+      darkHover: 'hover:border-violet-500/30 hover:bg-violet-500/[0.04]',
+      lightHover: 'hover:border-violet-200 hover:bg-violet-50/40',
+      tag: 'IA',
     },
     {
-      icon: '📊',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+      ),
       title: 'Analyse SWOT',
       desc: 'Identifiez vos forces, faiblesses, opportunités et menaces automatiquement.',
-      color: 'from-indigo-500 to-blue-600',
-      glow: 'shadow-indigo-500/25',
+      darkIcon: 'bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/20',
+      lightIcon: 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200',
+      darkHover: 'hover:border-indigo-500/30 hover:bg-indigo-500/[0.04]',
+      lightHover: 'hover:border-indigo-200 hover:bg-indigo-50/40',
+      tag: 'Analyse',
     },
     {
-      icon: '📅',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+        </svg>
+      ),
       title: 'Calendrier de Contenu',
       desc: 'Planifiez et organisez vos publications sur tous vos réseaux sociaux.',
-      color: 'from-fuchsia-500 to-pink-600',
-      glow: 'shadow-fuchsia-500/25',
+      darkIcon: 'bg-fuchsia-500/15 text-fuchsia-400 ring-1 ring-fuchsia-500/20',
+      lightIcon: 'bg-fuchsia-50 text-fuchsia-600 ring-1 ring-fuchsia-200',
+      darkHover: 'hover:border-fuchsia-500/30 hover:bg-fuchsia-500/[0.04]',
+      lightHover: 'hover:border-fuchsia-200 hover:bg-fuchsia-50/40',
+      tag: 'Planification',
     },
     {
-      icon: '📄',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      ),
       title: 'Export PDF Pro',
       desc: 'Exportez votre stratégie complète en PDF professionnel avec votre branding.',
-      color: 'from-emerald-500 to-teal-600',
-      glow: 'shadow-emerald-500/25',
+      darkIcon: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20',
+      lightIcon: 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200',
+      darkHover: 'hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]',
+      lightHover: 'hover:border-emerald-200 hover:bg-emerald-50/40',
+      tag: 'Export',
     },
     {
-      icon: '🎯',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
+      ),
       title: 'Cycle AVA',
-      desc: 'Structurez vos actions selon le cycle Avant / Pendant / Après pour maximiser l\'impact.',
-      color: 'from-orange-500 to-amber-600',
-      glow: 'shadow-orange-500/25',
+      desc: "Structurez vos actions selon le cycle Avant / Pendant / Après pour maximiser l'impact.",
+      darkIcon: 'bg-orange-500/15 text-orange-400 ring-1 ring-orange-500/20',
+      lightIcon: 'bg-orange-50 text-orange-600 ring-1 ring-orange-200',
+      darkHover: 'hover:border-orange-500/30 hover:bg-orange-500/[0.04]',
+      lightHover: 'hover:border-orange-200 hover:bg-orange-50/40',
+      tag: 'Méthode',
     },
     {
-      icon: '👥',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+        </svg>
+      ),
       title: 'Multi-Rôles',
       desc: 'Gérez votre équipe avec des rôles Admin et Marketeur distincts.',
-      color: 'from-rose-500 to-red-600',
-      glow: 'shadow-rose-500/25',
+      darkIcon: 'bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/20',
+      lightIcon: 'bg-rose-50 text-rose-600 ring-1 ring-rose-200',
+      darkHover: 'hover:border-rose-500/30 hover:bg-rose-500/[0.04]',
+      lightHover: 'hover:border-rose-200 hover:bg-rose-50/40',
+      tag: 'Équipe',
     },
   ];
 
   const steps = [
     { num: '01', title: 'Remplissez le formulaire', desc: 'Décrivez votre entreprise, vos objectifs et votre marché cible en quelques clics.' },
-    { num: '02', title: 'L\'IA génère votre stratégie', desc: 'Notre intelligence artificielle analyse vos données et crée une stratégie marketing complète.' },
-    { num: '03', title: 'Planifiez votre contenu', desc: 'Transformez votre stratégie en calendrier de publications prêt à l\'emploi.' },
+    { num: '02', title: "L'IA génère votre stratégie", desc: 'Notre intelligence artificielle analyse vos données et crée une stratégie marketing complète.' },
+    { num: '03', title: 'Planifiez votre contenu', desc: "Transformez votre stratégie en calendrier de publications prêt à l'emploi." },
     { num: '04', title: 'Exportez & Partagez', desc: 'Téléchargez votre plan marketing en PDF professionnel et partagez-le avec votre équipe.' },
   ];
 
   const testimonials = [
-    { name: 'Sophie Martin', role: 'Freelance Marketing', avatar: 'SM', text: 'MarketPlan IA a révolutionné ma façon de travailler. Je génère des stratégies complètes en 5 minutes !', stars: 5 },
-    { name: 'Thomas Dubois', role: 'CEO Startup', avatar: 'TD', text: 'L\'analyse SWOT automatique m\'a permis d\'identifier des opportunités que j\'aurais manquées.', stars: 5 },
-    { name: 'Amina Benali', role: 'Responsable Marketing PME', avatar: 'AB', text: 'Le calendrier de contenu est incroyable. Notre équipe est maintenant parfaitement synchronisée.', stars: 5 },
+    { name: 'Sophie Martin', role: 'Freelance Marketing', avatar: 'SM', text: "MarketPlan IA a révolutionné ma façon de travailler. Je génère des stratégies complètes en 5 minutes !", stars: 5, color: 'from-violet-500 to-purple-600' },
+    { name: 'Thomas Dubois', role: 'CEO Startup', avatar: 'TD', text: "L'analyse SWOT automatique m'a permis d'identifier des opportunités que j'aurais manquées.", stars: 5, color: 'from-indigo-500 to-blue-600' },
+    { name: 'Amina Benali', role: 'Responsable Marketing PME', avatar: 'AB', text: "Le calendrier de contenu est incroyable. Notre équipe est maintenant parfaitement synchronisée.", stars: 5, color: 'from-fuchsia-500 to-pink-600' },
   ];
 
   const plans = [
@@ -154,81 +206,156 @@ export default function HomePage() {
     },
   ];
 
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen bg-[#080812] text-white overflow-x-hidden">
-      {/* Animated background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-fuchsia-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+    <div className={`min-h-screen overflow-x-hidden transition-colors duration-500 ${dk ? 'bg-[#05050F] text-white' : 'bg-[#F7F8FC] text-slate-900'}`}>
+
+      {/* ── MESH BACKGROUND ── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        {dk ? (
+          <>
+            <div className="absolute -top-40 -left-20 w-175 h-175 bg-violet-700/20 rounded-full blur-[120px]" />
+            <div className="absolute top-1/2 -right-40 w-150 h-150 bg-indigo-700/15 rounded-full blur-[120px]" />
+            <div className="absolute -bottom-40 left-1/3 w-125 h-125 bg-fuchsia-700/10 rounded-full blur-[120px]" />
+            <div
+              className="absolute inset-0 opacity-[0.025]"
+              style={{ backgroundImage: 'radial-gradient(circle, #a78bfa 1px, transparent 1px)', backgroundSize: '32px 32px' }}
+            />
+          </>
+        ) : (
+          <>
+            <div className="absolute -top-40 -left-20 w-175 h-175 bg-violet-200/70 rounded-full blur-[120px]" />
+            <div className="absolute top-1/2 -right-40 w-150 h-150 bg-indigo-200/60 rounded-full blur-[120px]" />
+            <div className="absolute -bottom-40 left-1/3 w-125 h-125 bg-fuchsia-200/40 rounded-full blur-[120px]" />
+            <div
+              className="absolute inset-0 opacity-[0.3]"
+              style={{ backgroundImage: 'radial-gradient(circle, #c4b5fd 1px, transparent 1px)', backgroundSize: '32px 32px' }}
+            />
+          </>
+        )}
       </div>
 
       {/* ── NAVBAR ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080812]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? dk
+            ? 'bg-[#05050F]/90 backdrop-blur-2xl border-b border-white/6 shadow-2xl shadow-black/30'
+            : 'bg-white/90 backdrop-blur-2xl border-b border-slate-200/80 shadow-lg shadow-slate-200/50'
+          : 'bg-transparent'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center justify-between h-16 md:h-18">
+
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-lg font-bold shadow-lg shadow-violet-500/30">
+            <Link href="/" className="flex items-center gap-3 shrink-0 group">
+              <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-base font-black text-white shadow-lg shadow-violet-500/30 group-hover:scale-105 transition-transform">
                 M
               </div>
-              <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                MarketPlan <span className="text-violet-400">IA</span>
+              <span className={`text-base md:text-lg font-bold tracking-tight ${dk ? 'text-white' : 'text-slate-900'}`}>
+                MarketPlan <span className="text-violet-500">IA</span>
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-8">
+            {/* Desktop nav */}
+            <div className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
-                <a key={link.label} href={link.href}
-                  className="text-sm text-white/60 hover:text-violet-300 transition-colors duration-200">
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    dk
+                      ? 'text-white/55 hover:text-white hover:bg-white/6'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}>
                   {link.label}
                 </a>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login"
-              className="text-sm text-white/70 hover:text-white px-4 py-2 rounded-lg transition-colors duration-200">
-              Connexion
-            </Link>
-            <Link href="/register"
-              className="text-sm bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-105">
-              Commencer
-            </Link>
-          </div>
+            {/* Desktop CTA + Theme toggle */}
+            <div className="hidden md:flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                aria-label="Changer le thème"
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                  dk
+                    ? 'bg-white/6 hover:bg-white/10 text-white/60 hover:text-white'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'
+                }`}>
+                {dk ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                  </svg>
+                )}
+              </button>
+              <Link
+                href="/login"
+                className={`text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200 ${
+                  dk
+                    ? 'text-white/65 hover:text-white hover:bg-white/6'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}>
+                Connexion
+              </Link>
+              <Link
+                href="/register"
+                className="text-sm font-semibold bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-[1.03]">
+                Commencer
+              </Link>
+            </div>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden relative w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl hover:bg-white/5 transition-colors"
-            aria-label="Menu"
-          >
-            <span className={`block w-5 h-0.5 bg-white/80 transition-all duration-300 origin-center ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-            <span className={`block w-5 h-0.5 bg-white/80 transition-all duration-300 ${mobileMenuOpen ? 'opacity-0 scale-x-0' : ''}`} />
-            <span className={`block w-5 h-0.5 bg-white/80 transition-all duration-300 origin-center ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
-          </button>
+            {/* Mobile: theme + hamburger */}
+            <div className="flex md:hidden items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                aria-label="Changer le thème"
+                className={`w-9 h-9 rounded-xl flex items-center justify-center ${dk ? 'bg-white/6 text-white/60' : 'bg-slate-100 text-slate-500'}`}>
+                {dk ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                  </svg>
+                )}
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`w-9 h-9 flex flex-col items-center justify-center gap-1.5 rounded-xl transition-colors ${dk ? 'hover:bg-white/6' : 'hover:bg-slate-100'}`}
+                aria-label="Menu">
+                <span className={`block w-5 h-0.5 transition-all duration-300 origin-center ${dk ? 'bg-white/80' : 'bg-slate-600'} ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                <span className={`block w-5 h-0.5 transition-all duration-300 ${dk ? 'bg-white/80' : 'bg-slate-600'} ${mobileMenuOpen ? 'opacity-0 scale-x-0' : ''}`} />
+                <span className={`block w-5 h-0.5 transition-all duration-300 origin-center ${dk ? 'bg-white/80' : 'bg-slate-600'} ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Menu Drawer */}
-        <div className={`md:hidden transition-all duration-300 overflow-hidden ${mobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div className="bg-[#0d0d22]/98 backdrop-blur-xl border-t border-white/5 px-4 py-6 space-y-1">
+        {/* Mobile drawer */}
+        <div className={`md:hidden transition-all duration-300 overflow-hidden ${mobileMenuOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className={`backdrop-blur-2xl border-t px-4 py-6 space-y-1 ${dk ? 'bg-[#08081A]/97 border-white/6' : 'bg-white/97 border-slate-200'}`}>
             {navLinks.map((link) => (
-              <a key={link.label} href={link.href}
+              <a
+                key={link.label}
+                href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200 text-sm font-medium">
+                className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${dk ? 'text-white/65 hover:text-white hover:bg-white/6' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}>
                 {link.label}
               </a>
             ))}
-            <div className="pt-4 border-t border-white/5 mt-2 space-y-2.5">
+            <div className={`pt-4 border-t mt-2 space-y-2.5 ${dk ? 'border-white/6' : 'border-slate-100'}`}>
               <Link href="/login" onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-center px-4 py-3 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl transition-all duration-200 text-sm">
+                className={`block w-full text-center px-4 py-3 border rounded-xl text-sm font-medium transition-all duration-200 ${dk ? 'border-white/10 text-white/65 hover:text-white' : 'border-slate-200 text-slate-600 hover:text-slate-900'}`}>
                 Connexion
               </Link>
               <Link href="/register" onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-center px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-xl font-semibold transition-all duration-200 text-sm">
+                className="block w-full text-center px-4 py-3 bg-linear-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-semibold text-sm transition-all duration-200">
                 Commencer gratuitement
               </Link>
             </div>
@@ -236,52 +363,61 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ── HERO SECTION ── */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 pt-16 md:pt-20">
-        <div className="max-w-5xl mx-auto text-center relative z-10 w-full">
+      {/* ── HERO ── */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 pt-16 md:pt-20 z-10">
+        <div className="max-w-5xl mx-auto text-center w-full">
+
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-2 mb-6 sm:mb-8 backdrop-blur-sm">
-            <span className="w-2 h-2 bg-violet-400 rounded-full animate-pulse flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-violet-300 font-medium">Propulsé par l'Intelligence Artificielle</span>
+          <div className={`inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-8 border ${dk ? 'bg-violet-500/10 border-violet-500/25 text-violet-300' : 'bg-violet-50 border-violet-200 text-violet-600'}`}>
+            <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse shrink-0" />
+            <span className="text-xs sm:text-sm font-semibold tracking-wide">Propulsé par l&apos;Intelligence Artificielle</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-5 sm:mb-6 leading-tight tracking-tight">
-            Votre stratégie marketing
-            <br />
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
-              générée par l'IA
+          <h1 className={`text-5xl sm:text-6xl md:text-[80px] font-black mb-6 leading-[1.05] tracking-tight ${dk ? 'text-white' : 'text-slate-900'}`}>
+            Votre stratégie<br />
+            marketing{' '}
+            <span className="bg-linear-to-r from-violet-500 via-fuchsia-500 to-indigo-500 bg-clip-text text-transparent">
+              générée
             </span>
             <br />
-            <span className="text-3xl sm:text-4xl md:text-6xl">en 5 minutes</span>
+            <span className={`text-4xl sm:text-5xl md:text-6xl font-bold ${dk ? 'text-white/65' : 'text-slate-500'}`}>
+              par l&apos;IA en 5 minutes
+            </span>
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-2">
-            Créez des stratégies marketing complètes, analysez votre SWOT, planifiez votre contenu digital
-            et exportez le tout en PDF professionnel — automatisé par l'IA.
+          <p className={`text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${dk ? 'text-white/50' : 'text-slate-500'}`}>
+            Créez des stratégies marketing complètes, analysez votre SWOT, planifiez
+            votre contenu et exportez en PDF professionnel — automatisé par l&apos;IA.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10 sm:mb-12 px-2">
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
             <Link href="/register"
-              id="hero-cta-primary"
-              className="group w-full sm:w-auto relative inline-flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-6 sm:px-8 py-4 rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 hover:scale-105">
-              <span>🚀</span>
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-8 py-4 rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 hover:scale-[1.03]">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+              </svg>
               Créer ma stratégie gratuitement
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </Link>
             <a href="#comment-ca-marche"
-              id="hero-cta-secondary"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-6 sm:px-8 py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all duration-300 backdrop-blur-sm">
-              <span>▶</span>
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all duration-300 border ${
+                dk
+                  ? 'bg-white/4 hover:bg-white/8 border-white/10 hover:border-white/20 text-white/80 hover:text-white'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700 shadow-sm'
+              }`}>
+              <svg className="w-5 h-5 text-violet-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5.14v14l11-7-11-7z" />
+              </svg>
               Voir la démo
             </a>
           </div>
 
-          {/* Trust badges */}
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/40 mb-10 sm:mb-14">
+          {/* Trust line */}
+          <div className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm mb-14 ${dk ? 'text-white/35' : 'text-slate-400'}`}>
             {['✓ Gratuit à vie', '✓ Sans carte bancaire', '✓ Données sécurisées'].map((item) => (
               <span key={item}>{item}</span>
             ))}
@@ -290,97 +426,129 @@ export default function HomePage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto">
             {stats.map((stat) => (
-              <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm hover:bg-white/8 transition-colors">
-                <div className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-white/50 mt-1">{stat.label}</div>
+              <div
+                key={stat.label}
+                className={`rounded-2xl p-4 sm:p-5 border transition-all duration-200 ${
+                  dk
+                    ? 'bg-white/3 border-white/7 hover:bg-white/6 hover:border-white/10'
+                    : 'bg-white border-slate-200 hover:border-violet-200 shadow-sm hover:shadow-md'
+                }`}>
+                <div className="text-2xl sm:text-3xl font-black bg-linear-to-br from-violet-500 to-indigo-500 bg-clip-text text-transparent mb-1">{stat.value}</div>
+                <div className={`text-xs font-medium ${dk ? 'text-white/45' : 'text-slate-500'}`}>{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30">
-          <span className="text-xs">Défiler</span>
-          <div className="w-px h-12 bg-gradient-to-b from-white/30 to-transparent animate-pulse" />
+        {/* Scroll cue */}
+        <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 ${dk ? 'text-white/25' : 'text-slate-400'}`}>
+          <span className="text-xs font-medium tracking-widest uppercase">Défiler</span>
+          <div className={`w-px h-10 bg-linear-to-b ${dk ? 'from-white/25 to-transparent' : 'from-slate-400 to-transparent'} animate-pulse`} />
         </div>
       </section>
 
       {/* ── DASHBOARD PREVIEW ── */}
-      <section className="py-14 sm:py-20 px-4 sm:px-6">
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-violet-500/10">
-            {/* Browser bar */}
-            <div className="bg-[#0f0f1f] border-b border-white/5 px-4 py-3 flex items-center gap-3">
-              <div className="flex gap-2">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-bold tracking-widest uppercase mb-3 ${dk ? 'text-violet-400' : 'text-violet-600'}`}>Aperçu du tableau de bord</p>
+            <h2 className={`text-2xl sm:text-3xl font-black ${dk ? 'text-white' : 'text-slate-900'}`}>Tout votre marketing en un seul endroit</h2>
+          </div>
+
+          <div className={`rounded-2xl sm:rounded-3xl overflow-hidden border shadow-2xl ${
+            dk ? 'border-white/8 shadow-violet-500/10' : 'border-slate-200 shadow-slate-200/60'
+          }`}>
+            {/* Browser chrome */}
+            <div className={`border-b px-4 py-3 flex items-center gap-3 ${dk ? 'bg-[#0f0f22] border-white/6' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-500/70" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
                 <div className="w-3 h-3 rounded-full bg-green-500/70" />
               </div>
-              <div className="flex-1 bg-white/5 rounded-lg px-4 py-1.5 text-xs text-white/30 text-center max-w-xs mx-auto truncate">
+              <div className={`flex-1 rounded-lg px-4 py-1.5 text-xs text-center max-w-xs mx-auto font-mono ${dk ? 'bg-white/4 text-white/30' : 'bg-slate-100 text-slate-400'}`}>
                 app.marketplan-ia.com/dashboard
               </div>
             </div>
-            {/* Dashboard content — mobile simplified */}
-            <div className="bg-[#0d0d1e] p-4 sm:p-6 sm:hidden space-y-3">
+
+            {/* Mobile dashboard */}
+            <div className={`p-4 sm:hidden space-y-3 ${dk ? 'bg-[#0C0C1E]' : 'bg-slate-50'}`}>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { label: 'Stratégies', value: '12', color: 'from-violet-500 to-purple-600', icon: '📋' },
                   { label: 'Publications', value: '48', color: 'from-indigo-500 to-blue-600', icon: '📅' },
                   { label: 'SWOT', value: '8', color: 'from-fuchsia-500 to-pink-600', icon: '🧩' },
                 ].map((card) => (
-                  <div key={card.label} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                  <div key={card.label} className={`rounded-xl p-3 text-center border ${dk ? 'bg-white/4 border-white/7' : 'bg-white border-slate-200'}`}>
                     <div className="text-base mb-1">{card.icon}</div>
-                    <div className={`text-xl font-black bg-gradient-to-r ${card.color} bg-clip-text text-transparent`}>{card.value}</div>
-                    <div className="text-xs text-white/40 mt-0.5">{card.label}</div>
+                    <div className={`text-xl font-black bg-linear-to-br ${card.color} bg-clip-text text-transparent`}>{card.value}</div>
+                    <div className={`text-xs mt-0.5 ${dk ? 'text-white/40' : 'text-slate-500'}`}>{card.label}</div>
                   </div>
                 ))}
               </div>
-              <div className="bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border border-violet-500/20 rounded-xl p-4">
-                <div className="text-xs text-violet-300 mb-1.5">💡 Suggestion IA</div>
-                <div className="text-xs text-white/60 leading-relaxed">Publiez du contenu éducatif le mardi matin pour maximiser votre engagement LinkedIn.</div>
+              <div className={`rounded-xl p-4 border ${dk ? 'bg-violet-500/10 border-violet-500/20' : 'bg-violet-50 border-violet-200'}`}>
+                <div className={`text-xs font-semibold mb-1.5 ${dk ? 'text-violet-300' : 'text-violet-600'}`}>💡 Suggestion IA</div>
+                <div className={`text-xs leading-relaxed ${dk ? 'text-white/60' : 'text-slate-600'}`}>Publiez du contenu éducatif le mardi matin pour maximiser votre engagement LinkedIn.</div>
               </div>
             </div>
-            {/* Dashboard content — tablet/desktop full */}
-            <div className="bg-[#0d0d1e] p-6 hidden sm:grid grid-cols-12 gap-4 min-h-80">
+
+            {/* Desktop dashboard */}
+            <div className={`p-6 hidden sm:grid grid-cols-12 gap-4 min-h-72 ${dk ? 'bg-[#0C0C1E]' : 'bg-slate-50'}`}>
               {/* Sidebar */}
-              <div className="col-span-2 space-y-2">
+              <div className="col-span-2 space-y-1">
                 {['Dashboard', 'Stratégies', 'SWOT', 'Calendrier', 'Export'].map((item, i) => (
-                  <div key={item} className={`rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${i === 0 ? 'bg-violet-600/30 text-violet-300 border border-violet-500/30' : 'text-white/40 hover:text-white/60'}`}>
+                  <div
+                    key={item}
+                    className={`rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${
+                      i === 0
+                        ? dk
+                          ? 'bg-violet-500/20 text-violet-300 border border-violet-500/25'
+                          : 'bg-violet-100 text-violet-700 border border-violet-200'
+                        : dk
+                          ? 'text-white/35 hover:text-white/60 hover:bg-white/4'
+                          : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                    }`}>
                     {item}
                   </div>
                 ))}
               </div>
-              {/* Main content */}
+
+              {/* Main grid */}
               <div className="col-span-10 grid grid-cols-3 gap-4">
                 {[
-                  { label: 'Stratégies', value: '12', color: 'from-violet-500 to-purple-600', icon: '📋' },
-                  { label: 'Publications', value: '48', color: 'from-indigo-500 to-blue-600', icon: '📅' },
-                  { label: 'SWOT créés', value: '8', color: 'from-fuchsia-500 to-pink-600', icon: '🧩' },
+                  { label: 'Stratégies', value: '12', color: 'from-violet-500 to-purple-600', icon: '📋', w: '65%' },
+                  { label: 'Publications', value: '48', color: 'from-indigo-500 to-blue-600', icon: '📅', w: '80%' },
+                  { label: 'SWOT créés', value: '8', color: 'from-fuchsia-500 to-pink-600', icon: '🧩', w: '50%' },
                 ].map((card) => (
-                  <div key={card.label} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <div key={card.label} className={`rounded-2xl p-4 border ${dk ? 'bg-white/4 border-white/7' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-white/40">{card.label}</span>
+                      <span className={`text-xs font-medium ${dk ? 'text-white/40' : 'text-slate-500'}`}>{card.label}</span>
                       <span className="text-lg">{card.icon}</span>
                     </div>
-                    <div className={`text-2xl font-black bg-gradient-to-r ${card.color} bg-clip-text text-transparent`}>{card.value}</div>
-                    <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
-                      <div className={`h-full bg-gradient-to-r ${card.color} rounded-full`} style={{ width: '65%' }} />
+                    <div className={`text-2xl font-black bg-linear-to-br ${card.color} bg-clip-text text-transparent`}>{card.value}</div>
+                    <div className={`mt-3 h-1.5 rounded-full overflow-hidden ${dk ? 'bg-white/6' : 'bg-slate-100'}`}>
+                      <div className={`h-full bg-linear-to-r ${card.color} rounded-full`} style={{ width: card.w }} />
                     </div>
                   </div>
                 ))}
+
                 {/* Chart */}
-                <div className="col-span-2 bg-white/5 border border-white/10 rounded-2xl p-4">
-                  <div className="text-xs text-white/40 mb-3">Performance des publications</div>
-                  <div className="flex items-end gap-1 h-20">
+                <div className={`col-span-2 rounded-2xl p-4 border ${dk ? 'bg-white/4 border-white/7' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <div className={`text-xs font-medium mb-3 ${dk ? 'text-white/40' : 'text-slate-500'}`}>Performance des publications</div>
+                  <div className="flex items-end gap-1 h-16">
                     {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-                      <div key={i} className="flex-1 rounded-t-sm bg-gradient-to-t from-violet-600/60 to-indigo-500/60" style={{ height: `${h}%` }} />
+                      <div
+                        key={i}
+                        className="flex-1 rounded-t bg-linear-to-t from-violet-600/60 to-indigo-500/40 hover:from-violet-500 hover:to-indigo-400 transition-colors cursor-pointer"
+                        style={{ height: `${h}%` }}
+                      />
                     ))}
                   </div>
                 </div>
-                {/* AI suggestion */}
-                <div className="bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border border-violet-500/20 rounded-2xl p-4">
-                  <div className="text-xs text-violet-300 mb-2">💡 Suggestion IA</div>
-                  <div className="text-xs text-white/60 leading-relaxed">Publiez du contenu éducatif le mardi matin pour maximiser votre engagement LinkedIn.</div>
+
+                {/* AI card */}
+                <div className={`rounded-2xl p-4 border ${dk ? 'bg-violet-500/10 border-violet-500/20' : 'bg-violet-50 border-violet-200'}`}>
+                  <div className={`text-xs font-semibold mb-2 ${dk ? 'text-violet-300' : 'text-violet-600'}`}>💡 Suggestion IA</div>
+                  <div className={`text-xs leading-relaxed ${dk ? 'text-white/60' : 'text-slate-600'}`}>Publiez du contenu éducatif le mardi matin pour maximiser votre engagement LinkedIn.</div>
                 </div>
               </div>
             </div>
@@ -388,37 +556,50 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FEATURES GRID ── */}
-      <section id="fonctionnalites" className="py-16 sm:py-24 px-4 sm:px-6">
+      {/* ── FEATURES ── */}
+      <section id="fonctionnalites" className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-2 mb-5 sm:mb-6">
-              <span className="text-xs sm:text-sm text-violet-300 font-medium">✨ Fonctionnalités</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
-              Tout ce dont vous avez besoin
-              <br />
-              <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">pour dominer votre marché</span>
+          <div className="text-center mb-14">
+            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-5 border ${dk ? 'bg-violet-500/10 border-violet-500/20 text-violet-400' : 'bg-violet-50 border-violet-200 text-violet-600'}`}>
+              ✦ Fonctionnalités
+            </span>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black mb-4 leading-tight ${dk ? 'text-white' : 'text-slate-900'}`}>
+              Tout ce dont vous avez besoin<br />
+              <span className="bg-linear-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">pour dominer votre marché</span>
             </h2>
-            <p className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto px-2">
-              Une suite complète d'outils marketing alimentés par l'IA pour transformer votre approche digitale.
+            <p className={`text-base sm:text-lg max-w-2xl mx-auto ${dk ? 'text-white/50' : 'text-slate-500'}`}>
+              Une suite complète d&apos;outils marketing alimentés par l&apos;IA pour transformer votre approche digitale.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {features.map((feature, i) => (
-              <div key={feature.title}
-                className="group relative bg-white/3 hover:bg-white/6 border border-white/8 hover:border-white/15 rounded-2xl sm:rounded-3xl p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                onMouseEnter={() => setActiveFeature(i % 3)}>
-                <div className={`w-12 sm:w-14 h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                className={`group relative rounded-2xl sm:rounded-3xl p-6 border transition-all duration-300 hover:-translate-y-1.5 cursor-pointer ${
+                  dk
+                    ? `bg-white/2.5 border-white/7 ${feature.darkHover}`
+                    : `bg-white border-slate-200 hover:shadow-lg ${feature.lightHover}`
+                }`}>
+                <span className={`absolute top-5 right-5 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-lg ${
+                  dk ? 'bg-white/6 text-white/30' : 'bg-slate-100 text-slate-400'
+                }`}>{feature.tag}</span>
+
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 ${
+                  dk ? feature.darkIcon : feature.lightIcon
+                }`}>
                   {feature.icon}
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white group-hover:text-violet-300 transition-colors">{feature.title}</h3>
-                <p className="text-white/50 leading-relaxed text-sm">{feature.desc}</p>
-                <div className="mt-3 sm:mt-4 flex items-center gap-2 text-violet-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+
+                <h3 className={`text-base sm:text-lg font-bold mb-2.5 transition-colors ${dk ? 'text-white group-hover:text-violet-300' : 'text-slate-900 group-hover:text-violet-600'}`}>
+                  {feature.title}
+                </h3>
+                <p className={`text-sm leading-relaxed ${dk ? 'text-white/50' : 'text-slate-500'}`}>{feature.desc}</p>
+
+                <div className={`mt-5 flex items-center gap-1.5 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-300 ${dk ? 'text-violet-400' : 'text-violet-600'}`}>
                   En savoir plus
-                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                 </div>
               </div>
@@ -428,30 +609,33 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="comment-ca-marche" className="py-16 sm:py-24 px-4 sm:px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-5 sm:mb-6">
-              <span className="text-xs sm:text-sm text-indigo-300 font-medium">🔄 Comment ça marche</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
-              De l'idée à la stratégie
-              <br />
-              <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">en 4 étapes simples</span>
+      <section id="comment-ca-marche" className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
+        <div className={`absolute inset-0 pointer-events-none ${dk ? 'bg-linear-to-b from-transparent via-violet-950/8 to-transparent' : 'bg-linear-to-b from-transparent via-slate-100/50 to-transparent'}`} />
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-14">
+            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-5 border ${dk ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`}>
+              ◎ Comment ça marche
+            </span>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black mb-4 leading-tight ${dk ? 'text-white' : 'text-slate-900'}`}>
+              De l&apos;idée à la stratégie<br />
+              <span className="bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">en 4 étapes simples</span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {steps.map((step, i) => (
-              <div key={step.num} className="relative">
+              <div key={step.num} className="relative group">
                 {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-full w-full h-px bg-gradient-to-r from-violet-500/40 to-transparent z-10" />
+                  <div className={`hidden lg:block absolute top-9 left-[calc(100%+0px)] w-full h-px z-10 bg-linear-to-r ${dk ? 'from-violet-500/30 to-transparent' : 'from-violet-300/60 to-transparent'}`} />
                 )}
-                <div className="bg-white/3 border border-white/8 rounded-2xl sm:rounded-3xl p-5 sm:p-6 hover:bg-white/6 hover:border-violet-500/20 transition-all duration-300 group">
-                  <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent mb-3 sm:mb-4">{step.num}</div>
-                  <h3 className="text-base sm:text-lg font-bold mb-2 sm:mb-3 group-hover:text-violet-300 transition-colors">{step.title}</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">{step.desc}</p>
+                <div className={`h-full rounded-2xl sm:rounded-3xl p-6 border transition-all duration-300 hover:-translate-y-1 ${
+                  dk
+                    ? 'bg-white/2.5 border-white/7 hover:bg-indigo-500/5 hover:border-indigo-500/25'
+                    : 'bg-white border-slate-200 hover:border-indigo-200 hover:shadow-lg shadow-sm'
+                }`}>
+                  <div className="text-4xl font-black bg-linear-to-br from-violet-500 to-indigo-500 bg-clip-text text-transparent mb-4 leading-none">{step.num}</div>
+                  <h3 className={`text-base font-bold mb-2.5 transition-colors ${dk ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'}`}>{step.title}</h3>
+                  <p className={`text-sm leading-relaxed ${dk ? 'text-white/50' : 'text-slate-500'}`}>{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -459,43 +643,53 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── AVA MARKETING CYCLE ── */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6">
+      {/* ── AVA CYCLE ── */}
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
-              Le cycle marketing
-              <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent"> AVA</span>
+          <div className="text-center mb-14">
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black mb-4 ${dk ? 'text-white' : 'text-slate-900'}`}>
+              Le cycle marketing{' '}
+              <span className="bg-linear-to-r from-fuchsia-500 to-violet-500 bg-clip-text text-transparent">AVA</span>
             </h2>
-            <p className="text-white/50 text-base sm:text-lg px-2">Structurez vos actions pour maximiser chaque étape du parcours client</p>
+            <p className={`text-base sm:text-lg ${dk ? 'text-white/50' : 'text-slate-500'}`}>Structurez vos actions pour maximiser chaque étape du parcours client</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
               {
-                phase: 'AVANT', emoji: '🔴', label: 'Prospect',
-                color: 'from-red-500/20 to-orange-500/20', border: 'border-red-500/20', badge: 'bg-red-500/20 text-red-300',
+                phase: 'AVANT', label: 'Prospect', dot: 'bg-red-500',
+                darkCard: 'bg-linear-to-br from-red-500/10 to-orange-500/5 border-red-500/20',
+                lightCard: 'bg-red-50 border-red-200',
+                darkBadge: 'bg-red-500/15 text-red-300 border border-red-500/20',
+                lightBadge: 'bg-red-100 text-red-700 border border-red-200',
                 items: ['Marché cible & Persona', 'Message marketing', 'Canaux de communication'],
               },
               {
-                phase: 'PENDANT', emoji: '🟡', label: 'Lead',
-                color: 'from-yellow-500/20 to-amber-500/20', border: 'border-yellow-500/20', badge: 'bg-yellow-500/20 text-yellow-300',
+                phase: 'PENDANT', label: 'Lead', dot: 'bg-amber-500',
+                darkCard: 'bg-linear-to-br from-amber-500/10 to-yellow-500/5 border-amber-500/20',
+                lightCard: 'bg-amber-50 border-amber-200',
+                darkBadge: 'bg-amber-500/15 text-amber-300 border border-amber-500/20',
+                lightBadge: 'bg-amber-100 text-amber-700 border border-amber-200',
                 items: ['Capture de prospects', 'Nurturing & fidélisation', 'Stratégie de conversion'],
               },
               {
-                phase: 'APRÈS', emoji: '🟢', label: 'Client',
-                color: 'from-emerald-500/20 to-green-500/20', border: 'border-emerald-500/20', badge: 'bg-emerald-500/20 text-emerald-300',
+                phase: 'APRÈS', label: 'Client', dot: 'bg-emerald-500',
+                darkCard: 'bg-linear-to-br from-emerald-500/10 to-green-500/5 border-emerald-500/20',
+                lightCard: 'bg-emerald-50 border-emerald-200',
+                darkBadge: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20',
+                lightBadge: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
                 items: ['Expérience client', 'Valeur client augmentée', 'Stratégie de recommandation'],
               },
             ].map((phase) => (
-              <div key={phase.phase} className={`bg-gradient-to-br ${phase.color} border ${phase.border} rounded-2xl sm:rounded-3xl p-5 sm:p-6 hover:-translate-y-1 transition-all duration-300`}> 
-                <div className={`inline-flex items-center gap-2 ${phase.badge} rounded-full px-3 py-1.5 text-sm font-bold mb-4`}>
-                  {phase.emoji} {phase.phase} — {phase.label}
+              <div key={phase.phase} className={`rounded-2xl sm:rounded-3xl p-6 border transition-all duration-300 hover:-translate-y-1 ${dk ? phase.darkCard : phase.lightCard}`}>
+                <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold mb-5 ${dk ? phase.darkBadge : phase.lightBadge}`}>
+                  <span className={`w-2 h-2 rounded-full ${phase.dot} shrink-0`} />
+                  {phase.phase} — {phase.label}
                 </div>
                 <ul className="space-y-3">
                   {phase.items.map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-white/70 text-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/40 flex-shrink-0" />
+                    <li key={item} className={`flex items-center gap-3 text-sm ${dk ? 'text-white/65' : 'text-slate-700'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${phase.dot}`} />
                       {item}
                     </li>
                   ))}
@@ -507,33 +701,38 @@ export default function HomePage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section id="temoignages" className="py-16 sm:py-24 px-4 sm:px-6">
+      <section id="temoignages" className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-full px-4 py-2 mb-5 sm:mb-6">
-              <span className="text-xs sm:text-sm text-fuchsia-300 font-medium">💬 Témoignages</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black">
-              Ils nous font confiance
-            </h2>
+          <div className="text-center mb-14">
+            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-5 border ${dk ? 'bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-400' : 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-600'}`}>
+              ❝ Témoignages
+            </span>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black ${dk ? 'text-white' : 'text-slate-900'}`}>Ils nous font confiance</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
             {testimonials.map((t) => (
-              <div key={t.name} className="bg-white/3 border border-white/8 rounded-2xl sm:rounded-3xl p-5 sm:p-6 hover:bg-white/6 hover:border-violet-500/20 transition-all duration-300">
-                <div className="flex items-center gap-1 mb-4">
+              <div key={t.name}
+                className={`rounded-2xl sm:rounded-3xl p-6 border transition-all duration-300 hover:-translate-y-1 ${
+                  dk
+                    ? 'bg-white/2.5 border-white/7 hover:bg-white/5 hover:border-fuchsia-500/20'
+                    : 'bg-white border-slate-200 hover:border-fuchsia-200 hover:shadow-lg shadow-sm'
+                }`}>
+                <div className="flex items-center gap-0.5 mb-4">
                   {[...Array(t.stars)].map((_, i) => (
-                    <span key={i} className="text-yellow-400 text-sm">★</span>
+                    <svg key={i} className="w-4 h-4 text-amber-400 fill-amber-400" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
                   ))}
                 </div>
-                <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
+                <p className={`text-sm leading-relaxed mb-6 ${dk ? 'text-white/65' : 'text-slate-600'}`}>&ldquo;{t.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  <div className={`w-10 h-10 rounded-full bg-linear-to-br ${t.color} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
                     {t.avatar}
                   </div>
                   <div>
-                    <div className="font-semibold text-sm">{t.name}</div>
-                    <div className="text-white/40 text-xs">{t.role}</div>
+                    <div className={`font-semibold text-sm ${dk ? 'text-white' : 'text-slate-900'}`}>{t.name}</div>
+                    <div className={`text-xs ${dk ? 'text-white/40' : 'text-slate-500'}`}>{t.role}</div>
                   </div>
                 </div>
               </div>
@@ -543,48 +742,54 @@ export default function HomePage() {
       </section>
 
       {/* ── PRICING ── */}
-      <section id="tarifs" className="py-16 sm:py-24 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2 mb-5 sm:mb-6">
-              <span className="text-xs sm:text-sm text-emerald-300 font-medium">💎 Tarifs</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
-              Tarification simple
-              <br />
-              <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">et transparente</span>
+      <section id="tarifs" className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-5 border ${dk ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}>
+              ◆ Tarifs
+            </span>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black mb-4 ${dk ? 'text-white' : 'text-slate-900'}`}>
+              Tarification simple<br />
+              <span className="bg-linear-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">et transparente</span>
             </h2>
-            <p className="text-white/50 text-base sm:text-lg px-2">Choisissez le plan qui correspond à vos besoins. Tous les plans incluent notre IA marketing.</p>
+            <p className={`text-base sm:text-lg ${dk ? 'text-white/50' : 'text-slate-500'}`}>
+              Choisissez le plan qui correspond à vos besoins. Tous les plans incluent notre IA marketing.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
             {plans.map((plan) => (
-              <div key={plan.name}
-                className={`relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:-translate-y-1 border ${
+              <div
+                key={plan.name}
+                className={`relative rounded-2xl sm:rounded-3xl p-6 sm:p-7 border transition-all duration-300 hover:-translate-y-1.5 flex flex-col ${
                   plan.popular
-                    ? 'bg-gradient-to-b from-violet-600/15 to-indigo-600/5 border-violet-500/40'
-                    : 'bg-white/3 border-white/8 hover:border-white/15'
+                    ? dk
+                      ? 'bg-linear-to-b from-violet-600/15 to-indigo-600/5 border-violet-500/40 shadow-2xl shadow-violet-500/10'
+                      : 'bg-white border-violet-300 shadow-2xl shadow-violet-200/60'
+                    : dk
+                      ? 'bg-white/2.5 border-white/7 hover:border-white/12'
+                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md'
                 }`}>
                 {plan.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-violet-500/30 whitespace-nowrap">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <span className="bg-linear-to-r from-violet-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-violet-500/30 whitespace-nowrap">
                       ⭐ Le plus populaire
                     </span>
                   </div>
                 )}
-                <div className="mb-6 mt-2">
-                  <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                  <p className="text-white/40 text-sm mb-4">{plan.desc}</p>
+                <div className="mb-6 mt-1">
+                  <h3 className={`text-xl font-bold mb-1 ${dk ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
+                  <p className={`text-sm mb-5 ${dk ? 'text-white/40' : 'text-slate-500'}`}>{plan.desc}</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{plan.price}</span>
-                    <span className="text-white/40 text-sm">{plan.period}</span>
+                    <span className={`text-5xl font-black ${dk ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
+                    <span className={`text-sm ${dk ? 'text-white/40' : 'text-slate-500'}`}>{plan.period}</span>
                   </div>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-7 flex-1">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3 text-white/70 text-sm">
-                      <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3 h-3 text-violet-400" fill="currentColor" viewBox="0 0 20 20">
+                    <li key={feature} className={`flex items-center gap-3 text-sm ${dk ? 'text-white/65' : 'text-slate-700'}`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${dk ? 'bg-violet-500/20' : 'bg-violet-100'}`}>
+                        <svg className={`w-3 h-3 ${dk ? 'text-violet-400' : 'text-violet-600'}`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -593,10 +798,12 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <Link href="/register"
-                  className={`block w-full text-center py-3.5 px-6 rounded-xl font-semibold transition-all duration-200 text-sm ${
+                  className={`block w-full text-center py-3.5 px-6 rounded-xl font-semibold text-sm transition-all duration-200 ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-105'
-                      : 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20'
+                      ? 'bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25 hover:scale-[1.02]'
+                      : dk
+                        ? 'bg-white/6 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white'
+                        : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800'
                   }`}>
                   {plan.cta}
                 </Link>
@@ -604,8 +811,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Trust badges */}
-          <div className="mt-10 sm:mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm text-white/40">
+          <div className={`mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm ${dk ? 'text-white/35' : 'text-slate-400'}`}>
             {["✓ 30 jours d'essai gratuit", '✓ Sans engagement', '✓ Annulation à tout moment', '✓ Support en français'].map((item) => (
               <span key={item}>{item}</span>
             ))}
@@ -614,32 +820,42 @@ export default function HomePage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-2 mb-5 sm:mb-6">
-              <span className="text-xs sm:text-sm text-amber-300 font-medium">❓ FAQ</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">Questions fréquentes</h2>
-            <p className="text-white/50 text-base sm:text-lg px-2">Tout ce que vous devez savoir sur MarketPlan IA</p>
+      <section id="faq" className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-14">
+            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-5 border ${dk ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-600'}`}>
+              ? FAQ
+            </span>
+            <h2 className={`text-3xl sm:text-4xl font-black mb-3 ${dk ? 'text-white' : 'text-slate-900'}`}>Questions fréquentes</h2>
+            <p className={`text-base ${dk ? 'text-white/50' : 'text-slate-500'}`}>Tout ce que vous devez savoir sur MarketPlan IA</p>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {faqs.map((faq, i) => (
-              <div key={i} className="bg-white/3 border border-white/8 rounded-xl sm:rounded-2xl overflow-hidden hover:border-white/15 transition-colors">
+              <div
+                key={i}
+                className={`rounded-xl sm:rounded-2xl border overflow-hidden transition-all duration-200 ${
+                  openFAQ === i
+                    ? dk ? 'border-violet-500/30 bg-violet-500/5' : 'border-violet-200 bg-violet-50/80'
+                    : dk ? 'border-white/7 bg-white/2 hover:border-white/12' : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
+                }`}>
                 <button
                   onClick={() => setOpenFAQ(openFAQ === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left hover:bg-white/3 transition-colors">
-                  <span className="font-semibold text-sm sm:text-base">{faq.q}</span>
-                  <svg
-                    className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${openFAQ === i ? 'rotate-180 text-violet-400' : 'text-white/40'}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  className="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left">
+                  <span className={`font-semibold text-sm sm:text-base ${dk ? 'text-white' : 'text-slate-900'}`}>{faq.q}</span>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${
+                    openFAQ === i
+                      ? dk ? 'bg-violet-500/20 text-violet-400 rotate-180' : 'bg-violet-100 text-violet-600 rotate-180'
+                      : dk ? 'bg-white/6 text-white/40' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
-                <div className={`transition-all duration-300 overflow-hidden ${openFAQ === i ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="px-5 sm:px-6 pb-4 sm:pb-5 border-t border-white/5">
-                    <p className="text-white/60 text-sm leading-relaxed pt-3 sm:pt-4">{faq.a}</p>
+                <div className={`transition-all duration-300 overflow-hidden ${openFAQ === i ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className={`px-5 sm:px-6 pb-5 border-t ${dk ? 'border-white/6' : 'border-violet-100'}`}>
+                    <p className={`text-sm leading-relaxed pt-4 ${dk ? 'text-white/60' : 'text-slate-600'}`}>{faq.a}</p>
                   </div>
                 </div>
               </div>
@@ -648,35 +864,48 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA SECTION ── */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6">
+      {/* ── FINAL CTA ── */}
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="relative bg-gradient-to-br from-violet-600/20 via-indigo-600/20 to-fuchsia-600/20 border border-violet-500/20 rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-64 h-64 bg-violet-600/20 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl" />
+          <div className={`relative rounded-2xl sm:rounded-3xl p-10 sm:p-14 text-center overflow-hidden border ${
+            dk
+              ? 'bg-linear-to-br from-violet-600/20 via-indigo-600/15 to-fuchsia-600/10 border-violet-500/20'
+              : 'bg-linear-to-br from-violet-600 via-indigo-600 to-fuchsia-600 border-transparent'
+          }`}>
+            <div className="absolute -top-24 -right-24 w-72 h-72 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10">
-              <div className="text-4xl sm:text-5xl mb-5 sm:mb-6">🚀</div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
-                Prêt à transformer
-                <br />
-                <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">votre marketing ?</span>
+              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 text-2xl ${dk ? 'bg-white/10' : 'bg-white/20'}`}>
+                🚀
+              </div>
+              <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black mb-4 ${dk ? 'text-white' : 'text-white'}`}>
+                Prêt à transformer<br />
+                <span className={dk ? 'bg-linear-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent' : 'text-white/90'}>
+                  votre marketing ?
+                </span>
               </h2>
-              <p className="text-white/50 text-base sm:text-lg mb-8 max-w-xl mx-auto px-2">
+              <p className={`text-base sm:text-lg mb-8 max-w-lg mx-auto ${dk ? 'text-white/50' : 'text-white/75'}`}>
                 Rejoignez des milliers de marketeurs qui utilisent MarketPlan IA pour créer des stratégies gagnantes.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/register"
-                  id="cta-register-final"
-                  className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-7 sm:px-8 py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 hover:scale-105">
+                  className={`inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl sm:rounded-2xl font-bold text-base transition-all duration-300 hover:scale-[1.03] ${
+                    dk
+                      ? 'bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-2xl shadow-violet-500/30'
+                      : 'bg-white text-violet-700 hover:bg-white/90 shadow-xl'
+                  }`}>
                   Commencer gratuitement
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                 </Link>
                 <Link href="/login"
-                  id="cta-login-final"
-                  className="inline-flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-7 sm:px-8 py-4 rounded-xl sm:rounded-2xl font-semibold text-base sm:text-lg transition-all duration-300">
+                  className={`inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl sm:rounded-2xl font-semibold text-base transition-all duration-300 border ${
+                    dk
+                      ? 'bg-white/6 hover:bg-white/10 border-white/10 hover:border-white/20 text-white/80 hover:text-white'
+                      : 'bg-white/10 hover:bg-white/20 border-white/25 text-white'
+                  }`}>
                   Se connecter
                 </Link>
               </div>
@@ -686,21 +915,25 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-white/5 py-10 sm:py-12 px-4 sm:px-6">
+      <footer className={`relative border-t py-10 sm:py-12 px-4 sm:px-6 z-10 ${dk ? 'border-white/6' : 'border-slate-200'}`}>
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-sm font-bold">M</div>
-              <span className="font-bold text-white/80">MarketPlan <span className="text-violet-400">IA</span></span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-8 h-8 rounded-xl bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-sm font-bold text-white group-hover:scale-105 transition-transform">
+                M
+              </div>
+              <span className={`font-bold text-sm ${dk ? 'text-white/70' : 'text-slate-700'}`}>
+                MarketPlan <span className="text-violet-500">IA</span>
+              </span>
             </Link>
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-sm text-white/40">
-              <a href="#" className="hover:text-white/70 transition-colors">Confidentialité</a>
-              <a href="#" className="hover:text-white/70 transition-colors">Conditions d'utilisation</a>
-              <a href="#" className="hover:text-white/70 transition-colors">Contact</a>
+            <div className={`flex flex-wrap items-center justify-center gap-6 text-sm ${dk ? 'text-white/35' : 'text-slate-400'}`}>
+              {['Confidentialité', "Conditions d'utilisation", 'Contact'].map((l) => (
+                <a key={l} href="#" className={`transition-colors duration-200 ${dk ? 'hover:text-white/70' : 'hover:text-slate-700'}`}>{l}</a>
+              ))}
             </div>
-            <div className="text-sm text-white/30 text-center sm:text-right">
+            <p className={`text-xs ${dk ? 'text-white/20' : 'text-slate-400'}`}>
               © 2026 MarketPlan IA. Tous droits réservés.
-            </div>
+            </p>
           </div>
         </div>
       </footer>
