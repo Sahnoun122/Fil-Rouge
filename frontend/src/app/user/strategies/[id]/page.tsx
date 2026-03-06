@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import {
   AlertCircle,
   ArrowLeft,
-  Building,
+  Building2,
   Calendar,
   ChevronDown,
   ChevronRight,
@@ -15,9 +15,14 @@ import {
   Edit,
   Eye,
   EyeOff,
+  FileText,
+  MapPin,
   RefreshCw,
   Sparkles,
+  Target,
   Trash2,
+  Wand2,
+  Zap,
 } from 'lucide-react';
 import { useStrategy, useStrategies } from '@/src/hooks/useStrategies';
 import { OBJECTIVE_LABELS, TONE_LABELS } from '@/src/types/strategy.types';
@@ -26,21 +31,51 @@ type SectionItem = {
   title: string;
   sectionKey: string;
   content: unknown;
+  phase: 'avant' | 'pendant' | 'apres';
+};
+
+const PHASE_CONFIG = {
+  avant: {
+    label: 'Avant',
+    description: 'Attirer & Sensibiliser',
+    color: 'violet',
+    bg: 'bg-violet-50',
+    border: 'border-violet-200',
+    badge: 'bg-violet-100 text-violet-700',
+    dot: 'bg-violet-500',
+    headerBg: 'bg-linear-to-r from-violet-600 to-purple-600',
+    icon: Target,
+  },
+  pendant: {
+    label: 'Pendant',
+    description: 'Convertir & Engager',
+    color: 'indigo',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    badge: 'bg-indigo-100 text-indigo-700',
+    dot: 'bg-indigo-500',
+    headerBg: 'bg-linear-to-r from-indigo-600 to-violet-600',
+    icon: Zap,
+  },
+  apres: {
+    label: 'Après',
+    description: 'Fidéliser & Recommander',
+    color: 'purple',
+    bg: 'bg-purple-50',
+    border: 'border-purple-200',
+    badge: 'bg-purple-100 text-purple-700',
+    dot: 'bg-purple-500',
+    headerBg: 'bg-linear-to-r from-purple-600 to-pink-600',
+    icon: Sparkles,
+  },
 };
 
 const formatSectionContent = (value: unknown): string => {
   if (value === null || value === undefined) {
     return 'Contenu indisponible pour cette section.';
   }
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   try {
     return JSON.stringify(value, null, 2);
   } catch {
@@ -52,6 +87,7 @@ interface StrategySectionCardProps {
   title: string;
   sectionKey: string;
   content: unknown;
+  phase: 'avant' | 'pendant' | 'apres';
   onRegenerate: (sectionKey: string, content: string) => void;
   isRegenerating: boolean;
 }
@@ -60,12 +96,14 @@ function StrategySectionCard({
   title,
   sectionKey,
   content,
+  phase,
   onRegenerate,
   isRegenerating,
 }: StrategySectionCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showFullContent, setShowFullContent] = useState(false);
 
+  const cfg = PHASE_CONFIG[phase];
   const normalizedContent = formatSectionContent(content);
   const isLongContent = normalizedContent.length > 700;
   const displayContent =
@@ -74,70 +112,111 @@ function StrategySectionCard({
       : `${normalizedContent.substring(0, 700)}...`;
 
   const handleRegenerate = () => {
-    if (window.confirm(`Voulez-vous regenerer la section "${title}" ?`)) {
+    if (window.confirm(`Voulez-vous régénérer la section "${title}" ?`)) {
       onRegenerate(sectionKey, normalizedContent);
     }
   };
 
   return (
-    <article className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+    <article className={`rounded-2xl border bg-white shadow-sm shadow-slate-200/50 overflow-hidden transition-all duration-200 ${cfg.border}`}>
       <header
-        className="cursor-pointer border-b border-gray-100 p-6 transition-colors hover:bg-gray-50"
+        className="cursor-pointer p-5 transition-colors hover:bg-slate-50/80"
         onClick={() => setIsExpanded((prev) => !prev)}
       >
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center">
-            {isExpanded ? (
-              <ChevronDown className="mr-2 h-5 w-5 text-gray-400" />
-            ) : (
-              <ChevronRight className="mr-2 h-5 w-5 text-gray-400" />
-            )}
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <div className="flex items-center gap-3">
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${cfg.bg}`}>
+              {isExpanded ? (
+                <ChevronDown className={`h-4 w-4 text-${cfg.color}-600`} />
+              ) : (
+                <ChevronRight className={`h-4 w-4 text-${cfg.color}-600`} />
+              )}
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+              <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badge}`}>
+                {cfg.label}
+              </span>
+            </div>
           </div>
 
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleRegenerate();
-            }}
+            onClick={(e) => { e.stopPropagation(); handleRegenerate(); }}
             disabled={isRegenerating}
-            className="flex items-center rounded-lg px-3 py-1.5 text-sm text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800 disabled:opacity-50"
+            className={`flex items-center gap-1.5 rounded-xl border ${cfg.border} ${cfg.bg} px-3 py-1.5 text-xs font-medium text-${cfg.color}-700 transition-all hover:shadow-sm disabled:opacity-50`}
           >
-            <RefreshCw className={`mr-1 h-4 w-4 ${isRegenerating ? 'animate-spin' : ''}`} />
-            Regenerer
+            <RefreshCw className={`h-3.5 w-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+            Régénérer
           </button>
         </div>
       </header>
 
-      {isExpanded ? (
-        <div className="p-6">
-          <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-gray-700">
+      {isExpanded && (
+        <div className="border-t border-slate-100 p-5">
+          <pre className="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-slate-700">
             {displayContent}
           </pre>
 
-          {isLongContent ? (
+          {isLongContent && (
             <button
               type="button"
               onClick={() => setShowFullContent((prev) => !prev)}
-              className="mt-4 flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+              className={`mt-4 flex items-center gap-1.5 text-sm font-medium text-${cfg.color}-600 hover:text-${cfg.color}-800 transition-colors`}
             >
               {showFullContent ? (
-                <>
-                  <EyeOff className="mr-1 h-4 w-4" />
-                  Voir moins
-                </>
+                <><EyeOff className="h-4 w-4" />Voir moins</>
               ) : (
-                <>
-                  <Eye className="mr-1 h-4 w-4" />
-                  Voir plus
-                </>
+                <><Eye className="h-4 w-4" />Voir plus</>
               )}
             </button>
-          ) : null}
+          )}
         </div>
-      ) : null}
+      )}
     </article>
+  );
+}
+
+interface PhaseGroupProps {
+  phase: 'avant' | 'pendant' | 'apres';
+  sections: SectionItem[];
+  onRegenerate: (sectionKey: string, content: string) => void;
+  isRegenerating: string | null;
+}
+
+function PhaseGroup({ phase, sections, onRegenerate, isRegenerating }: PhaseGroupProps) {
+  const cfg = PHASE_CONFIG[phase];
+  const Icon = cfg.icon;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${cfg.headerBg}`}>
+          <Icon className="h-4 w-4 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">{cfg.label}</h2>
+          <p className="text-sm text-slate-500">{cfg.description}</p>
+        </div>
+        <div className={`ml-auto rounded-full ${cfg.badge} px-3 py-1 text-xs font-semibold`}>
+          {sections.length} section{sections.length > 1 ? 's' : ''}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {sections.map((section) => (
+          <StrategySectionCard
+            key={section.sectionKey}
+            title={section.title}
+            sectionKey={section.sectionKey}
+            content={section.content}
+            phase={phase}
+            onRegenerate={onRegenerate}
+            isRegenerating={isRegenerating === section.sectionKey}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -150,6 +229,7 @@ export default function StrategyDetailPage() {
   const { regenerateSection, deleteStrategy } = useStrategies();
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (!strategyId) {
@@ -161,66 +241,33 @@ export default function StrategyDetailPage() {
     if (!strategy?.generatedStrategy) return [];
 
     return [
-      {
-        title: 'Marche cible',
-        sectionKey: 'avant.marcheCible',
-        content: strategy.generatedStrategy.avant?.marcheCible,
-      },
-      {
-        title: 'Message marketing',
-        sectionKey: 'avant.messageMarketing',
-        content: strategy.generatedStrategy.avant?.messageMarketing,
-      },
-      {
-        title: 'Canaux de communication',
-        sectionKey: 'avant.canauxCommunication',
-        content: strategy.generatedStrategy.avant?.canauxCommunication,
-      },
-      {
-        title: 'Capture de prospects',
-        sectionKey: 'pendant.captureProspects',
-        content: strategy.generatedStrategy.pendant?.captureProspects,
-      },
-      {
-        title: 'Nurturing',
-        sectionKey: 'pendant.nurturing',
-        content: strategy.generatedStrategy.pendant?.nurturing,
-      },
-      {
-        title: 'Conversion',
-        sectionKey: 'pendant.conversion',
-        content: strategy.generatedStrategy.pendant?.conversion,
-      },
-      {
-        title: 'Experience client',
-        sectionKey: 'apres.experienceClient',
-        content: strategy.generatedStrategy.apres?.experienceClient,
-      },
-      {
-        title: 'Augmentation valeur client',
-        sectionKey: 'apres.augmentationValeurClient',
-        content: strategy.generatedStrategy.apres?.augmentationValeurClient,
-      },
-      {
-        title: 'Recommandation',
-        sectionKey: 'apres.recommandation',
-        content: strategy.generatedStrategy.apres?.recommandation,
-      },
+      { title: 'Marché cible', sectionKey: 'avant.marcheCible', content: strategy.generatedStrategy.avant?.marcheCible, phase: 'avant' },
+      { title: 'Message marketing', sectionKey: 'avant.messageMarketing', content: strategy.generatedStrategy.avant?.messageMarketing, phase: 'avant' },
+      { title: 'Canaux de communication', sectionKey: 'avant.canauxCommunication', content: strategy.generatedStrategy.avant?.canauxCommunication, phase: 'avant' },
+      { title: 'Capture de prospects', sectionKey: 'pendant.captureProspects', content: strategy.generatedStrategy.pendant?.captureProspects, phase: 'pendant' },
+      { title: 'Nurturing', sectionKey: 'pendant.nurturing', content: strategy.generatedStrategy.pendant?.nurturing, phase: 'pendant' },
+      { title: 'Conversion', sectionKey: 'pendant.conversion', content: strategy.generatedStrategy.pendant?.conversion, phase: 'pendant' },
+      { title: 'Expérience client', sectionKey: 'apres.experienceClient', content: strategy.generatedStrategy.apres?.experienceClient, phase: 'apres' },
+      { title: 'Augmentation valeur client', sectionKey: 'apres.augmentationValeurClient', content: strategy.generatedStrategy.apres?.augmentationValeurClient, phase: 'apres' },
+      { title: 'Recommandation', sectionKey: 'apres.recommandation', content: strategy.generatedStrategy.apres?.recommandation, phase: 'apres' },
     ];
   }, [strategy]);
 
+  const avantSections = sectionItems.filter((s) => s.phase === 'avant');
+  const pendantSections = sectionItems.filter((s) => s.phase === 'pendant');
+  const apresSections = sectionItems.filter((s) => s.phase === 'apres');
+
   const handleDelete = async () => {
     if (!strategyId) return;
-    if (!window.confirm('Etes-vous sur de vouloir supprimer cette strategie ?')) return;
-
     setIsDeleting(true);
     try {
       await deleteStrategy(strategyId);
-      toast.success('Strategie supprimee avec succes');
+      toast.success('Stratégie supprimée avec succès');
       router.push('/user/strategies');
     } catch {
       toast.error('Erreur lors de la suppression');
       setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -229,10 +276,10 @@ export default function StrategyDetailPage() {
     setIsRegenerating(sectionKey);
     try {
       await regenerateSection(strategyId, sectionKey, currentContent);
-      toast.success('Section regeneree avec succes');
+      toast.success('Section régénérée avec succès');
       await loadStrategy(strategyId);
     } catch {
-      toast.error('Erreur lors de la regeneration');
+      toast.error('Erreur lors de la régénération');
     } finally {
       setIsRegenerating(null);
     }
@@ -245,9 +292,10 @@ export default function StrategyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="mx-auto max-w-4xl rounded-xl border border-gray-200 bg-white p-8 text-gray-500">
-          Chargement de la strategie...
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+          <p className="text-sm font-medium text-slate-600">Chargement de la stratégie...</p>
         </div>
       </div>
     );
@@ -255,17 +303,19 @@ export default function StrategyDetailPage() {
 
   if (error || !strategy) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
-          <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-gray-900">Strategie introuvable</h2>
-          <p className="mb-6 text-gray-600">{error || 'Cette strategie est indisponible.'}</p>
+      <div className="flex min-h-[60vh] items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-2xl border border-red-100 bg-white p-8 text-center shadow-lg shadow-slate-200/50">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="mb-2 text-xl font-bold text-slate-900">Stratégie introuvable</h2>
+          <p className="mb-6 text-sm text-slate-600">{error || 'Cette stratégie est indisponible.'}</p>
           <Link
             href="/user/strategies"
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/25 transition-all hover:shadow-lg hover:shadow-violet-500/30"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour aux strategies
+            <ArrowLeft className="h-4 w-4" />
+            Retour aux stratégies
           </Link>
         </div>
       </div>
@@ -273,124 +323,198 @@ export default function StrategyDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <nav className="mb-6 flex items-center space-x-2 text-sm text-gray-500">
-          <Link href="/user/strategies" className="transition-colors hover:text-gray-700">
-            Strategies
-          </Link>
-          <span>•</span>
-          <span className="max-w-64 truncate font-medium text-gray-900">{strategy.businessInfo.businessName}</span>
-        </nav>
+    <div className="space-y-8">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm">
+        <Link
+          href="/user/strategies"
+          className="flex items-center gap-1.5 text-slate-500 transition-colors hover:text-violet-600"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Stratégies
+        </Link>
+        <span className="text-slate-300">/</span>
+        <span className="max-w-64 truncate font-medium text-slate-700">
+          {strategy.businessInfo.businessName}
+        </span>
+      </nav>
 
-        <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-            <div className="flex-1">
-              <div className="mb-4 flex items-start gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600">
-                  <Building className="h-8 w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h1 className="mb-2 text-2xl font-bold text-gray-900 lg:text-3xl">
-                    {strategy.businessInfo.businessName}
-                  </h1>
-                  <p className="mb-4 text-lg text-gray-600">{strategy.businessInfo.industry}</p>
-
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">
-                      {OBJECTIVE_LABELS[strategy.businessInfo.mainObjective]}
-                    </span>
-                    <span className="rounded-full bg-purple-100 px-3 py-1 text-sm text-purple-700">
-                      {TONE_LABELS[strategy.businessInfo.tone]}
-                    </span>
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
-                      {strategy.businessInfo.location}
-                    </span>
-                  </div>
-                </div>
+      {/* Hero header card */}
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-violet-600 via-violet-700 to-purple-700 p-8 shadow-xl shadow-violet-500/20">
+        {/* Grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-10"
+          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px)', backgroundSize: '32px 32px' }}
+        />
+        <div className="relative">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-start gap-5">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20">
+                <Building2 className="h-8 w-8 text-white" />
               </div>
-
-              <div className="grid gap-2 text-sm text-gray-500 sm:grid-cols-2">
-                <p className="flex items-center">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Creee le {new Date(strategy.createdAt).toLocaleDateString('fr-FR')}
-                </p>
-                <p className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4" />
-                  Mise a jour le {new Date(strategy.updatedAt).toLocaleDateString('fr-FR')}
-                </p>
+              <div>
+                <h1 className="mb-1 text-2xl font-bold text-white lg:text-3xl">
+                  {strategy.businessInfo.businessName}
+                </h1>
+                <p className="mb-4 text-base text-violet-200">{strategy.businessInfo.industry}</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/20">
+                    <Target className="h-3 w-3" />
+                    {OBJECTIVE_LABELS[strategy.businessInfo.mainObjective]}
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/20">
+                    <FileText className="h-3 w-3" />
+                    {TONE_LABELS[strategy.businessInfo.tone]}
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/20">
+                    <MapPin className="h-3 w-3" />
+                    {strategy.businessInfo.location}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href={`/swot/new?strategyId=${strategy._id}`}
-                className="flex items-center rounded-lg bg-cyan-600 px-4 py-2 text-white transition-colors hover:bg-cyan-700"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Creer SWOT a partir de cette strategie
-              </Link>
-              <Link
-                href={`/user/content/new?strategyId=${strategy._id}`}
-                className="flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generer du contenu
-              </Link>
-              <Link
-                href={`/swot?strategyId=${strategy._id}`}
-                className="flex items-center rounded-lg border border-cyan-300 px-4 py-2 text-cyan-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800"
-              >
-                <Eye className="mr-2 h-4 w-4" />
-                Voir SWOT lies
-              </Link>
+            {/* Action buttons */}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="flex items-center rounded-lg px-4 py-2 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:bg-white/25"
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
                 Actualiser
+              </button>
+              <Link
+                href={`/user/strategies/${strategy._id}/edit`}
+                className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:bg-white/25"
+              >
+                <Edit className="h-4 w-4" />
+                Modifier
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                disabled={isDeleting}
+                className="flex items-center gap-2 rounded-xl bg-red-500/80 px-4 py-2 text-sm font-medium text-white ring-1 ring-red-400/40 transition-all hover:bg-red-500 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer
+              </button>
+            </div>
+          </div>
+
+          {/* Meta row */}
+          <div className="mt-6 flex flex-wrap items-center gap-6 border-t border-white/15 pt-5 text-sm text-violet-200">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4" />
+              Créée le {new Date(strategy.createdAt).toLocaleDateString('fr-FR')}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4" />
+              Mise à jour le {new Date(strategy.updatedAt).toLocaleDateString('fr-FR')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Link
+          href={`/swot/new?strategyId=${strategy._id}`}
+          className="group flex items-center gap-3 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-slate-200/50 transition-all hover:border-violet-300 hover:shadow-md hover:shadow-violet-500/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-violet-600 to-purple-600">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-violet-700">Créer une analyse SWOT</p>
+            <p className="text-xs text-slate-500">Basée sur cette stratégie</p>
+          </div>
+        </Link>
+
+        <Link
+          href={`/user/content/new?strategyId=${strategy._id}`}
+          className="group flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm shadow-slate-200/50 transition-all hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-500/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600">
+            <Wand2 className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700">Générer du contenu</p>
+            <p className="text-xs text-slate-500">Posts, articles, campagnes</p>
+          </div>
+        </Link>
+
+        <Link
+          href={`/swot?strategyId=${strategy._id}`}
+          className="group flex items-center gap-3 rounded-2xl border border-purple-100 bg-white p-4 shadow-sm shadow-slate-200/50 transition-all hover:border-purple-300 hover:shadow-md hover:shadow-purple-500/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-purple-600 to-pink-600">
+            <Eye className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-purple-700">Voir les SWOT liés</p>
+            <p className="text-xs text-slate-500">Analyses existantes</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Strategy content */}
+      {sectionItems.length > 0 ? (
+        <div className="space-y-10">
+          {avantSections.length > 0 && (
+            <PhaseGroup phase="avant" sections={avantSections} onRegenerate={handleRegenerateSection} isRegenerating={isRegenerating} />
+          )}
+          {pendantSections.length > 0 && (
+            <PhaseGroup phase="pendant" sections={pendantSections} onRegenerate={handleRegenerateSection} isRegenerating={isRegenerating} />
+          )}
+          {apresSections.length > 0 && (
+            <PhaseGroup phase="apres" sections={apresSections} onRegenerate={handleRegenerateSection} isRegenerating={isRegenerating} />
+          )}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm shadow-slate-200/50">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
+            <Sparkles className="h-8 w-8 text-violet-400" />
+          </div>
+          <p className="font-medium text-slate-700">Stratégie en cours de génération...</p>
+          <p className="mt-1 text-sm text-slate-500">Revenez dans quelques instants.</p>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
+              <Trash2 className="h-7 w-7 text-red-500" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-slate-900">Supprimer la stratégie</h3>
+            <p className="mb-6 text-sm text-slate-600">
+              Êtes-vous sûr de vouloir supprimer{' '}
+              <span className="font-semibold text-slate-900">{strategy.businessInfo.businessName}</span> ?
+              Cette action est irréversible.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50"
+              >
+                Annuler
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex items-center rounded-lg px-4 py-2 text-red-600 transition-colors hover:bg-red-50 hover:text-red-800 disabled:opacity-50"
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-red-500/25 transition-all hover:bg-red-700 disabled:opacity-60"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer
+                {isDeleting ? 'Suppression...' : 'Supprimer'}
               </button>
-              <Link
-                href={`/user/strategies/${strategy._id}/edit`}
-                className="flex items-center rounded-lg px-4 py-2 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Modifier
-              </Link>
             </div>
           </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-8">
-          {sectionItems.length > 0 ? (
-            sectionItems.map((section) => (
-              <StrategySectionCard
-                key={section.sectionKey}
-                title={section.title}
-                sectionKey={section.sectionKey}
-                content={section.content}
-                onRegenerate={handleRegenerateSection}
-                isRegenerating={isRegenerating === section.sectionKey}
-              />
-            ))
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-600">
-              Strategie en cours de generation.
-            </div>
-          )}
-        </section>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
