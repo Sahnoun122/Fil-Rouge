@@ -75,6 +75,17 @@ export class UsersController {
     };
   }
 
+  @Delete('profile')
+  async deleteOwnAccount(@Request() req: any) {
+    const userId = this.getAuthenticatedUserId(req);
+    await this.usersService.deleteOwnAccount(userId);
+
+    return {
+      success: true,
+      message: 'Compte supprime avec succes',
+    };
+  }
+
   @Get('admin/all')
   @UseGuards(RolesGuard)
   @Roles('admin')

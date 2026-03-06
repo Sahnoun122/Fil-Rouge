@@ -345,6 +345,29 @@ export class UsersService {
     }
   }
 
+  async deleteOwnAccount(userId: string): Promise<void> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      if (user.role === 'admin') {
+        const otherAdmins = await this.countOtherUnbannedAdmins(userId);
+        if (otherAdmins === 0) {
+          throw new BadRequestException('Impossible de supprimer le dernier administrateur');
+        }
+      }
+
+      await this.userModel.findByIdAndDelete(userId).exec();
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erreur lors de la suppression du compte');
+    }
+  }
+
   async deleteUserByAdmin(userId: string, currentAdminId?: string): Promise<void> {
     try {
       const user = await this.userModel.findById(userId);
