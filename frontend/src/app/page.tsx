@@ -11,7 +11,7 @@ import Footer from '../../components/landing/Footer';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white">
+    <main className="min-h-screen overflow-x-hidden bg-white text-slate-900">
       <Navbar />
       <Hero />
       <Problem />
@@ -22,6 +22,6 @@ export default function HomePage() {
       <Benefits />
       <FinalCTA />
       <Footer />
-    </div>
+    </main>
   );
 }

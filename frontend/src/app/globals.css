@@ -1,12 +1,17 @@
 @import "tailwindcss";
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html {
   scroll-behavior: smooth;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -20,6 +25,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #05050F;
   color: #ffffff;
+  overflow-x: hidden;
 }
 
 /* Custom scrollbar */

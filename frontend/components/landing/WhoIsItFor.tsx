@@ -35,30 +35,30 @@ const AUDIENCES = [
 
 export default function WhoIsItFor() {
   return (
-    <section className="py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-sm font-bold uppercase tracking-wider text-violet-600 mb-3">For Everyone</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+    <section className="py-20 lg:py-28 bg-white">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+        <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-600 mb-4">For Everyone</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Who Is MarketPlan IA For?
           </h2>
-          <p className="mt-4 text-lg text-slate-600">
+          <p className="mt-5 text-lg text-slate-500 leading-relaxed">
             Whether you&apos;re solo or running a team, MarketPlan IA adapts to your needs.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {AUDIENCES.map(({ icon: Icon, title, description }) => (
             <div
               key={title}
-              className="group flex gap-4 p-5 rounded-2xl border border-slate-200 hover:border-violet-300 hover:shadow-md transition-all bg-white"
+              className="group flex gap-5 p-6 rounded-2xl border border-slate-200 hover:border-violet-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 bg-white"
             >
-              <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 group-hover:bg-violet-100 transition-colors">
+              <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 group-hover:bg-violet-100 transition-colors">
                 <Icon className="w-5 h-5 text-violet-600" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm mb-1.5">{title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
+              <div className="flex flex-col justify-center">
+                <h3 className="font-bold text-slate-900 text-sm mb-1.5 leading-snug">{title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
               </div>
             </div>
           ))}

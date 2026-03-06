@@ -37,36 +37,39 @@ const STEPS = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-24 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-sm font-bold uppercase tracking-wider text-violet-600 mb-3">How It Works</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+    <section id="how-it-works" className="py-20 lg:py-28 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+        <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-600 mb-4">How It Works</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             How MarketPlan IA Works
           </h2>
-          <p className="mt-4 text-lg text-slate-600">
+          <p className="mt-5 text-lg text-slate-500 leading-relaxed">
             From zero to a complete marketing strategy in 4 simple steps.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {STEPS.map(({ number, icon: Icon, title, description, color, ring }, index) => (
-            <div key={number} className="relative">
-              {/* Connector line */}
+            <div key={number} className="relative flex flex-col">
+              {/* Connector line — desktop only */}
               {index < STEPS.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-linear-to-r from-violet-200 to-violet-100 z-0" style={{ width: 'calc(100% - 2rem)', left: '50%' }} />
+                <div
+                  className="hidden lg:block absolute top-[52px] h-px bg-linear-to-r from-violet-300 to-violet-100 z-0"
+                  style={{ left: '50%', width: '100%' }}
+                />
               )}
-              <div className="relative bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-violet-200 transition-all text-center">
-                {/* Step badge */}
-                <div className={`w-10 h-10 rounded-full ${ring} text-white text-xs font-extrabold flex items-center justify-center mx-auto mb-4`}>
+              <div className="relative z-10 flex flex-col items-center text-center bg-white rounded-2xl border border-slate-200 p-7 hover:shadow-md hover:border-violet-200 transition-all duration-200 h-full">
+                {/* Step number */}
+                <div className={`w-11 h-11 rounded-full ${ring} text-white text-xs font-extrabold flex items-center justify-center mb-5 shadow-sm`}>
                   {number}
                 </div>
                 {/* Icon */}
-                <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center mx-auto mb-4`}>
+                <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center mb-5`}>
                   <Icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-slate-900 text-sm mb-2">{title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
+                <h3 className="font-bold text-slate-900 text-sm mb-3 leading-snug">{title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
               </div>
             </div>
           ))}

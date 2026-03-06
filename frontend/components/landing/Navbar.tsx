@@ -14,9 +14,9 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-white/95 backdrop-blur-sm fixed w-full z-50 border-b border-slate-200/70 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <nav className="bg-white/95 backdrop-blur-sm fixed w-full z-50 border-b border-slate-200/60 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+        <div className="flex justify-between items-center h-[68px]">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm">
@@ -67,7 +67,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4">
+        <div className="md:hidden border-t border-slate-200 bg-white px-6 py-5">
           <div className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
               <Link
