@@ -23,8 +23,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #05050F;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #0f0f0f;
   overflow-x: hidden;
 }
 
