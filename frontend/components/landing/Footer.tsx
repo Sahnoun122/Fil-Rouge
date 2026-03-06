@@ -1,34 +1,56 @@
 import Link from 'next/link';
-import { Zap } from 'lucide-react';
+import { Zap, Twitter, Linkedin, Github } from 'lucide-react';
 
 const LINKS = [
-  { label: 'Home', href: '/' },
   { label: 'Features', href: '#features' },
+  { label: 'How It Works', href: '#how-it-works' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'Login', href: '/login' },
+  { label: 'Log in', href: '/login' },
   { label: 'Sign Up', href: '/register' },
+];
+
+const SOCIALS = [
+  { icon: Twitter, href: '#', label: 'Twitter' },
+  { icon: Linkedin, href: '#', label: 'LinkedIn' },
+  { icon: Github, href: '#', label: 'GitHub' },
 ];
 
 const Footer = () => {
   return (
-    <footer id="footer" className="bg-slate-950 text-white">
+    <footer className="bg-slate-950 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-        <div className="py-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
+        {/* Top row */}
+        <div className="py-14 grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
           {/* Brand */}
-          <div className="max-w-sm">
+          <div>
             <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm shadow-violet-600/30">
+                <Zap className="w-4 h-4 text-white" fill="white" />
               </div>
-              <span className="font-bold text-base text-white">MarketPlan IA</span>
+              <span className="font-extrabold text-sm text-white tracking-tight">
+                MarketPlan <span className="text-violet-400">IA</span>
+              </span>
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              AI-powered marketing strategy and content planning platform.
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+              AI-powered marketing strategy and content planning platform for modern businesses.
             </p>
+            {/* Socials */}
+            <div className="flex items-center gap-3 mt-6">
+              {SOCIALS.map(({ icon: Icon, href, label }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-violet-500/50 hover:bg-violet-500/10 transition-all"
+                >
+                  <Icon className="w-4 h-4" />
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Nav Links */}
-          <div className="flex flex-wrap gap-x-8 gap-y-3">
+          {/* Nav links */}
+          <div className="md:col-span-2 flex flex-wrap gap-x-10 gap-y-3 md:justify-end md:items-start">
             {LINKS.map((link) => (
               <Link
                 key={link.label}
@@ -41,11 +63,12 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500">
-          <p>© 2026 MarketPlan IA. All rights reserved.</p>
+        {/* Bottom bar */}
+        <div className="border-t border-white/5 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-xs text-slate-500">© 2026 MarketPlan IA. All rights reserved.</p>
           <div className="flex items-center gap-5">
-            <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

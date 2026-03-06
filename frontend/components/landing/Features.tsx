@@ -10,89 +10,54 @@ import {
 } from 'lucide-react';
 
 const FEATURES = [
-  {
-    icon: Sparkles,
-    title: 'AI Marketing Strategy Generator',
-    description: 'Generate a complete marketing strategy based on simple inputs about your business.',
-    bg: 'bg-violet-50',
-    iconColor: 'text-violet-600',
-  },
-  {
-    icon: Target,
-    title: 'SWOT Analysis',
-    description: 'Automatically generate strengths, weaknesses, opportunities, and threats.',
-    bg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-  },
-  {
-    icon: CalendarDays,
-    title: 'Content Planning Calendar',
-    description: 'Organize all your social media content in a clear, structured calendar.',
-    bg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
-  },
-  {
-    icon: MessageSquare,
-    title: 'Smart Content Suggestions',
-    description: 'AI suggests post ideas, captions, and hashtags tailored to your audience.',
-    bg: 'bg-sky-50',
-    iconColor: 'text-sky-600',
-  },
-  {
-    icon: Layers,
-    title: 'Marketing Funnel Structure',
-    description: 'Organize your strategy into Prospect, Lead, and Client phases automatically.',
-    bg: 'bg-pink-50',
-    iconColor: 'text-pink-600',
-  },
-  {
-    icon: FileDown,
-    title: 'PDF Export',
-    description: 'Export your full strategy and planning into a professional, shareable PDF.',
-    bg: 'bg-violet-50',
-    iconColor: 'text-violet-600',
-  },
-  {
-    icon: BarChart3,
-    title: 'Marketing Dashboard',
-    description: 'Track your strategies, publications, and AI recommendations in one place.',
-    bg: 'bg-teal-50',
-    iconColor: 'text-teal-600',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Admin Dashboard',
-    description: 'Manage users and monitor all platform activity with full control.',
-    bg: 'bg-slate-50',
-    iconColor: 'text-slate-600',
-  },
+  { icon: Sparkles, title: 'AI Strategy Generator', description: 'Generate a complete marketing strategy from simple inputs about your business.', gradient: 'from-violet-500 to-purple-600' },
+  { icon: Target, title: 'SWOT Analysis', description: 'Auto-generate strengths, weaknesses, opportunities, and threats instantly.', gradient: 'from-emerald-500 to-teal-600' },
+  { icon: CalendarDays, title: 'Content Calendar', description: 'Organize all social media posts in a clear, structured, shareable calendar.', gradient: 'from-amber-500 to-orange-500' },
+  { icon: MessageSquare, title: 'Smart Suggestions', description: 'AI suggests post ideas, captions, and hashtags tailored to your audience.', gradient: 'from-sky-500 to-cyan-500' },
+  { icon: Layers, title: 'Funnel Structure', description: 'Organize your strategy into Prospect, Lead, and Client phases automatically.', gradient: 'from-pink-500 to-rose-500' },
+  { icon: FileDown, title: 'PDF Export', description: 'Export your full strategy into a professional, beautifully formatted PDF.', gradient: 'from-violet-500 to-indigo-600' },
+  { icon: BarChart3, title: 'Marketing Dashboard', description: 'Track strategies, publications, and AI insights all in one place.', gradient: 'from-teal-500 to-cyan-600' },
+  { icon: ShieldCheck, title: 'Admin Dashboard', description: 'Manage users and monitor all platform activity with complete control.', gradient: 'from-slate-600 to-slate-800' },
 ];
 
 const Features = () => {
   return (
-    <section id="features" className="py-20 lg:py-28 bg-white">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+    <section id="features" className="py-24 lg:py-32 bg-slate-950 relative overflow-hidden">
+      {/* Subtle grid */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(139,92,246,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.05) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+      <div className="pointer-events-none absolute top-0 right-0 w-96 h-96 rounded-full bg-violet-700/10 blur-3xl" />
+
+      <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
-          <p className="text-xs font-bold uppercase tracking-widest text-violet-600 mb-4">Features</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Powerful Features</h2>
-          <p className="mt-5 text-lg text-slate-500 leading-relaxed">
-            Everything you need to build, execute, and scale your marketing strategy — all in one place.
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">Features</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Everything You Need to{' '}
+            <span className="bg-linear-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">Grow Faster</span>
+          </h2>
+          <p className="mt-5 text-base text-slate-400 leading-relaxed">
+            All the tools to build, execute, and scale your marketing — in one platform.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {FEATURES.map(({ icon: Icon, title, description, bg, iconColor }) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {FEATURES.map(({ icon: Icon, title, description, gradient }) => (
             <div
               key={title}
-              className="group flex flex-col gap-4 p-6 rounded-2xl border border-slate-200 bg-white hover:shadow-md hover:border-violet-200 hover:-translate-y-1 transition-all duration-200"
+              className="group relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] hover:border-violet-500/30 transition-all duration-200 overflow-hidden"
             >
-              <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-5 h-5 ${iconColor}`} />
+              {/* Hover glow */}
+              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-violet-500/0 group-hover:bg-violet-500/10 blur-2xl transition-all duration-300" />
+              <div className={`w-11 h-11 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center mb-5 shadow-lg`}>
+                <Icon className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-snug">{title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
-              </div>
+              <h3 className="text-sm font-bold text-white mb-2 leading-snug">{title}</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
