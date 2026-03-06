@@ -2,10 +2,7 @@
 
 import { ReactNode, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
 import AdminSidebar from '../admin/AdminSidebar';
-import DashboardNavbar from '../layouts/DashboardNavbar';
-import { getPageTitleFromPath } from '@/src/constants/navigation';
 
 const ProtectedRoute = dynamic(() => import('../ProtectedRoute'), { ssr: false });
 
@@ -14,36 +11,31 @@ interface AdminLayoutProps {
   title?: string;
 }
 
-export default function AdminLayout({ children, title }: AdminLayoutProps) {
+export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const pathname = usePathname();
-  const pageTitle = title ?? getPageTitleFromPath(pathname, 'admin');
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="flex min-h-screen bg-slate-50">
+      <div className="flex min-h-screen bg-slate-50/70">
         <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
         <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 lg:hidden">
-            <h1 className="text-lg font-semibold text-slate-900">{pageTitle}</h1>
+          {/* Mobile header */}
+          <header className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3 lg:hidden">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               aria-label="Open navigation"
               type="button"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </header>
 
           <main className="flex-1 overflow-y-auto">
-            <div className="px-4 py-4 sm:px-6">
-              <DashboardNavbar role="admin" />
-            </div>
-            <div className="px-4 pb-8 sm:px-6">{children}</div>
+            <div className="px-6 pb-8 pt-6">{children}</div>
           </main>
         </div>
       </div>
