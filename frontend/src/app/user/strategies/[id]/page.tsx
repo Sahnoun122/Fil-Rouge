@@ -14,7 +14,6 @@ import {
   Clock,
   Edit,
   Eye,
-  EyeOff,
   FileText,
   MapPin,
   RefreshCw,
@@ -70,17 +69,71 @@ const PHASE_CONFIG = {
   },
 };
 
-const formatSectionContent = (value: unknown): string => {
+const toLabel = (key: string) =>
+  key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+
+function RenderContent({ value, depth = 0 }: { value: unknown; depth?: number }) {
   if (value === null || value === undefined) {
-    return 'Contenu indisponible pour cette section.';
+    return <p className="italic text-slate-400 text-sm">Contenu indisponible.</p>;
   }
+
+  if (typeof value === 'string') {
+    const paragraphs = value.split(/\n{2,}/);
+    return (
+      <div className="space-y-3">
+        {paragraphs.map((para, i) => (
+          <p key={i} className="text-sm leading-relaxed text-slate-700">
+            {para.split('\n').map((line, j) => (
+              <span key={j}>{line}{j < para.split('\n').length - 1 && <br />}</span>
+            ))}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return <p className="text-sm text-slate-700">{String(value)}</p>;
+  }
+
+  if (Array.isArray(value)) {
+    return (
+      <ul className="space-y-2">
+        {value.filter(Boolean).map((item, i) => (
+          <li key={i} className="flex items-start gap-2.5">
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" />
+            <div className="flex-1">
+              <RenderContent value={item} depth={depth + 1} />
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v !== null && v !== undefined && v !== '');
+    return (
+      <div className={`space-y-4 ${depth > 0 ? 'pl-4 border-l-2 border-slate-100' : ''}`}>
+        {entries.map(([key, val]) => (
+          <div key={key}>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              {toLabel(key)}
+            </p>
+            <RenderContent value={val} depth={depth + 1} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+const getRawText = (value: unknown): string => {
+  if (!value) return '';
   if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return 'Contenu indisponible pour cette section.';
-  }
+  try { return JSON.stringify(value); } catch { return ''; }
 };
 
 interface StrategySectionCardProps {
@@ -101,19 +154,13 @@ function StrategySectionCard({
   isRegenerating,
 }: StrategySectionCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showFullContent, setShowFullContent] = useState(false);
 
   const cfg = PHASE_CONFIG[phase];
-  const normalizedContent = formatSectionContent(content);
-  const isLongContent = normalizedContent.length > 700;
-  const displayContent =
-    showFullContent || !isLongContent
-      ? normalizedContent
-      : `${normalizedContent.substring(0, 700)}...`;
+  const rawText = getRawText(content);
 
   const handleRegenerate = () => {
     if (window.confirm(`Voulez-vous régénérer la section "${title}" ?`)) {
-      onRegenerate(sectionKey, normalizedContent);
+      onRegenerate(sectionKey, rawText);
     }
   };
 
@@ -154,23 +201,7 @@ function StrategySectionCard({
 
       {isExpanded && (
         <div className="border-t border-slate-100 p-5">
-          <pre className="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-slate-700">
-            {displayContent}
-          </pre>
-
-          {isLongContent && (
-            <button
-              type="button"
-              onClick={() => setShowFullContent((prev) => !prev)}
-              className={`mt-4 flex items-center gap-1.5 text-sm font-medium text-${cfg.color}-600 hover:text-${cfg.color}-800 transition-colors`}
-            >
-              {showFullContent ? (
-                <><EyeOff className="h-4 w-4" />Voir moins</>
-              ) : (
-                <><Eye className="h-4 w-4" />Voir plus</>
-              )}
-            </button>
-          )}
+          <RenderContent value={content} />
         </div>
       )}
     </article>
