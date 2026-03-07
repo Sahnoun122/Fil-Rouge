@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import frLocale from "@fullcalendar/core/locales/fr";
+import type { EventClickArg, EventContentArg, EventInput } from "@fullcalendar/core";
 import { Toaster, toast } from "react-hot-toast";
 import {
   ArrowUpRight,
@@ -17,6 +23,7 @@ import { contentService } from "@/src/services/contentService";
 import type {
   CampaignOption,
   CalendarFilterState,
+  CalendarRange,
   StrategyOption,
 } from "@/src/types/calendar.types";
 import type { ContentCampaign } from "@/src/types/content.types";
@@ -28,8 +35,186 @@ const initialFilters: CalendarFilterState = {
   view: "dayGridMonth",
 };
 
+const SCHEDULED_STATUS_LABELS: Record<string, string> = {
+  planned: "Planifie",
+  published: "Publie",
+  late: "En retard",
+};
+
+function toIsoRange(date: string, endOfDay = false) {
+  return new Date(
+    `${date}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`,
+  ).toISOString();
+}
+
+function getCurrentMonthRange(): CalendarRange {
+  const now = new Date();
+  const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+  const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
+
+  return {
+    rangeStart: firstDay.toISOString(),
+    rangeEnd: new Date(
+      Date.UTC(
+        lastDay.getUTCFullYear(),
+        lastDay.getUTCMonth(),
+        lastDay.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    ).toISOString(),
+  };
+}
+
+function buildCampaignRange(campaign: ContentCampaign): CalendarRange {
+  const scheduledDates = campaign.generatedPosts
+    .map((post) => post.schedule?.date?.trim())
+    .filter((value): value is string => Boolean(value))
+    .sort((left, right) => left.localeCompare(right));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const resolvedStart = campaign.inputs?.startDate || scheduledDates[0] || today;
+  const resolvedEnd =
+    campaign.inputs?.endDate ||
+    scheduledDates[scheduledDates.length - 1] ||
+    resolvedStart;
+
+  const startDate = resolvedStart <= resolvedEnd ? resolvedStart : resolvedEnd;
+  const endDate = resolvedStart <= resolvedEnd ? resolvedEnd : resolvedStart;
+
+  return {
+    rangeStart: toIsoRange(startDate),
+    rangeEnd: toIsoRange(endDate, true),
+  };
+}
+
+function parseScheduleParts(date: string, time: string) {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
+  const timeMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time.trim());
+
+  if (!dateMatch || !timeMatch) {
+    return null;
+  }
+
+  return {
+    year: Number(dateMatch[1]),
+    month: Number(dateMatch[2]),
+    day: Number(dateMatch[3]),
+    hour: Number(timeMatch[1]),
+    minute: Number(timeMatch[2]),
+  };
+}
+
+function getDatePartsInTimezone(date: Date, timezone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
+  const parts = formatter.formatToParts(date);
+  const values = new Map<string, string>();
+
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      values.set(part.type, part.value);
+    }
+  }
+
+  return {
+    year: Number(values.get("year")),
+    month: Number(values.get("month")),
+    day: Number(values.get("day")),
+    hour: Number(values.get("hour")),
+    minute: Number(values.get("minute")),
+  };
+}
+
+function zonedDateTimeToUtc(date: string, time: string, timezone: string): Date | null {
+  const target = parseScheduleParts(date, time);
+  if (!target) {
+    return null;
+  }
+
+  try {
+    let utcMillis = Date.UTC(
+      target.year,
+      target.month - 1,
+      target.day,
+      target.hour,
+      target.minute,
+    );
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const zonedParts = getDatePartsInTimezone(new Date(utcMillis), timezone);
+      const zonedAsUtc = Date.UTC(
+        zonedParts.year,
+        zonedParts.month - 1,
+        zonedParts.day,
+        zonedParts.hour,
+        zonedParts.minute,
+      );
+      const targetAsUtc = Date.UTC(
+        target.year,
+        target.month - 1,
+        target.day,
+        target.hour,
+        target.minute,
+      );
+      const diff = zonedAsUtc - targetAsUtc;
+      if (diff === 0) {
+        break;
+      }
+      utcMillis -= diff;
+    }
+
+    return new Date(utcMillis);
+  } catch {
+    return null;
+  }
+}
+
+function formatScheduleDate(date: string): string {
+  const parsedDate = new Date(`${date}T00:00:00.000Z`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return date;
+  }
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(parsedDate);
+}
+
+function formatScheduleLabel(date?: string, time?: string): string {
+  if (!date || !time) {
+    return "Non planifie";
+  }
+
+  return `${formatScheduleDate(date)} a ${time}`;
+}
+
+function normalizeStatusLabel(status?: string): string {
+  if (!status) {
+    return "Planifie";
+  }
+
+  return SCHEDULED_STATUS_LABELS[status.toLowerCase()] ?? status;
+}
+
 export default function CalendarPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const planningCalendarRef = useRef<FullCalendar | null>(null);
   const campaignIdFilter = searchParams.get("campaignId")?.trim() || "";
   const [filters, setFilters] = useState<CalendarFilterState>(initialFilters);
   const [strategies, setStrategies] = useState<StrategyOption[]>([]);
@@ -42,9 +227,10 @@ export default function CalendarPage() {
   const {
     posts,
     total,
+    isLoading,
     isMutating,
     error,
-    refresh,
+    setVisibleRange,
   } = useCalendar(filters);
 
   useEffect(() => {
@@ -80,9 +266,10 @@ export default function CalendarPage() {
     }
 
     const loadCampaignDetail = async () => {
+      setCampaignDetail(null);
+
       try {
-        const loadedCampaign =
-          await contentService.getCampaign(campaignIdFilter);
+        const loadedCampaign = await contentService.getCampaign(campaignIdFilter);
         setCampaignDetail(loadedCampaign);
       } catch (requestError) {
         toast.error(
@@ -96,6 +283,19 @@ export default function CalendarPage() {
 
     void loadCampaignDetail();
   }, [campaignIdFilter]);
+
+  useEffect(() => {
+    if (!campaignIdFilter) {
+      void setVisibleRange(getCurrentMonthRange());
+      return;
+    }
+
+    if (!campaignDetail) {
+      return;
+    }
+
+    void setVisibleRange(buildCampaignRange(campaignDetail));
+  }, [campaignDetail, campaignIdFilter, setVisibleRange]);
 
   useEffect(() => {
     if (!error) {
@@ -138,16 +338,37 @@ export default function CalendarPage() {
 
     return [...campaignDetail.generatedPosts]
       .map((post, index) => {
-        const matchingScheduledPost = scopedPosts.find(
-          (scheduledPost) =>
-            scheduledPost.caption.trim() === post.caption.trim() &&
-            scheduledPost.platform.toLowerCase() ===
-              post.platform.toLowerCase(),
-        );
+        const scheduleSignature = `AUTO_SCHEDULE:${campaignIdFilter}:${index}`;
+        const matchingScheduledPost =
+          scopedPosts.find(
+            (scheduledPost) => scheduledPost.notes?.trim() === scheduleSignature,
+          ) ??
+          scopedPosts.find(
+            (scheduledPost) =>
+              scheduledPost.caption.trim() === post.caption.trim() &&
+              scheduledPost.platform.toLowerCase() ===
+                post.platform.toLowerCase(),
+          );
+
+        const timezone =
+          post.schedule?.timezone ||
+          matchingScheduledPost?.timezone ||
+          campaignTimeline[0]?.timezone ||
+          "UTC";
+
+        const rawScheduleDateTime =
+          post.schedule?.date && post.schedule?.time
+            ? zonedDateTimeToUtc(
+                post.schedule.date,
+                post.schedule.time,
+                timezone,
+              ) ?? new Date(`${post.schedule.date}T${post.schedule.time}:00`)
+            : null;
 
         const scheduleDateTime =
-          post.schedule?.date && post.schedule?.time
-            ? new Date(`${post.schedule.date}T${post.schedule.time}:00`)
+          rawScheduleDateTime &&
+          !Number.isNaN(rawScheduleDateTime.getTime())
+            ? rawScheduleDateTime
             : null;
 
         return {
@@ -157,17 +378,15 @@ export default function CalendarPage() {
           detailHref: campaignIdFilter
             ? `/calendar/planning/campaign/${campaignIdFilter}/${post._id || index}`
             : null,
-          scheduleLabel:
-            post.schedule?.date && post.schedule?.time
-              ? `${post.schedule.date} a ${post.schedule.time}`
-              : "Non planifie",
+          scheduleLabel: formatScheduleLabel(
+            post.schedule?.date,
+            post.schedule?.time,
+          ),
           scheduleDateTime,
-          status: matchingScheduledPost?.status ?? "draft",
-          timezone:
-            post.schedule?.timezone ||
-            matchingScheduledPost?.timezone ||
-            campaignTimeline[0]?.timezone ||
-            "UTC",
+          scheduleDate: post.schedule?.date ?? null,
+          scheduleTime: post.schedule?.time ?? null,
+          status: matchingScheduledPost?.status ?? "planned",
+          timezone,
         };
       })
       .sort((left, right) => {
@@ -187,7 +406,60 @@ export default function CalendarPage() {
           left.scheduleDateTime.getTime() - right.scheduleDateTime.getTime()
         );
       });
-  }, [campaignDetail, campaignTimeline, scopedPosts]);
+  }, [campaignDetail, campaignIdFilter, campaignTimeline, scopedPosts]);
+
+  const planningEvents = useMemo<EventInput[]>(() => {
+    return planningCards
+      .filter((post) => Boolean(post.scheduleDateTime) && Boolean(post.detailHref))
+      .map((post) => ({
+        id: post.scheduledPostId || `${campaignIdFilter}-${post._id || post.index}`,
+        title: post.title?.trim() || post.caption.trim() || "Publication",
+        start: post.scheduleDateTime?.toISOString(),
+        allDay: false,
+        extendedProps: {
+          detailHref: post.detailHref,
+          platform: post.platform,
+          timezone: post.timezone,
+        },
+      }));
+  }, [campaignIdFilter, planningCards]);
+
+  const handlePlanningEventClick = useCallback(
+    (arg: EventClickArg) => {
+      const detailHref = (arg.event.extendedProps as { detailHref?: string })
+        .detailHref;
+      if (detailHref) {
+        router.push(detailHref);
+      }
+    },
+    [router],
+  );
+
+  const renderPlanningEvent = useCallback((arg: EventContentArg) => {
+    const platform = (arg.event.extendedProps as { platform?: string }).platform;
+
+    return (
+      <div className="w-full rounded-xl border border-stone-200 bg-white/95 px-2.5 py-2 text-left shadow-sm">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+          {arg.timeText} {platform ? `- ${platform}` : ""}
+        </p>
+        <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-4 text-stone-800">
+          {arg.event.title}
+        </p>
+      </div>
+    );
+  }, []);
+
+  useEffect(() => {
+    const calendarApi = planningCalendarRef.current?.getApi();
+    if (!calendarApi) {
+      return;
+    }
+
+    if (calendarApi.view.type !== filters.view) {
+      calendarApi.changeView(filters.view);
+    }
+  }, [filters.view]);
 
   return (
     <div className="space-y-6">
@@ -280,7 +552,7 @@ export default function CalendarPage() {
               Posts planifies
             </p>
             <p className="mt-3 text-2xl font-semibold text-stone-950">
-              {scopedPosts.length}
+              {planningCards.filter((post) => post.scheduleDateTime).length}
             </p>
           </article>
           <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
@@ -296,6 +568,84 @@ export default function CalendarPage() {
         </section>
       ) : null}
 
+      {campaignIdFilter ? (
+        <section className="rounded-[32px] border border-stone-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Vue calendrier
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-stone-950">
+                Date et heure des publications
+              </h2>
+              <p className="mt-2 text-sm text-stone-600">
+                Clique sur une publication pour ouvrir sa page detail.
+              </p>
+            </div>
+
+            <div className="inline-flex rounded-2xl border border-stone-200 bg-stone-100 p-1">
+              {[
+                { label: "Mois", value: "dayGridMonth" as const },
+                { label: "Semaine", value: "timeGridWeek" as const },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setFilters((current) => ({ ...current, view: option.value }))
+                  }
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    filters.view === option.value
+                      ? "bg-stone-950 text-white shadow-sm"
+                      : "text-stone-600 hover:text-stone-950"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mt-5 overflow-hidden rounded-[24px] border border-stone-200 bg-[#f8f2e8] p-3">
+            {planningEvents.length === 0 ? (
+              <div className="rounded-[20px] border border-dashed border-stone-300 bg-white p-10 text-center text-sm text-stone-500">
+                Aucune publication planifiee avec date et heure.
+              </div>
+            ) : (
+              <FullCalendar
+                ref={planningCalendarRef}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView={filters.view}
+                locale={frLocale}
+                firstDay={1}
+                headerToolbar={false}
+                height="auto"
+                nowIndicator
+                events={planningEvents}
+                allDaySlot={false}
+                slotMinTime="06:00:00"
+                slotMaxTime="23:00:00"
+                eventClick={handlePlanningEventClick}
+                eventContent={renderPlanningEvent}
+                eventTimeFormat={{
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                }}
+              />
+            )}
+
+            {isLoading ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f8f2e8]/70 backdrop-blur-[2px]">
+                <div className="rounded-2xl border border-stone-200 bg-white px-5 py-3 text-sm font-medium text-stone-700 shadow-sm">
+                  Chargement du calendrier...
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       {!campaignIdFilter ? (
         <section className="rounded-[32px] border border-stone-200 bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
           <div className="max-w-2xl">
@@ -306,9 +656,9 @@ export default function CalendarPage() {
               Ouvre une campagne pour voir son planning detaille
             </h2>
             <p className="mt-3 text-sm leading-6 text-stone-600">
-              La grande vue calendrier a ete retiree. Le planning se consulte
-              maintenant depuis les cards de campagne pour un rendu plus propre
-              et plus professionnel.
+              Chaque campagne affiche maintenant une vue calendrier
+              professionnelle avec la date, l heure de publication et l acces
+              direct au detail de chaque post.
             </p>
           </div>
 
@@ -382,7 +732,7 @@ export default function CalendarPage() {
                           {post.type || "post"}
                         </span>
                         <span className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
-                          {post.status}
+                          {normalizeStatusLabel(post.status)}
                         </span>
                       </div>
                       <div className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700 transition group-hover:border-stone-300 group-hover:text-stone-950">
@@ -402,7 +752,12 @@ export default function CalendarPage() {
                         <p className="mt-1 text-sm font-semibold text-stone-950">
                           {post.scheduleLabel}
                         </p>
-                        <p className="text-xs text-stone-500">{post.timezone}</p>
+                        <p className="text-xs text-stone-500">
+                          {post.timezone}
+                          {post.scheduleDate && post.scheduleTime
+                            ? ` - ${post.scheduleDate} ${post.scheduleTime}`
+                            : ""}
+                        </p>
                       </div>
                       {(post.hashtags ?? []).length > 0 ? (
                         <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700">
