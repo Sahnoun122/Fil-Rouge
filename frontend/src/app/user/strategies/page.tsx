@@ -32,15 +32,15 @@ const EmptyState = () => (
         <Sparkles className="w-10 h-10 text-white" />
       </div>
       <h3 className="text-2xl font-bold text-gray-900 mb-4">
-        Aucune stratégie créée
+      No strategies yet
       </h3>
       <p className="text-gray-600 mb-8 text-lg">
-        Commencez par créer votre première stratégie marketing personnalisée avec l'IA
+        Start by creating your first AI-powered personalized marketing strategy
       </p>
       <Link href="/user/strategies/new">
         <button className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
           <Plus className="w-5 h-5 mr-2" />
-          Créer ma première stratégie
+          Create my first strategy
         </button>
       </Link>
     </div>
@@ -93,19 +93,19 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette stratégie ?')) {
+    if (window.confirm('Are you sure you want to delete this strategy?')) {
       try {
         await onDelete(strategy._id);
-        toast.success('Stratégie supprimée avec succès');
+        toast.success('Strategy deleted successfully');
       } catch (error) {
-        toast.error('Erreur lors de la suppression');
+        toast.error('Error deleting strategy');
       }
     }
     setShowMenu(false);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -113,10 +113,10 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
   };
 
   const formatBudget = (budget?: number) => {
-    if (!budget) return 'Non défini';
-    return new Intl.NumberFormat('fr-FR', {
+    if (!budget) return 'Not defined';
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'USD',
       maximumFractionDigits: 0,
     }).format(budget);
   };
@@ -161,7 +161,7 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Voir les détails
+                  View details
                 </button>
                 <button
                   onClick={handleDelete}
@@ -169,7 +169,7 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
                   className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Supprimer
+                  Delete
                 </button>
               </div>
             </>
@@ -196,7 +196,7 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
 
         <div className="flex items-center text-sm text-gray-600">
           <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-          <span>Créée le {formatDate(strategy.createdAt)}</span>
+          <span>Created on {formatDate(strategy.createdAt)}</span>
         </div>
       </div>
 
@@ -215,7 +215,7 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
         onClick={handleView}
         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
       >
-        Voir la stratégie complète
+        View full strategy
       </button>
     </div>
   );
@@ -271,8 +271,8 @@ export default function StrategiesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Mes Stratégies</h1>
-              <p className="text-gray-600 mt-2">Chargement...</p>
+              <h1 className="text-3xl font-bold text-gray-900">My Strategies</h1>
+              <p className="text-gray-600 mt-2">Loading...</p>
             </div>
           </div>
           <LoadingSkeleton />
@@ -288,11 +288,11 @@ export default function StrategiesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Mes Stratégies Marketing</h1>
+            <h1 className="text-3xl font-bold text-gray-900">My Marketing Strategies</h1>
             <p className="text-gray-600 mt-2">
               {strategies.length > 0 
-                ? `${pagination.total} stratégie${pagination.total > 1 ? 's' : ''} trouvée${pagination.total > 1 ? 's' : ''}`
-                : 'Gérez vos stratégies marketing générées par l\'IA'
+                ? `${pagination.total} strategy${pagination.total > 1 ? 'ies' : ''} found`
+                : 'Manage your AI-generated marketing strategies'
               }
             </p>
           </div>
@@ -300,7 +300,7 @@ export default function StrategiesPage() {
                   <Link href="/user/strategies/new">
             <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
               <Plus className="w-5 h-5 mr-2" />
-              Nouvelle Stratégie
+              New Strategy
             </button>
           </Link>
         </div>
@@ -313,7 +313,7 @@ export default function StrategiesPage() {
               onClick={refresh}
               className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
             >
-              Réessayer
+              Retry
             </button>
           </div>
         )}
@@ -328,7 +328,7 @@ export default function StrategiesPage() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Rechercher par nom d'entreprise ou secteur..."
+                    placeholder="Search by company name or industry..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -343,7 +343,7 @@ export default function StrategiesPage() {
                   onChange={(e) => setFilterBy(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="all">Tous les objectifs</option>
+                  <option value="all">All objectives</option>
                   {Object.entries(OBJECTIVE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
@@ -357,8 +357,8 @@ export default function StrategiesPage() {
                   onChange={(e) => setSortBy(e.target.value as 'date' | 'name')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="date">Plus récentes</option>
-                  <option value="name">Par nom</option>
+                  <option value="date">Most recent</option>
+                  <option value="name">By name</option>
                 </select>
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function StrategiesPage() {
           <EmptyState />
         ) : filteredStrategies.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Aucune stratégie ne correspond à vos critères de recherche.</p>
+            <p className="text-gray-500 text-lg">No strategy matches your search criteria.</p>
           </div>
         ) : (
           <>
@@ -389,9 +389,9 @@ export default function StrategiesPage() {
             {pagination.pages > 1 && (
               <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4">
                 <div className="text-sm text-gray-700">
-                  Affichage de {((pagination.page - 1) * pagination.limit) + 1} à{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} sur{' '}
-                  {pagination.total} stratégies
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                  {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                  {pagination.total} strategies
                 </div>
                 
                 <div className="flex items-center space-x-2">

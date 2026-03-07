@@ -72,8 +72,10 @@ async function refreshAccessToken(): Promise<boolean> {
 
     const data = await res.json();
 
-    if (data?.success && data?.accessToken && data?.refreshToken) {
-      TokenManager.setTokens(data.accessToken, data.refreshToken);
+    if (data?.success && (data?.accessToken || data?.data?.accessToken) && (data?.refreshToken || data?.data?.refreshToken)) {
+      const accessToken = data.accessToken ?? data.data.accessToken;
+      const refreshToken = data.refreshToken ?? data.data.refreshToken;
+      TokenManager.setTokens(accessToken, refreshToken);
       return true;
     }
 

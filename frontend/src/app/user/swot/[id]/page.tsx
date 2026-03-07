@@ -86,7 +86,7 @@ const normalizeText = (value: string): string | undefined => {
 };
 
 const formatDate = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', {
+  new Date(value).toLocaleDateString('en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -153,7 +153,7 @@ export default function UserSwotDetailPage() {
 
       const swotPayload = swotResponse.data;
       if (!swotPayload) {
-        throw new Error('SWOT introuvable');
+        throw new Error('SWOT not found');
       }
 
       setSwot(swotPayload);
@@ -169,7 +169,7 @@ export default function UserSwotDetailPage() {
         setStrategy(null);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors du chargement du SWOT');
+      toast.error(error instanceof Error ? error.message : 'Error loading SWOT');
     } finally {
       setIsLoading(false);
     }
@@ -219,15 +219,15 @@ export default function UserSwotDetailPage() {
       });
 
       if (!response.data) {
-        throw new Error('Mise a jour invalide');
+        throw new Error('Invalid update');
       }
 
       setSwot(response.data);
       setForm(hydrateForm(response.data));
       setIsEditing(false);
-      toast.success('SWOT sauvegarde avec succes');
+      toast.success('SWOT saved successfully');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde');
+      toast.error(error instanceof Error ? error.message : 'Error saving SWOT');
     } finally {
       setIsSaving(false);
     }
@@ -248,16 +248,16 @@ export default function UserSwotDetailPage() {
       });
 
       if (!response.data) {
-        throw new Error('Amelioration invalide');
+        throw new Error('Invalid improvement');
       }
 
       setSwot(response.data);
       setForm(hydrateForm(response.data));
       setImproveInstruction('');
       setIsImproveModalOpen(false);
-      toast.success('SWOT ameliore avec IA');
+      toast.success('SWOT improved with AI');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de l amelioration IA');
+      toast.error(error instanceof Error ? error.message : 'Error improving SWOT with AI');
     } finally {
       setIsImproving(false);
     }
@@ -268,7 +268,7 @@ export default function UserSwotDetailPage() {
   }
 
   if (!swot) {
-    return <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-red-700">SWOT introuvable.</div>;
+    return <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-red-700">SWOT not found.</div>;
   }
 
   const isBusy = isSaving || isImproving;
@@ -282,11 +282,11 @@ export default function UserSwotDetailPage() {
             className="mb-2 inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour aux SWOT
+            Back to SWOT analyses
           </Link>
           <h1 className="text-3xl font-bold text-slate-900">{form.title || swot.title}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Cree le {formatDate(swot.createdAt)} - mis a jour le {formatDate(swot.updatedAt)}
+            Created on {formatDate(swot.createdAt)} - updated on {formatDate(swot.updatedAt)}
           </p>
         </div>
 
@@ -299,7 +299,7 @@ export default function UserSwotDetailPage() {
               className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
               <Edit3 className="mr-2 h-4 w-4" />
-              Editer
+              Edit
             </button>
           ) : (
             <>
@@ -310,7 +310,7 @@ export default function UserSwotDetailPage() {
                 className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Sauvegarder
+                Save
               </button>
               <button
                 type="button"
@@ -319,7 +319,7 @@ export default function UserSwotDetailPage() {
                 className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 <X className="mr-2 h-4 w-4" />
-                Annuler
+                Cancel
               </button>
             </>
           )}
@@ -330,18 +330,18 @@ export default function UserSwotDetailPage() {
             className="inline-flex items-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Ameliorer avec IA
+            Improve with AI
           </button>
         </div>
       </section>
 
       <section className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5 shadow-sm">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">Strategie associee</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">Linked strategy</p>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-lg font-semibold text-slate-900">{strategy?.businessInfo.businessName || swot.strategyId}</p>
             <p className="text-sm text-slate-600">
-              Objectif: {strategy?.businessInfo.mainObjective || '-'} | Tone: {strategy?.businessInfo.tone || '-'}
+              Objective: {strategy?.businessInfo.mainObjective || '-'} | Tone: {strategy?.businessInfo.tone || '-'}
             </p>
           </div>
           <Link
@@ -349,7 +349,7 @@ export default function UserSwotDetailPage() {
             className="inline-flex items-center rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100"
           >
             <PenSquare className="mr-2 h-4 w-4" />
-            Voir la strategie
+            View strategy
           </Link>
         </div>
       </section>
@@ -358,7 +358,7 @@ export default function UserSwotDetailPage() {
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Inputs</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Notes internes</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Internal notes</label>
             <textarea
               value={form.inputs.notesInternes}
               onChange={(event) =>
@@ -372,7 +372,7 @@ export default function UserSwotDetailPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Notes externes</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">External notes</label>
             <textarea
               value={form.inputs.notesExternes}
               onChange={(event) =>
@@ -386,7 +386,7 @@ export default function UserSwotDetailPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Concurrents</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Competitors</label>
             <textarea
               value={stringifyList(form.inputs.concurrents)}
               onChange={(event) =>
@@ -400,7 +400,7 @@ export default function UserSwotDetailPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Ressources</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Resources</label>
             <textarea
               value={stringifyList(form.inputs.ressources)}
               onChange={(event) =>
@@ -414,7 +414,7 @@ export default function UserSwotDetailPage() {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">Objectifs</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Objectives</label>
             <textarea
               value={form.inputs.objectifs}
               onChange={(event) =>
@@ -431,7 +431,7 @@ export default function UserSwotDetailPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Matrice SWOT</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">SWOT Matrix</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
             <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-emerald-700">Strengths</h3>
@@ -451,7 +451,7 @@ export default function UserSwotDetailPage() {
                     </li>
                   ))
                 ) : (
-                  <li className="text-slate-500">Aucun point</li>
+                  <li className="text-slate-500">No items</li>
                 )}
               </ul>
             )}
@@ -475,7 +475,7 @@ export default function UserSwotDetailPage() {
                     </li>
                   ))
                 ) : (
-                  <li className="text-slate-500">Aucun point</li>
+                  <li className="text-slate-500">No items</li>
                 )}
               </ul>
             )}
@@ -499,7 +499,7 @@ export default function UserSwotDetailPage() {
                     </li>
                   ))
                 ) : (
-                  <li className="text-slate-500">Aucun point</li>
+                  <li className="text-slate-500">No items</li>
                 )}
               </ul>
             )}
@@ -523,7 +523,7 @@ export default function UserSwotDetailPage() {
                     </li>
                   ))
                 ) : (
-                  <li className="text-slate-500">Aucun point</li>
+                  <li className="text-slate-500">No items</li>
                 )}
               </ul>
             )}
@@ -535,7 +535,7 @@ export default function UserSwotDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Ameliorer avec IA</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Improve with AI</h3>
               <button
                 type="button"
                 onClick={() => setIsImproveModalOpen(false)}
@@ -546,13 +546,13 @@ export default function UserSwotDetailPage() {
               </button>
             </div>
             <p className="mb-3 text-sm text-slate-600">
-              Ajoutez une instruction pour guider l&apos;IA vers une amelioration plus ciblee.
+              Add an instruction to guide the AI toward a more targeted improvement.
             </p>
             <textarea
               value={improveInstruction}
               onChange={(event) => setImproveInstruction(event.target.value)}
               rows={5}
-              placeholder="Ex: Renforce les opportunites B2B et precise les menaces concurrentielles."
+              placeholder="E.g.: Strengthen B2B opportunities and clarify competitive threats."
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:ring-2"
               disabled={isImproving}
             />
@@ -563,7 +563,7 @@ export default function UserSwotDetailPage() {
                 disabled={isImproving}
                 className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="button"
@@ -572,7 +572,7 @@ export default function UserSwotDetailPage() {
                 className="inline-flex items-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                Lancer l&apos;amelioration
+                Launch improvement
               </button>
             </div>
           </div>

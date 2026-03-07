@@ -6,7 +6,7 @@ import { useAuth } from '@/src/hooks/useAuth';
 import useAdminUsers from '@/src/hooks/useAdmin';
 import { AdminUser, AdminUserRole } from '@/src/types/admin.types';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
@@ -104,18 +104,18 @@ export default function AdminUsersPage() {
   const statsCards = useMemo(() => {
     if (!stats) {
       return [
-        { label: 'Total comptes', value: '-' },
-        { label: 'Administrateurs', value: '-' },
-        { label: 'Comptes bannis', value: '-' },
-        { label: 'Nouveaux (30j)', value: '-' },
+        { label: 'Total accounts', value: '-' },
+        { label: 'Admins', value: '-' },
+        { label: 'Banned accounts', value: '-' },
+        { label: 'New (30d)', value: '-' },
       ];
     }
 
     return [
-      { label: 'Total comptes', value: String(stats.total) },
-      { label: 'Administrateurs', value: String(stats.admins) },
-      { label: 'Comptes bannis', value: String(stats.banned) },
-      { label: 'Nouveaux (30j)', value: String(stats.recentSignups) },
+      { label: 'Total accounts', value: String(stats.total) },
+      { label: 'Admins', value: String(stats.admins) },
+      { label: 'Banned accounts', value: String(stats.banned) },
+      { label: 'New (30d)', value: String(stats.recentSignups) },
     ];
   }, [stats]);
 
@@ -260,7 +260,7 @@ export default function AdminUsersPage() {
     setPendingUserId(targetUser.id);
 
     try {
-      const reason = targetUser.isBanned ? undefined : 'Banni par un administrateur';
+      const reason = targetUser.isBanned ? undefined : 'Banned by an administrator';
       await setUserBanStatus(targetUser.id, !targetUser.isBanned, reason);
       await loadStats();
     } catch {
@@ -274,9 +274,9 @@ export default function AdminUsersPage() {
     <section className="space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Administration</p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Gestion des comptes utilisateurs</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">User account management</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Pilotez la gestion des comptes depuis un espace centralise et securise.
+          Manage accounts from a centralized and secure space.
         </p>
       </header>
 
@@ -293,7 +293,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="grid flex-1 gap-3 md:grid-cols-[1.5fr_1fr]">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recherche</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Search</span>
               <input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
@@ -310,7 +310,7 @@ export default function AdminUsersPage() {
                 onChange={(event) => setRoleFilter(event.target.value as AdminUserRole | 'all')}
                 className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
               >
-                <option value="all">Tous</option>
+                <option value="all">All</option>
                 <option value="admin">Admin</option>
                 <option value="user">User</option>
               </select>
@@ -322,26 +322,26 @@ export default function AdminUsersPage() {
             className="h-10 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
             type="button"
           >
-            Nouvel utilisateur
+            New user
           </button>
         </div>
 
         {isFormOpen ? (
           <form onSubmit={onSubmitUserForm} className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-slate-900">{isEditing ? 'Modifier un utilisateur' : 'Creer un utilisateur'}</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{isEditing ? 'Edit user' : 'Create user'}</h2>
               <button
                 onClick={closeForm}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                 type="button"
               >
-                Fermer
+                Close
               </button>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nom complet</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Full name</span>
                 <input
                   value={formState.fullName}
                   onChange={(event) => onFormFieldChange('fullName', event.target.value)}
@@ -364,7 +364,7 @@ export default function AdminUsersPage() {
 
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Mot de passe {isEditing ? '(optionnel)' : ''}
+                  Password {isEditing ? '(optional)' : ''}
                 </span>
                 <input
                   value={formState.password}
@@ -376,7 +376,7 @@ export default function AdminUsersPage() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telephone</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</span>
                 <input
                   value={formState.phone}
                   onChange={(event) => onFormFieldChange('phone', event.target.value)}
@@ -386,7 +386,7 @@ export default function AdminUsersPage() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Entreprise</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Company</span>
                 <input
                   value={formState.companyName}
                   onChange={(event) => onFormFieldChange('companyName', event.target.value)}
@@ -396,7 +396,7 @@ export default function AdminUsersPage() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secteur</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Industry</span>
                 <input
                   value={formState.industry}
                   onChange={(event) => onFormFieldChange('industry', event.target.value)}
@@ -424,14 +424,14 @@ export default function AdminUsersPage() {
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                 type="button"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 disabled={isSubmittingForm}
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
               >
-                {isSubmittingForm ? 'Sauvegarde...' : isEditing ? 'Mettre a jour' : 'Creer'}
+                {isSubmittingForm ? 'Saving...' : isEditing ? 'Update' : 'Create'}
               </button>
             </div>
           </form>
@@ -445,7 +445,7 @@ export default function AdminUsersPage() {
               className="rounded-md px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
               type="button"
             >
-              Fermer
+              Close
             </button>
           </div>
         ) : null}
@@ -455,12 +455,12 @@ export default function AdminUsersPage() {
             <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Nom</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Name</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Email</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Role</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Statut</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Derniere connexion</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Cree le</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Status</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Last login</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Created on</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Action</th>
                 </tr>
               </thead>
@@ -469,13 +469,13 @@ export default function AdminUsersPage() {
                 {isLoadingUsers ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
-                      Chargement des utilisateurs...
+                      Loading users...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
-                      Aucun utilisateur trouve pour ces filtres.
+                      No users found for these filters.
                     </td>
                   </tr>
                 ) : (
@@ -488,7 +488,7 @@ export default function AdminUsersPage() {
                       <tr key={managedUser.id} className="align-middle">
                         <td className="px-4 py-3">
                           <p className="font-medium text-slate-900">{managedUser.fullName || '-'}</p>
-                          <p className="text-xs text-slate-500">{managedUser.companyName || 'Sans entreprise'}</p>
+                          <p className="text-xs text-slate-500">{managedUser.companyName || 'No company'}</p>
                         </td>
 
                         <td className="px-4 py-3 text-slate-700">{managedUser.email}</td>
@@ -513,7 +513,7 @@ export default function AdminUsersPage() {
                                 : 'bg-emerald-100 text-emerald-700'
                             }`}
                           >
-                            {managedUser.isBanned ? 'Banni' : 'Normal'}
+                            {managedUser.isBanned ? 'Banned' : 'Active'}
                           </span>
                         </td>
 
@@ -526,12 +526,12 @@ export default function AdminUsersPage() {
                               href={`/admin/users/${managedUser.id}`}
                               className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                             >
-                              Consulter
+                              View
                             </Link>
 
                             {isCurrentAdmin ? (
                               <span className="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
-                                Compte connecte
+                                Connected account
                               </span>
                             ) : (
                               <>
@@ -541,7 +541,7 @@ export default function AdminUsersPage() {
                                 className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                                 type="button"
                               >
-                                Modifier
+                                Edit
                               </button>
 
                               <button
@@ -550,7 +550,7 @@ export default function AdminUsersPage() {
                                 className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                                 type="button"
                               >
-                                Supprimer
+                                Delete
                               </button>
 
                               <button
@@ -563,7 +563,7 @@ export default function AdminUsersPage() {
                                 }`}
                                 type="button"
                               >
-                                {managedUser.isBanned ? 'Debannir' : 'Bannir'}
+                                {managedUser.isBanned ? 'Unban' : 'Ban'}
                               </button>
                               </>
                             )}
@@ -580,7 +580,7 @@ export default function AdminUsersPage() {
 
         <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
           <p className="text-sm text-slate-500">
-            Total: <span className="font-semibold text-slate-700">{usersResult?.total ?? 0}</span> comptes
+            Total: <span className="font-semibold text-slate-700">{usersResult?.total ?? 0}</span> accounts
           </p>
 
           <div className="flex items-center gap-2">
@@ -590,7 +590,7 @@ export default function AdminUsersPage() {
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
             >
-              Precedent
+              Previous
             </button>
 
             <span className="text-sm text-slate-600">
@@ -603,7 +603,7 @@ export default function AdminUsersPage() {
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
             >
-              Suivant
+              Next
             </button>
           </div>
         </footer>

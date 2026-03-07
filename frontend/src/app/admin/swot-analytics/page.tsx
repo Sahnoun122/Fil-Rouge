@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useAdminSwots } from '@/src/hooks/useAdmin';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
@@ -79,7 +79,7 @@ export default function AdminSwotAnalyticsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Administration</p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">SWOT Analytics</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Consultez les analyses SWOT de chaque utilisateur, liees a leurs strategies marketing.
+          View all user SWOT analyses linked to their marketing strategies.
         </p>
       </header>
 
@@ -89,7 +89,7 @@ export default function AdminSwotAnalyticsPage() {
           <p className="mt-2 text-2xl font-semibold text-slate-900">{totalSwots}</p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-slate-500">IA (page en cours)</p>
+          <p className="text-sm text-slate-500">AI (current page)</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{aiGeneratedOnPage}</p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -102,7 +102,7 @@ export default function AdminSwotAnalyticsPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recherche</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Search</span>
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
@@ -120,7 +120,7 @@ export default function AdminSwotAnalyticsPage() {
               className="rounded-md px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
               type="button"
             >
-              Fermer
+              Close
             </button>
           </div>
         ) : null}
@@ -130,12 +130,12 @@ export default function AdminSwotAnalyticsPage() {
             <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Utilisateur</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Strategie</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Titre SWOT</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">User</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Strategy</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">SWOT Title</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">IA</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Points</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Cree le</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Created on</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Action</th>
                 </tr>
               </thead>
@@ -144,13 +144,13 @@ export default function AdminSwotAnalyticsPage() {
                 {isLoadingSwots ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
-                      Chargement des SWOT...
+                      Loading SWOT analyses...
                     </td>
                   </tr>
                 ) : swots.length === 0 ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
-                      Aucun SWOT trouve.
+                      No SWOT found.
                     </td>
                   </tr>
                 ) : (
@@ -167,7 +167,7 @@ export default function AdminSwotAnalyticsPage() {
                           href={`/admin/strategies/${item.strategyId}`}
                           className="mt-1 inline-flex text-xs font-semibold text-cyan-700 hover:underline"
                         >
-                          Voir strategie liee
+                          View linked strategy
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-slate-700">{item.title}</td>
@@ -179,7 +179,7 @@ export default function AdminSwotAnalyticsPage() {
                               : 'bg-amber-100 text-amber-700'
                           }`}
                         >
-                          {item.isAiGenerated ? 'Oui' : 'Non'}
+                          {item.isAiGenerated ? 'Yes' : 'No'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-700">
@@ -192,7 +192,7 @@ export default function AdminSwotAnalyticsPage() {
                           href={`/admin/swot-analytics/${item.id}`}
                           className="inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                         >
-                          Consulter
+                          View
                         </Link>
                       </td>
                     </tr>
@@ -215,7 +215,7 @@ export default function AdminSwotAnalyticsPage() {
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
             >
-              Precedent
+              Previous
             </button>
             <button
               onClick={() => onPageChange(currentPage + 1)}
@@ -223,7 +223,7 @@ export default function AdminSwotAnalyticsPage() {
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
             >
-              Suivant
+              Next
             </button>
           </div>
         </footer>

@@ -4,14 +4,14 @@ export default function ResetPasswordPage() {
   return (
     <div className="bg-white rounded-xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Nouveau mot de passe</h1>
-        <p className="text-gray-600">Entrez votre nouveau mot de passe</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">New Password</h1>
+        <p className="text-gray-600">Enter your new password</p>
       </div>
       
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nouveau mot de passe
+            New password
           </label>
           <input
             type="password"
@@ -22,7 +22,7 @@ export default function ResetPasswordPage() {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Confirmer le mot de passe
+            Confirm password
           </label>
           <input
             type="password"
@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
         </div>
         
         <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-colors">
-          Réinitialiser le mot de passe
+          Reset password
         </button>
       </div>
     </div>

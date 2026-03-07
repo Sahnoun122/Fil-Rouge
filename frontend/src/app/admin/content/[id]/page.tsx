@@ -20,7 +20,7 @@ import {
 import { useAdminContent } from '@/src/hooks/useAdmin';
 import type { GeneratedPost } from '@/src/types/content.types';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
@@ -45,8 +45,8 @@ const formatMode = (value: string): string => {
 const formatObjective = (value: string): string => {
   const labels: Record<string, string> = {
     leads: 'Leads',
-    sales: 'Ventes',
-    awareness: 'Notoriete',
+    sales: 'Sales',
+    awareness: 'Awareness',
     engagement: 'Engagement',
   };
 
@@ -99,7 +99,7 @@ function PostCard({ index, post }: { index: number; post: GeneratedPost }) {
         <div className="space-y-4 p-5">
           {post.title ? (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Titre</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Title</p>
               <p className="mt-1 text-sm text-slate-900">{post.title}</p>
             </div>
           ) : null}
@@ -145,7 +145,7 @@ function PostCard({ index, post }: { index: number; post: GeneratedPost }) {
 
           {post.suggestedVisual ? (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Visuel suggere</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Suggested visual</p>
               <p className="mt-1 text-sm text-slate-900">{post.suggestedVisual}</p>
             </div>
           ) : null}
@@ -156,7 +156,7 @@ function PostCard({ index, post }: { index: number; post: GeneratedPost }) {
                 variant ? (
                   <article key={`${post.platform}-variant-${variantIndex}`} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Variante {String.fromCharCode(65 + variantIndex)}
+                      Variant {String.fromCharCode(65 + variantIndex)}
                     </p>
                     <p className="mt-2 text-sm text-slate-900">{variant}</p>
                   </article>
@@ -167,9 +167,9 @@ function PostCard({ index, post }: { index: number; post: GeneratedPost }) {
 
           {post.schedule ? (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Programmation</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Schedule</p>
               <p className="mt-1 text-sm text-slate-900">
-                {post.schedule.date} a {post.schedule.time}
+                {post.schedule.date} at {post.schedule.time}
               </p>
             </div>
           ) : null}
@@ -199,10 +199,10 @@ export default function AdminContentDetailPage() {
 
     return [
       { label: 'Mode', value: formatMode(content.mode) },
-      { label: 'Objectif', value: formatObjective(content.objective) },
-      { label: 'Posts generes', value: String(content.generatedPosts.length) },
+      { label: 'Objective', value: formatObjective(content.objective) },
+      { label: 'Generated posts', value: String(content.generatedPosts.length) },
       {
-        label: 'Frequence / semaine',
+        label: 'Frequency / week',
         value: content.campaignSummary?.postingPlan?.frequencyPerWeek
           ? String(content.campaignSummary.postingPlan.frequencyPerWeek)
           : '-',
@@ -214,7 +214,7 @@ export default function AdminContentDetailPage() {
     return (
       <div className="min-h-screen bg-slate-50 p-8">
         <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-8 text-slate-500 shadow-sm">
-          Chargement de la campagne content...
+          Loading content campaign...
         </div>
       </div>
     );
@@ -225,14 +225,14 @@ export default function AdminContentDetailPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
           <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-slate-900">Campagne introuvable</h2>
-          <p className="mb-6 text-slate-600">{error || 'Cette campagne est indisponible.'}</p>
+          <h2 className="mb-2 text-2xl font-bold text-slate-900">Campaign not found</h2>
+          <p className="mb-6 text-slate-600">{error || 'This campaign is unavailable.'}</p>
           <Link
             href="/admin/content"
             className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-white transition-colors hover:bg-slate-800"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour au contenu
+            Back to content
           </Link>
         </div>
       </div>
@@ -240,21 +240,21 @@ export default function AdminContentDetailPage() {
   }
 
   const infoItems: DetailItem[] = [
-    { label: 'Nom de campagne', value: content.name },
-    { label: 'Entreprise', value: content.user.companyName || '-' },
+    { label: 'Campaign name', value: content.name },
+    { label: 'Company', value: content.user.companyName || '-' },
     { label: 'Business source', value: content.strategy.businessName || '-' },
-    { label: 'Secteur', value: content.strategy.industry || '-' },
+    { label: 'Industry', value: content.strategy.industry || '-' },
     {
-      label: 'Plateformes',
+      label: 'Platforms',
       value: content.platforms.length > 0 ? content.platforms.join(', ') : '-',
     },
-    { label: 'Cree le', value: formatDate(content.createdAt) },
+    { label: 'Created', value: formatDate(content.createdAt) },
   ];
 
   const inputItems: DetailItem[] = [
-    { label: 'Offre produit', value: content.inputs?.productOffer || '-' },
-    { label: 'Audience cible', value: content.inputs?.targetAudience || '-' },
-    { label: 'Ton', value: content.inputs?.tone || '-' },
+    { label: 'Product offer', value: content.inputs?.productOffer || '-' },
+    { label: 'Target audience', value: content.inputs?.targetAudience || '-' },
+    { label: 'Tone', value: content.inputs?.tone || '-' },
     { label: 'Call to action', value: content.inputs?.callToAction || '-' },
     { label: 'Promo details', value: content.inputs?.promoDetails || '-' },
     { label: 'Budget', value: content.inputs?.budget ? String(content.inputs.budget) : '-' },
@@ -266,7 +266,7 @@ export default function AdminContentDetailPage() {
           : '-',
     },
     {
-      label: 'Periode',
+      label: 'Period',
       value:
         content.inputs?.startDate || content.inputs?.endDate
           ? `${formatDate(content.inputs?.startDate)} -> ${formatDate(content.inputs?.endDate)}`
@@ -315,19 +315,19 @@ export default function AdminContentDetailPage() {
                     </p>
                     <p className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      Cree le {formatDate(content.createdAt)}
+                      Created on {formatDate(content.createdAt)}
                     </p>
                     <p className="flex items-center">
                       <Clock className="mr-2 h-4 w-4" />
-                      Mise a jour le {formatDate(content.updatedAt)}
+                      Updated on {formatDate(content.updatedAt)}
                     </p>
                     <p className="flex items-center">
                       <Globe className="mr-2 h-4 w-4" />
-                      {content.platforms.length > 0 ? content.platforms.join(', ') : 'Aucune plateforme'}
+                      {content.platforms.length > 0 ? content.platforms.join(', ') : 'No platforms'}
                     </p>
                     <p className="flex items-center">
                       <Layers3 className="mr-2 h-4 w-4" />
-                      {content.generatedPosts.length} posts generes
+                      {content.generatedPosts.length} generated posts
                     </p>
                   </div>
                 </div>
@@ -339,7 +339,7 @@ export default function AdminContentDetailPage() {
               className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour a la liste
+              Back to list
             </Link>
           </div>
         </section>
@@ -357,7 +357,7 @@ export default function AdminContentDetailPage() {
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-slate-500" />
-              <h2 className="text-lg font-semibold text-slate-900">Informations generales</h2>
+              <h2 className="text-lg font-semibold text-slate-900">General information</h2>
             </div>
             <DetailGrid items={infoItems} />
           </article>
@@ -365,7 +365,7 @@ export default function AdminContentDetailPage() {
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-5 w-5 text-slate-500" />
-              <h2 className="text-lg font-semibold text-slate-900">Parametres de campagne</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Campaign settings</h2>
             </div>
             <DetailGrid items={inputItems} />
           </article>
@@ -374,7 +374,7 @@ export default function AdminContentDetailPage() {
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <Layers3 className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-900">Synthese IA</h2>
+              <h2 className="text-lg font-semibold text-slate-900">AI Summary</h2>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -390,10 +390,10 @@ export default function AdminContentDetailPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Posting plan</p>
               <p className="mt-2 text-sm text-slate-900">
                 {content.campaignSummary?.postingPlan?.frequencyPerWeek
-                  ? `${content.campaignSummary.postingPlan.frequencyPerWeek} posts/semaine`
+                  ? `${content.campaignSummary.postingPlan.frequencyPerWeek} posts/week`
                   : '-'}
                 {content.campaignSummary?.postingPlan?.durationWeeks
-                  ? ` sur ${content.campaignSummary.postingPlan.durationWeeks} semaines`
+                  ? ` over ${content.campaignSummary.postingPlan.durationWeeks} weeks`
                   : ''}
               </p>
             </article>
@@ -403,7 +403,7 @@ export default function AdminContentDetailPage() {
         <section className="mt-6 space-y-4">
           <div className="flex items-center gap-2">
             <Megaphone className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-900">Posts generes</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Generated posts</h2>
           </div>
 
           {content.generatedPosts.length > 0 ? (

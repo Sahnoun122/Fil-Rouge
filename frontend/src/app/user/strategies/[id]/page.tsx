@@ -35,8 +35,8 @@ type SectionItem = {
 
 const PHASE_CONFIG = {
   avant: {
-    label: 'Avant',
-    description: 'Attirer & Sensibiliser',
+    label: 'Before',
+    description: 'Attract & Raise Awareness',
     color: 'violet',
     bg: 'bg-violet-50',
     border: 'border-violet-200',
@@ -46,8 +46,8 @@ const PHASE_CONFIG = {
     icon: Target,
   },
   pendant: {
-    label: 'Pendant',
-    description: 'Convertir & Engager',
+    label: 'During',
+    description: 'Convert & Engage',
     color: 'indigo',
     bg: 'bg-indigo-50',
     border: 'border-indigo-200',
@@ -57,8 +57,8 @@ const PHASE_CONFIG = {
     icon: Zap,
   },
   apres: {
-    label: 'Après',
-    description: 'Fidéliser & Recommander',
+    label: 'After',
+    description: 'Retain & Recommend',
     color: 'purple',
     bg: 'bg-purple-50',
     border: 'border-purple-200',
@@ -74,7 +74,7 @@ const toLabel = (key: string) =>
 
 function RenderContent({ value, depth = 0 }: { value: unknown; depth?: number }) {
   if (value === null || value === undefined) {
-    return <p className="italic text-slate-400 text-sm">Contenu indisponible.</p>;
+    return <p className="italic text-slate-400 text-sm">Content unavailable.</p>;
   }
 
   if (typeof value === 'string') {
@@ -159,7 +159,7 @@ function StrategySectionCard({
   const rawText = getRawText(content);
 
   const handleRegenerate = () => {
-    if (window.confirm(`Voulez-vous régénérer la section "${title}" ?`)) {
+    if (window.confirm(`Do you want to regenerate the "${title}" section?`)) {
       onRegenerate(sectionKey, rawText);
     }
   };
@@ -194,7 +194,7 @@ function StrategySectionCard({
             className={`flex items-center gap-1.5 rounded-xl border ${cfg.border} ${cfg.bg} px-3 py-1.5 text-xs font-medium text-${cfg.color}-700 transition-all hover:shadow-sm disabled:opacity-50`}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
-            Régénérer
+            Regenerate
           </button>
         </div>
       </header>
@@ -272,15 +272,15 @@ export default function StrategyDetailPage() {
     if (!strategy?.generatedStrategy) return [];
 
     return [
-      { title: 'Marché cible', sectionKey: 'avant.marcheCible', content: strategy.generatedStrategy.avant?.marcheCible, phase: 'avant' },
-      { title: 'Message marketing', sectionKey: 'avant.messageMarketing', content: strategy.generatedStrategy.avant?.messageMarketing, phase: 'avant' },
-      { title: 'Canaux de communication', sectionKey: 'avant.canauxCommunication', content: strategy.generatedStrategy.avant?.canauxCommunication, phase: 'avant' },
-      { title: 'Capture de prospects', sectionKey: 'pendant.captureProspects', content: strategy.generatedStrategy.pendant?.captureProspects, phase: 'pendant' },
+      { title: 'Target Market', sectionKey: 'avant.marcheCible', content: strategy.generatedStrategy.avant?.marcheCible, phase: 'avant' },
+      { title: 'Marketing Message', sectionKey: 'avant.messageMarketing', content: strategy.generatedStrategy.avant?.messageMarketing, phase: 'avant' },
+      { title: 'Communication Channels', sectionKey: 'avant.canauxCommunication', content: strategy.generatedStrategy.avant?.canauxCommunication, phase: 'avant' },
+      { title: 'Lead Capture', sectionKey: 'pendant.captureProspects', content: strategy.generatedStrategy.pendant?.captureProspects, phase: 'pendant' },
       { title: 'Nurturing', sectionKey: 'pendant.nurturing', content: strategy.generatedStrategy.pendant?.nurturing, phase: 'pendant' },
       { title: 'Conversion', sectionKey: 'pendant.conversion', content: strategy.generatedStrategy.pendant?.conversion, phase: 'pendant' },
-      { title: 'Expérience client', sectionKey: 'apres.experienceClient', content: strategy.generatedStrategy.apres?.experienceClient, phase: 'apres' },
-      { title: 'Augmentation valeur client', sectionKey: 'apres.augmentationValeurClient', content: strategy.generatedStrategy.apres?.augmentationValeurClient, phase: 'apres' },
-      { title: 'Recommandation', sectionKey: 'apres.recommandation', content: strategy.generatedStrategy.apres?.recommandation, phase: 'apres' },
+      { title: 'Customer Experience', sectionKey: 'apres.experienceClient', content: strategy.generatedStrategy.apres?.experienceClient, phase: 'apres' },
+      { title: 'Customer Value Growth', sectionKey: 'apres.augmentationValeurClient', content: strategy.generatedStrategy.apres?.augmentationValeurClient, phase: 'apres' },
+      { title: 'Referral', sectionKey: 'apres.recommandation', content: strategy.generatedStrategy.apres?.recommandation, phase: 'apres' },
     ];
   }, [strategy]);
 
@@ -293,10 +293,10 @@ export default function StrategyDetailPage() {
     setIsDeleting(true);
     try {
       await deleteStrategy(strategyId);
-      toast.success('Stratégie supprimée avec succès');
+      toast.success('Strategy deleted successfully');
       router.push('/user/strategies');
     } catch {
-      toast.error('Erreur lors de la suppression');
+      toast.error('Error deleting strategy');
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
@@ -307,10 +307,10 @@ export default function StrategyDetailPage() {
     setIsRegenerating(sectionKey);
     try {
       await regenerateSection(strategyId, sectionKey, currentContent);
-      toast.success('Section régénérée avec succès');
+      toast.success('Section regenerated successfully');
       await loadStrategy(strategyId);
     } catch {
-      toast.error('Erreur lors de la régénération');
+      toast.error('Error regenerating section');
     } finally {
       setIsRegenerating(null);
     }
@@ -326,7 +326,7 @@ export default function StrategyDetailPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
-          <p className="text-sm font-medium text-slate-600">Chargement de la stratégie...</p>
+          <p className="text-sm font-medium text-slate-600">Loading strategy...</p>
         </div>
       </div>
     );
@@ -339,14 +339,14 @@ export default function StrategyDetailPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
-          <h2 className="mb-2 text-xl font-bold text-slate-900">Stratégie introuvable</h2>
-          <p className="mb-6 text-sm text-slate-600">{error || 'Cette stratégie est indisponible.'}</p>
+          <h2 className="mb-2 text-xl font-bold text-slate-900">Strategy not found</h2>
+          <p className="mb-6 text-sm text-slate-600">{error || 'This strategy is unavailable.'}</p>
           <Link
             href="/user/strategies"
             className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/25 transition-all hover:shadow-lg hover:shadow-violet-500/30"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour aux stratégies
+            Back to strategies
           </Link>
         </div>
       </div>
@@ -362,7 +362,7 @@ export default function StrategyDetailPage() {
           className="flex items-center gap-1.5 text-slate-500 transition-colors hover:text-violet-600"
         >
           <ArrowLeft className="h-4 w-4" />
-          Stratégies
+          Strategies
         </Link>
         <span className="text-slate-300">/</span>
         <span className="max-w-64 truncate font-medium text-slate-700">
@@ -413,14 +413,14 @@ export default function StrategyDetailPage() {
                 className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:bg-white/25"
               >
                 <RefreshCw className="h-4 w-4" />
-                Actualiser
+                Refresh
               </button>
               <Link
                 href={`/user/strategies/${strategy._id}/edit`}
                 className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:bg-white/25"
               >
                 <Edit className="h-4 w-4" />
-                Modifier
+                Edit
               </Link>
               <button
                 type="button"
@@ -429,7 +429,7 @@ export default function StrategyDetailPage() {
                 className="flex items-center gap-2 rounded-xl bg-red-500/80 px-4 py-2 text-sm font-medium text-white ring-1 ring-red-400/40 transition-all hover:bg-red-500 disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
-                Supprimer
+                Delete
               </button>
             </div>
           </div>
@@ -438,11 +438,11 @@ export default function StrategyDetailPage() {
           <div className="mt-6 flex flex-wrap items-center gap-6 border-t border-white/15 pt-5 text-sm text-violet-200">
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              Créée le {new Date(strategy.createdAt).toLocaleDateString('fr-FR')}
+              Created on {new Date(strategy.createdAt).toLocaleDateString('en-US')}
             </span>
             <span className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              Mise à jour le {new Date(strategy.updatedAt).toLocaleDateString('fr-FR')}
+              Updated on {new Date(strategy.updatedAt).toLocaleDateString('en-US')}
             </span>
           </div>
         </div>
@@ -458,8 +458,8 @@ export default function StrategyDetailPage() {
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900 group-hover:text-violet-700">Créer une analyse SWOT</p>
-            <p className="text-xs text-slate-500">Basée sur cette stratégie</p>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-violet-700">Create a SWOT analysis</p>
+            <p className="text-xs text-slate-500">Based on this strategy</p>
           </div>
         </Link>
 
@@ -471,8 +471,8 @@ export default function StrategyDetailPage() {
             <Wand2 className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700">Générer du contenu</p>
-            <p className="text-xs text-slate-500">Posts, articles, campagnes</p>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700">Generate content</p>
+            <p className="text-xs text-slate-500">Posts, articles, campaigns</p>
           </div>
         </Link>
 
@@ -484,8 +484,8 @@ export default function StrategyDetailPage() {
             <Eye className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900 group-hover:text-purple-700">Voir les SWOT liés</p>
-            <p className="text-xs text-slate-500">Analyses existantes</p>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-purple-700">View linked SWOT analyses</p>
+            <p className="text-xs text-slate-500">Existing analyses</p>
           </div>
         </Link>
       </div>
@@ -508,8 +508,8 @@ export default function StrategyDetailPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
             <Sparkles className="h-8 w-8 text-violet-400" />
           </div>
-          <p className="font-medium text-slate-700">Stratégie en cours de génération...</p>
-          <p className="mt-1 text-sm text-slate-500">Revenez dans quelques instants.</p>
+          <p className="font-medium text-slate-700">Strategy is being generated...</p>
+          <p className="mt-1 text-sm text-slate-500">Check back in a few moments.</p>
         </div>
       )}
 
@@ -520,11 +520,11 @@ export default function StrategyDetailPage() {
             <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
               <Trash2 className="h-7 w-7 text-red-500" />
             </div>
-            <h3 className="mb-2 text-xl font-bold text-slate-900">Supprimer la stratégie</h3>
+            <h3 className="mb-2 text-xl font-bold text-slate-900">Delete strategy</h3>
             <p className="mb-6 text-sm text-slate-600">
-              Êtes-vous sûr de vouloir supprimer{' '}
-              <span className="font-semibold text-slate-900">{strategy.businessInfo.businessName}</span> ?
-              Cette action est irréversible.
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-slate-900">{strategy.businessInfo.businessName}</span>?
+              This action is irreversible.
             </p>
             <div className="flex gap-3">
               <button
@@ -532,7 +532,7 @@ export default function StrategyDetailPage() {
                 onClick={() => setShowDeleteModal(false)}
                 className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="button"
@@ -540,7 +540,7 @@ export default function StrategyDetailPage() {
                 disabled={isDeleting}
                 className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-red-500/25 transition-all hover:bg-red-700 disabled:opacity-60"
               >
-                {isDeleting ? 'Suppression...' : 'Supprimer'}
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

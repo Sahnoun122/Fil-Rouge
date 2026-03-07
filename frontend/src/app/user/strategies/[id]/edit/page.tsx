@@ -65,16 +65,16 @@ export default function EditStrategyPage() {
   const handleSubmit = async (data: BusinessInfo) => {
     try {
       await updateStrategy(strategyId, data);
-      toast.success('StratÃ©gie mise Ã  jour avec succÃ¨s !');
+      toast.success('Strategy updated successfully!');
       router.push(`/user/strategies/${strategyId}`);
     } catch (error: any) {
-      console.error('Erreur lors de la mise Ã  jour:', error);
-      toast.error(error.message || 'Erreur lors de la mise Ã  jour de la stratÃ©gie');
+      console.error('Error updating strategy:', error);
+      toast.error(error.message || 'Error updating strategy');
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -94,17 +94,17 @@ export default function EditStrategyPage() {
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              StratÃ©gie introuvable
+              Strategy not found
             </h2>
             <p className="text-gray-600 mb-6">
-              {error || 'Cette stratÃ©gie n\'existe pas ou a Ã©tÃ© supprimÃ©e.'}
+              {error || 'This strategy does not exist or has been deleted.'}
             </p>
             <Link
               href="/user/strategies"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour aux stratÃ©gies
+              Back to strategies
             </Link>
           </div>
         </div>
@@ -119,17 +119,17 @@ export default function EditStrategyPage() {
         {/* Navigation */}
         <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
           <Link href="/user/strategies" className="hover:text-gray-700 transition-colors">
-            StratÃ©gies
+            Strategies
           </Link>
-          <span>â€¢</span>
+          <span>•</span>
           <Link 
             href={`/user/strategies/${strategy._id}`} 
             className="hover:text-gray-700 transition-colors truncate max-w-64"
           >
             {strategy.businessInfo.businessName}
           </Link>
-          <span>â€¢</span>
-          <span className="text-gray-900 font-medium">Modifier</span>
+          <span>•</span>
+          <span className="text-gray-900 font-medium">Edit</span>
         </nav>
 
         {/* Header */}
@@ -142,15 +142,15 @@ export default function EditStrategyPage() {
                 </div>
                 <div className="flex-1">
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-                    Modifier la stratÃ©gie
+                    Edit Strategy
                   </h1>
                   <p className="text-gray-600 text-lg mb-4">
-                    {strategy.businessInfo.businessName} â€¢ {strategy.businessInfo.industry}
+                    {strategy.businessInfo.businessName} • {strategy.businessInfo.industry}
                   </p>
                   
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="w-4 h-4 mr-1" />
-                    CrÃ©Ã©e le {formatDate(strategy.createdAt)}
+                    Created on {formatDate(strategy.createdAt)}
                   </div>
                 </div>
               </div>
@@ -163,7 +163,7 @@ export default function EditStrategyPage() {
                 className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4 mr-2" />
-                Annuler
+                Cancel
               </Link>
             </div>
           </div>
@@ -173,10 +173,10 @@ export default function EditStrategyPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Informations Business
+              Business Information
             </h2>
             <p className="text-gray-600">
-              Modifiez les informations de votre entreprise. Les sections de stratÃ©gie seront automatiquement rÃ©gÃ©nÃ©rÃ©es si nÃ©cessaire.
+              Update your business details. Strategy sections will be automatically regenerated if needed.
             </p>
           </div>
 
@@ -193,20 +193,20 @@ export default function EditStrategyPage() {
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-amber-900 font-semibold mb-2">
-                Important Ã  savoir
+                Important to know
               </h3>
               <div className="text-amber-800 text-sm space-y-2">
                 <p>
-                  â€¢ La modification des informations business peut nÃ©cessiter la rÃ©gÃ©nÃ©ration de certaines sections de votre stratÃ©gie.
+                  • Modifying business information may require regeneration of some strategy sections.
                 </p>
                 <p>
-                  â€¢ Les sections rÃ©gÃ©nÃ©rÃ©es remplaceront le contenu existant.
+                  • Regenerated sections will replace the existing content.
                 </p>
                 <p>
-                  â€¢ Vous pourrez toujours rÃ©gÃ©nÃ©rer individuellement chaque section depuis la page de dÃ©tails.
+                  • You can always regenerate each section individually from the details page.
                 </p>
                 <p>
-                  â€¢ L'historique des versions prÃ©cÃ©dentes ne sera pas conservÃ©.
+                  • The history of previous versions will not be retained.
                 </p>
               </div>
             </div>

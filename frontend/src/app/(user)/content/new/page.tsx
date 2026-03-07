@@ -31,35 +31,35 @@ interface StrategiesListResponse {
 }
 
 const toneOptions: Array<{ label: string; value: ToneValue }> = [
-  { label: 'Amical', value: 'friendly' },
-  { label: 'Professionnel', value: 'professional' },
-  { label: 'Luxe', value: 'luxury' },
-  { label: 'Jeune', value: 'young' },
+  { label: 'Friendly', value: 'friendly' },
+  { label: 'Professional', value: 'professional' },
+  { label: 'Luxury', value: 'luxury' },
+  { label: 'Young', value: 'young' },
 ];
 
 const platformOptions = [
-  { label: 'Instagram', value: 'Instagram', helper: 'Reels, carrousels, posts sponsorises' },
-  { label: 'Facebook', value: 'Facebook', helper: 'Posts, campagnes conversion et trafic' },
-  { label: 'TikTok', value: 'TikTok', helper: 'Videos courtes, ads verticales, captions natives' },
-  { label: 'LinkedIn', value: 'LinkedIn', helper: 'Expertise, B2B, lead gen et brand content' },
-  { label: 'YouTube', value: 'YouTube', helper: 'Shorts, video ads et descriptions video' },
-  { label: 'X', value: 'X', helper: 'Messages courts, threads sponsorises ou organiques' },
-  { label: 'Snapchat', value: 'Snapchat', helper: 'Stories, format mobile rapide, ads natives' },
-  { label: 'Pinterest', value: 'Pinterest', helper: 'Pins, inspiration visuelle et trafic evergreen' },
-  { label: 'Threads', value: 'Threads', helper: 'Conversationnel, communautaire, contenu rapide' },
+  { label: 'Instagram', value: 'Instagram', helper: 'Reels, carousels, sponsored posts' },
+  { label: 'Facebook', value: 'Facebook', helper: 'Posts, conversion and traffic campaigns' },
+  { label: 'TikTok', value: 'TikTok', helper: 'Short videos, vertical ads, native captions' },
+  { label: 'LinkedIn', value: 'LinkedIn', helper: 'Expertise, B2B, lead gen and brand content' },
+  { label: 'YouTube', value: 'YouTube', helper: 'Shorts, video ads and video descriptions' },
+  { label: 'X', value: 'X', helper: 'Short messages, sponsored or organic threads' },
+  { label: 'Snapchat', value: 'Snapchat', helper: 'Stories, fast mobile format, native ads' },
+  { label: 'Pinterest', value: 'Pinterest', helper: 'Pins, visual inspiration and evergreen traffic' },
+  { label: 'Threads', value: 'Threads', helper: 'Conversational, community-driven, quick content' },
 ];
 
 const formSchema = z
   .object({
-    strategyId: z.string().min(1, 'La strategie est obligatoire'),
+    strategyId: z.string().min(1, 'Strategy is required'),
     mode: z.enum(['ADS', 'CONTENT_MARKETING']),
-    name: z.string().max(120, '120 caracteres maximum').optional(),
-    callToAction: z.string().max(280, '280 caracteres maximum').optional(),
+    name: z.string().max(120, 'Maximum 120 characters').optional(),
+    callToAction: z.string().max(280, 'Maximum 280 characters').optional(),
     tone: z.union([z.enum(['friendly', 'professional', 'luxury', 'young']), z.literal('')]).optional(),
-    productOffer: z.string().max(500, '500 caracteres maximum').optional(),
-    targetAudience: z.string().max(500, '500 caracteres maximum').optional(),
-    platforms: z.array(z.string()).min(1, 'Choisissez au moins une plateforme'),
-    promoDetails: z.string().max(1000, '1000 caracteres maximum').optional(),
+    productOffer: z.string().max(500, 'Maximum 500 characters').optional(),
+    targetAudience: z.string().max(500, 'Maximum 500 characters').optional(),
+    platforms: z.array(z.string()).min(1, 'Select at least one platform'),
+    promoDetails: z.string().max(1000, 'Maximum 1000 characters').optional(),
     budget: z.string().optional(),
     frequencyPerWeek: z.string().optional(),
     startDate: z.string().optional(),
@@ -71,7 +71,7 @@ const formSchema = z
       if (!Number.isInteger(parsedFrequency) || parsedFrequency < 1 || parsedFrequency > 21) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'La frequence par semaine est obligatoire',
+          message: 'Weekly frequency is required',
           path: ['frequencyPerWeek'],
         });
       }
@@ -82,7 +82,7 @@ const formSchema = z
       if (!Number.isFinite(parsedBudget) || parsedBudget < 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Le budget doit etre un nombre positif',
+          message: 'Budget must be a positive number',
           path: ['budget'],
         });
       }
@@ -91,7 +91,7 @@ const formSchema = z
     if (value.startDate && value.endDate && value.endDate < value.startDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'La date de fin doit etre posterieure a la date de debut',
+        message: 'End date must be after start date',
         path: ['endDate'],
       });
     }
@@ -158,7 +158,7 @@ export default function NewContentCampaignPage() {
 
         setStrategies(response.data?.strategies ?? []);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Erreur de chargement des strategies');
+        toast.error(error instanceof Error ? error.message : 'Failed to load strategies');
       } finally {
         setIsLoadingStrategies(false);
       }
@@ -221,13 +221,13 @@ export default function NewContentCampaignPage() {
 
       const createdId = response.data?._id;
       if (!createdId) {
-        throw new Error('Creation effectuee mais identifiant introuvable');
+        throw new Error('Created but ID not found');
       }
 
-      toast.success('Campagne content creee avec succes');
+      toast.success('Content campaign created successfully');
       router.push(`/user/content/${createdId}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de la creation');
+      toast.error(error instanceof Error ? error.message : 'Error while creating');
     } finally {
       setIsSubmitting(false);
     }
@@ -241,12 +241,12 @@ export default function NewContentCampaignPage() {
           className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour aux campagnes
+          Back to campaigns
         </Link>
 
-        <h1 className="mt-3 text-3xl font-bold text-slate-900">Nouvelle campagne Content</h1>
+        <h1 className="mt-3 text-3xl font-bold text-slate-900">New Content Campaign</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Configurez votre campagne puis lancez la generation de contenu.
+          Configure your campaign and launch content generation.
         </p>
       </section>
 
@@ -254,13 +254,13 @@ export default function NewContentCampaignPage() {
         <article className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Strategie *</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Strategy *</label>
               <select
                 {...register('strategyId')}
                 disabled={isLoadingStrategies}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 disabled:bg-slate-100"
               >
-                <option value="">{isLoadingStrategies ? 'Chargement...' : 'Selectionnez une strategie'}</option>
+                <option value="">{isLoadingStrategies ? 'Loading...' : 'Select a strategy'}</option>
                 {strategies.map((strategy) => (
                   <option key={strategy._id} value={strategy._id}>
                     {strategy.businessInfo.businessName} - {strategy.businessInfo.industry}
@@ -284,10 +284,10 @@ export default function NewContentCampaignPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Nom (optionnel)</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Name (optional)</label>
               <input
                 {...register('name')}
-                placeholder="Ex: Lancement ete 2026"
+                placeholder="Ex: Summer launch 2026"
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               />
               {errors.name ? <p className="mt-1 text-xs text-rose-600">{errors.name.message}</p> : null}
@@ -310,7 +310,7 @@ export default function NewContentCampaignPage() {
                 {...register('tone')}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               >
-                <option value="">Selectionnez un ton</option>
+                <option value="">Select a tone</option>
                 {toneOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -339,8 +339,8 @@ export default function NewContentCampaignPage() {
 
             <div className="md:col-span-2">
               <div className="mb-1.5 flex items-center justify-between gap-3">
-                <label className="block text-sm font-medium text-slate-700">Plateformes *</label>
-                <span className="text-xs text-slate-500">{selectedPlatforms.length} selectionnee(s)</span>
+                <label className="block text-sm font-medium text-slate-700">Platforms *</label>
+                <span className="text-xs text-slate-500">{selectedPlatforms.length} selected</span>
               </div>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {platformOptions.map((platform) => {
@@ -447,25 +447,25 @@ export default function NewContentCampaignPage() {
 
         <aside className="space-y-4">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-500">Recap</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-500">Summary</h2>
             <ul className="mt-3 space-y-2 text-sm text-slate-700">
               <li>
                 Mode: <span className="font-semibold text-slate-900">{mode}</span>
               </li>
               <li>
-                Strategie:{' '}
+                Strategy:{' '}
                 <span className="font-semibold text-slate-900">
-                  {selectedStrategy?.businessInfo.businessName || 'Non selectionnee'}
+                  {selectedStrategy?.businessInfo.businessName || 'Not selected'}
                 </span>
               </li>
               <li>
-                Plateformes:{' '}
+                Platforms:{' '}
                 <span className="font-semibold text-slate-900">
-                  {selectedPlatforms.length > 0 ? selectedPlatforms.join(', ') : 'Aucune'}
+                  {selectedPlatforms.length > 0 ? selectedPlatforms.join(', ') : 'None'}
                 </span>
               </li>
               <li>
-                Secteur:{' '}
+                Industry:{' '}
                 <span className="font-semibold text-slate-900">
                   {selectedStrategy?.businessInfo.industry || '-'}
                 </span>
@@ -479,7 +479,7 @@ export default function NewContentCampaignPage() {
               Creation
             </p>
             <p className="mt-3 text-sm text-cyan-900">
-              La campagne sera creee puis redirigee vers sa page de details.
+              Campaign will be created and redirected to its details page.
             </p>
           </article>
 
@@ -491,10 +491,10 @@ export default function NewContentCampaignPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creation...
+                Creating...
               </>
             ) : (
-              'Creer la campagne'
+              'Create campaign'
             )}
           </button>
         </aside>

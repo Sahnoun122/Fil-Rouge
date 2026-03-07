@@ -23,7 +23,7 @@ type SectionItem = {
 
 const formatSectionContent = (value: unknown): string => {
   if (value === null || value === undefined) {
-    return 'Contenu indisponible pour cette section.';
+    return 'Content unavailable for this section.';
   }
 
   if (typeof value === 'string') {
@@ -37,22 +37,22 @@ const formatSectionContent = (value: unknown): string => {
   try {
     return JSON.stringify(value, null, 2);
   } catch {
-    return 'Contenu indisponible pour cette section.';
+    return 'Content unavailable for this section.';
   }
 };
 
 const OBJECTIVE_LABELS: Record<string, string> = {
   leads: 'Leads',
-  sales: 'Ventes',
-  awareness: 'Notoriete',
+  sales: 'Sales',
+  awareness: 'Awareness',
   engagement: 'Engagement',
 };
 
 const TONE_LABELS: Record<string, string> = {
-  friendly: 'Amical',
-  professional: 'Professionnel',
-  luxury: 'Luxe',
-  young: 'Jeune',
+  friendly: 'Friendly',
+  professional: 'Professional',
+  luxury: 'Luxury',
+  young: 'Young',
 };
 
 interface StrategySectionCardProps {
@@ -111,22 +111,22 @@ export default function AdminStrategyDetailPage() {
 
     return [
       {
-        title: 'Marche cible',
+      { title: 'Target Market',
         sectionKey: 'avant.marcheCible',
         content: strategy.generatedStrategy.avant?.marcheCible,
       },
       {
-        title: 'Message marketing',
+      { title: 'Marketing Message',
         sectionKey: 'avant.messageMarketing',
         content: strategy.generatedStrategy.avant?.messageMarketing,
       },
       {
-        title: 'Canaux de communication',
+      { title: 'Communication Channels',
         sectionKey: 'avant.canauxCommunication',
         content: strategy.generatedStrategy.avant?.canauxCommunication,
       },
       {
-        title: 'Capture de prospects',
+      { title: 'Lead Capture',
         sectionKey: 'pendant.captureProspects',
         content: strategy.generatedStrategy.pendant?.captureProspects,
       },
@@ -141,17 +141,17 @@ export default function AdminStrategyDetailPage() {
         content: strategy.generatedStrategy.pendant?.conversion,
       },
       {
-        title: 'Experience client',
+      { title: 'Customer Experience',
         sectionKey: 'apres.experienceClient',
         content: strategy.generatedStrategy.apres?.experienceClient,
       },
       {
-        title: 'Augmentation valeur client',
+      { title: 'Customer Value Growth',
         sectionKey: 'apres.augmentationValeurClient',
         content: strategy.generatedStrategy.apres?.augmentationValeurClient,
       },
       {
-        title: 'Recommandation',
+      { title: 'Referral',
         sectionKey: 'apres.recommandation',
         content: strategy.generatedStrategy.apres?.recommandation,
       },
@@ -162,7 +162,7 @@ export default function AdminStrategyDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="mx-auto max-w-4xl rounded-xl border border-gray-200 bg-white p-8 text-gray-500">
-          Chargement de la strategie...
+          Loading strategy...
         </div>
       </div>
     );
@@ -173,14 +173,14 @@ export default function AdminStrategyDetailPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
           <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-gray-900">Strategie introuvable</h2>
-          <p className="mb-6 text-gray-600">{error || 'Cette strategie est indisponible.'}</p>
+          <h2 className="mb-2 text-2xl font-bold text-gray-900">Strategy not found</h2>
+          <p className="mb-6 text-gray-600">{error || 'This strategy is unavailable.'}</p>
           <Link
             href="/admin/strategies"
             className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-white transition-colors hover:bg-slate-800"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour aux strategies
+            Back to strategies
           </Link>
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function AdminStrategyDetailPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-6 flex items-center space-x-2 text-sm text-gray-500">
           <Link href="/admin/strategies" className="transition-colors hover:text-gray-700">
-            Strategies admin
+            Admin strategies
           </Link>
           <span>-</span>
           <span className="max-w-64 truncate font-medium text-gray-900">{strategy.businessInfo.businessName}</span>
@@ -231,11 +231,11 @@ export default function AdminStrategyDetailPage() {
                 </p>
                 <p className="flex items-center">
                   <Calendar className="mr-2 h-4 w-4" />
-                  Creee le {new Date(strategy.createdAt).toLocaleDateString('fr-FR')}
+                  Created on {new Date(strategy.createdAt).toLocaleDateString('en-US')}
                 </p>
                 <p className="flex items-center">
                   <Clock className="mr-2 h-4 w-4" />
-                  Mise a jour le {new Date(strategy.updatedAt).toLocaleDateString('fr-FR')}
+                  Updated on {new Date(strategy.updatedAt).toLocaleDateString('en-US')}
                 </p>
               </div>
             </div>
@@ -246,7 +246,7 @@ export default function AdminStrategyDetailPage() {
                 className="flex items-center rounded-lg border border-slate-300 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour a la liste
+                Back to list
               </Link>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function AdminStrategyDetailPage() {
             ))
           ) : (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-600">
-              Strategie en cours de generation.
+              Strategy is being generated.
             </div>
           )}
         </section>

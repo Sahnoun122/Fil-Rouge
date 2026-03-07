@@ -40,17 +40,17 @@ export default function DebugTokensPage() {
 
   const testTokens = (accessToken: string, refreshToken: string) => {
     if (!accessToken || !refreshToken) {
-      alert('Veuillez entrer les tokens');
+      alert('Please enter the tokens');
       return;
     }
     
     TokenManager.setTokens(accessToken, refreshToken);
     refreshTokenInfo();
-    alert('Tokens sauvés ! Vérifiez les logs.');
+    alert('Tokens saved! Check the logs.');
   };
 
   if (process.env.NODE_ENV === 'production') {
-    return <div className="p-8 text-center">Cette page n'est disponible qu'en développement.</div>;
+    return <div className="p-8 text-center">This page is only available in development.</div>;
   }
 
   return (
@@ -59,18 +59,18 @@ export default function DebugTokensPage() {
       
       {/* État actuel */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">État actuel des tokens</h2>
+        <h2 className="text-xl font-semibold mb-4">Current token state</h2>
         <div className="space-y-2">
           <div>
             <strong>Access Token:</strong>
             <p className="font-mono text-sm bg-gray-100 p-2 rounded mt-1 break-all">
-              {accessToken || 'Aucun token'}
+              {accessToken || 'No token'}
             </p>
           </div>
           <div>
             <strong>Refresh Token:</strong>
             <p className="font-mono text-sm bg-gray-100 p-2 rounded mt-1 break-all">
-              {refreshToken || 'Aucun token'}
+              {refreshToken || 'No token'}
             </p>
           </div>
         </div>
@@ -80,23 +80,23 @@ export default function DebugTokensPage() {
             onClick={refreshTokenInfo}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            🔄 Rafraîchir
+            🔄 Refresh
           </button>
           <button
             onClick={clearTokens}
             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
-            🗑️ Supprimer tokens
+            🗑️ Delete tokens
           </button>
         </div>
       </div>
 
       {/* Test manual */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Test manuel</h2>
+        <h2 className="text-xl font-semibold mb-4">Manual test</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Access Token de test:</label>
+            <label className="block text-sm font-medium mb-1">Test access token:</label>
             <input
               type="text"
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -105,7 +105,7 @@ export default function DebugTokensPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Refresh Token de test:</label>
+            <label className="block text-sm font-medium mb-1">Test refresh token:</label>
             <input
               type="text"
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -121,27 +121,27 @@ export default function DebugTokensPage() {
             }}
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           >
-            💾 Sauver tokens de test
+            💾 Save test tokens
           </button>
         </div>
       </div>
 
       {/* Diagnostic */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Diagnostic localStorage</h2>
+        <h2 className="text-xl font-semibold mb-4">localStorage Diagnostic</h2>
         <pre className="font-mono text-sm bg-gray-100 p-4 rounded overflow-auto max-h-64">
-          {diagnosticInfo || 'Cliquez sur "Rafraîchir" pour voir le diagnostic'}
+          {diagnosticInfo || 'Click "Refresh" to see the diagnostic'}
         </pre>
       </div>
 
       {/* Instructions */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mt-6">
-        <h3 className="font-semibold text-yellow-800 mb-2">🛠️ Instructions de debugging:</h3>
+        <h3 className="font-semibold text-yellow-800 mb-2">🛠️ Debugging instructions:</h3>
         <ol className="list-decimal list-inside space-y-1 text-sm text-yellow-700">
-          <li>Ouvrez la console du navigateur (F12)</li>
-          <li>Utilisez <code className="bg-yellow-100 px-1 rounded">diagnoseTokens()</code> pour voir l'état détaillé</li>
-          <li>Utilisez <code className="bg-yellow-100 px-1 rounded">TokenManager.setTokens('access', 'refresh')</code> pour tester</li>
-          <li>Regardez les logs lors du login/register pour voir ce qui se passe</li>
+          <li>Open the browser console (F12)</li>
+          <li>Use <code className="bg-yellow-100 px-1 rounded">diagnoseTokens()</code> to see the detailed state</li>
+          <li>Use <code className="bg-yellow-100 px-1 rounded">TokenManager.setTokens('access', 'refresh')</code> to test</li>
+          <li>Watch the logs during login/register to see what happens</li>
         </ol>
       </div>
     </div>

@@ -115,7 +115,7 @@ function scheduleText(
   schedule?: ContentCampaign["generatedPosts"][number]["schedule"],
 ) {
   if (!schedule?.date || !schedule?.time) {
-    return "Non planifie";
+    return "Not scheduled";
   }
 
   return `${schedule.date} ${schedule.time}`;
@@ -123,7 +123,7 @@ function scheduleText(
 
 function formatDateTime(value?: string): string {
   if (!value) return "-";
-  return new Date(value).toLocaleString("fr-FR", {
+  return new Date(value).toLocaleString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -173,7 +173,7 @@ function PostCard({ post, mode }: { post: PostWithIndex; mode: string }) {
               className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
             >
               {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {expanded ? "Réduire" : "Détails"}
+              {expanded ? "Collapse" : "Details"}
             </button>
           )}
         </div>
@@ -186,7 +186,7 @@ function PostCard({ post, mode }: { post: PostWithIndex; mode: string }) {
           <div>
             <div className="mb-1 flex items-center gap-1.5">
               <Type className="h-3.5 w-3.5 text-slate-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Titre</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Title</span>
             </div>
             <p className="text-base font-bold text-slate-900">{post.title}</p>
           </div>
@@ -247,13 +247,13 @@ function PostCard({ post, mode }: { post: PostWithIndex; mode: string }) {
             <div>
               <div className="mb-2 flex items-center gap-1.5">
                 <Eye className="h-3.5 w-3.5 text-purple-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Variantes A/B/C</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">A/B/C Variants</span>
               </div>
               <div className="space-y-2">
                 {[
-                  { label: "A — Émotion", value: post.adCopyVariantA, color: "border-purple-100 bg-purple-50 text-purple-900" },
-                  { label: "B — Bénéfice", value: post.adCopyVariantB, color: "border-blue-100 bg-blue-50 text-blue-900" },
-                  { label: "C — Urgence", value: post.adCopyVariantC, color: "border-rose-100 bg-rose-50 text-rose-900" },
+                  { label: "A — Emotion", value: post.adCopyVariantA, color: "border-purple-100 bg-purple-50 text-purple-900" },
+                  { label: "B — Benefit", value: post.adCopyVariantB, color: "border-blue-100 bg-blue-50 text-blue-900" },
+                  { label: "C — Urgency", value: post.adCopyVariantC, color: "border-rose-100 bg-rose-50 text-rose-900" },
                 ].map(({ label, value, color }) =>
                   value ? (
                     <div key={label} className={`rounded-xl border px-4 py-3 ${color}`}>
@@ -271,7 +271,7 @@ function PostCard({ post, mode }: { post: PostWithIndex; mode: string }) {
             <div>
               <div className="mb-1 flex items-center gap-1.5">
                 <MonitorPlay className="h-3.5 w-3.5 text-cyan-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Visuel suggéré</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Suggested visual</span>
               </div>
               <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-2.5 text-sm text-cyan-800">
                 {post.suggestedVisual}
@@ -362,19 +362,19 @@ export default function ContentCampaignDetailPage() {
       await generateCampaign(campaignId, {
         instruction: generateInstruction.trim() || undefined,
       });
-      toast.success("Contenu genere avec succes");
+      toast.success("Content generated successfully");
     } catch (requestError) {
       toast.error(
         requestError instanceof Error
           ? requestError.message
-          : "Erreur de generation",
+          : "Generation error",
       );
     }
   };
 
   const handleRegeneratePlatform = async () => {
     if (!campaignId || !platformToRegenerate) {
-      toast.error("Selectionnez une plateforme");
+      toast.error("Select a platform");
       return;
     }
 
@@ -383,12 +383,12 @@ export default function ContentCampaignDetailPage() {
         platform: platformToRegenerate,
         instruction: platformInstruction.trim() || undefined,
       });
-      toast.success(`Posts ${platformToRegenerate} regeneres`);
+      toast.success(`${platformToRegenerate} posts regenerated`);
     } catch (requestError) {
       toast.error(
         requestError instanceof Error
           ? requestError.message
-          : "Erreur de regeneration plateforme",
+          : "Platform regeneration error",
       );
     }
   };
@@ -398,7 +398,7 @@ export default function ContentCampaignDetailPage() {
     const index = Number(postIndexInput);
 
     if (!Number.isInteger(index) || index < 0) {
-      toast.error("Index de post invalide");
+      toast.error("Invalid post index");
       return;
     }
 
@@ -407,12 +407,12 @@ export default function ContentCampaignDetailPage() {
         index,
         instruction: postInstruction.trim() || undefined,
       });
-      toast.success(`Post #${index} regenere`);
+      toast.success(`Post #${index} regenerated`);
     } catch (requestError) {
       toast.error(
         requestError instanceof Error
           ? requestError.message
-          : "Erreur de regeneration du post",
+          : "Post regeneration error",
       );
     }
   };
@@ -428,13 +428,13 @@ export default function ContentCampaignDetailPage() {
         campaignId,
         buildAutoSchedulePayload(campaign),
       );
-      toast.success("Planning genere. Redirection vers le calendrier...");
+      toast.success("Schedule generated. Redirecting to calendar...");
       router.push(`/calendar?campaignId=${campaign._id}`);
     } catch (requestError) {
       toast.error(
         requestError instanceof Error
           ? requestError.message
-          : "Erreur lors de la generation du planning",
+          : "Error generating schedule",
       );
     } finally {
       setIsScheduling(false);
@@ -448,16 +448,16 @@ export default function ContentCampaignDetailPage() {
   if (!campaign) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
-        <h1 className="text-xl font-bold text-rose-700">Campagne introuvable</h1>
+        <h1 className="text-xl font-bold text-rose-700">Campaign not found</h1>
         <p className="mt-2 text-sm text-rose-600">
-          {error || "Cette campagne n'est plus accessible."}
+          {error || "This campaign is no longer accessible."}
         </p>
         <Link
           href="/user/content"
           className="mt-4 inline-flex items-center rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Retour
+          Back
         </Link>
       </div>
     );
@@ -488,10 +488,10 @@ export default function ContentCampaignDetailPage() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900"
             >
               <ArrowLeft className="h-4 w-4" />
-              Retour aux campagnes
+              Back to campaigns
             </Link>
             <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-400">
-              Campagne content
+              Content campaign
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
               {campaign.name}
@@ -516,7 +516,7 @@ export default function ContentCampaignDetailPage() {
             className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
-            Nouvelle campagne
+            New campaign
           </Link>
         </div>
       </section>
@@ -528,7 +528,7 @@ export default function ContentCampaignDetailPage() {
             <Hash className="h-4 w-4 text-cyan-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Posts générés</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Generated posts</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">{posts.length}</p>
           </div>
         </article>
@@ -537,7 +537,7 @@ export default function ContentCampaignDetailPage() {
             <CalendarCheck2 className="h-4 w-4 text-emerald-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Planifiés</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Scheduled</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">{scheduledCount}</p>
           </div>
         </article>
@@ -546,7 +546,7 @@ export default function ContentCampaignDetailPage() {
             <Zap className="h-4 w-4 text-purple-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Fréquence / sem.</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Frequency / week</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">
               {campaign.campaignSummary?.postingPlan?.frequencyPerWeek ?? "-"}
             </p>
@@ -557,7 +557,7 @@ export default function ContentCampaignDetailPage() {
             <Clock className="h-4 w-4 text-amber-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Mise à jour</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Last updated</p>
             <p className="mt-0.5 text-sm font-bold text-slate-900">{formatDateTime(campaign.updatedAt)}</p>
           </div>
         </article>
@@ -568,14 +568,14 @@ export default function ContentCampaignDetailPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-widest text-cyan-600">
-              Planification automatique
+              Automatic scheduling
             </p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">
-              Générer le planning et travailler dans le calendrier
+              Generate schedule and work in the calendar
             </h2>
             <p className="mt-1.5 text-sm leading-6 text-slate-600">
-              Un seul clic applique les heuristiques de planification,
-              enregistre les horaires et synchronise avec le calendrier.
+              A single click applies scheduling heuristics,
+              saves the schedules and syncs with the calendar.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -590,7 +590,7 @@ export default function ContentCampaignDetailPage() {
               ) : (
                 <CalendarDays className="mr-2 h-4 w-4" />
               )}
-              Générer un planning
+              Generate schedule
             </button>
             <button
               type="button"
@@ -598,7 +598,7 @@ export default function ContentCampaignDetailPage() {
               className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               <CalendarDays className="mr-2 h-4 w-4" />
-              Ouvrir le calendrier
+              Open calendar
             </button>
           </div>
         </div>
@@ -609,9 +609,9 @@ export default function ContentCampaignDetailPage() {
         {/* Tab bar */}
         <div className="flex border-b border-slate-100 bg-slate-50/60">
           {([
-            { id: "global", label: "Générer", icon: Bot },
-            { id: "platform", label: "Par plateforme", icon: RefreshCcw },
-            { id: "post", label: "Par post", icon: FileText },
+            { id: "global", label: "Generate", icon: Bot },
+            { id: "platform", label: "By platform", icon: RefreshCcw },
+            { id: "post", label: "By post", icon: FileText },
           ] as const).map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -633,14 +633,14 @@ export default function ContentCampaignDetailPage() {
           {aiTab === "global" && (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Génération globale</p>
-                <p className="mt-0.5 text-sm text-slate-500">Génère tous les posts pour l'ensemble des plateformes sélectionnées.</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Global generation</p>
+                <p className="mt-0.5 text-sm text-slate-500">Generates all posts for all selected platforms.</p>
               </div>
               <textarea
                 value={generateInstruction}
                 onChange={(event) => setGenerateInstruction(event.target.value)}
                 rows={3}
-                placeholder="Instruction optionnelle (ex: accent sur la conversion mobile)…"
+                placeholder="Optional instruction (e.g., focus on mobile conversion)…"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
               />
               <button
@@ -654,7 +654,7 @@ export default function ContentCampaignDetailPage() {
                 ) : (
                   <Bot className="mr-2 h-4 w-4" />
                 )}
-                Générer le contenu
+                Generate content
               </button>
             </div>
           )}
@@ -662,15 +662,15 @@ export default function ContentCampaignDetailPage() {
           {aiTab === "platform" && (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Régénérer une plateforme</p>
-                <p className="mt-0.5 text-sm text-slate-500">Régénère tous les posts d'une plateforme spécifique.</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Regenerate a platform</p>
+                <p className="mt-0.5 text-sm text-slate-500">Regenerates all posts for a specific platform.</p>
               </div>
               <select
                 value={platformToRegenerate}
                 onChange={(event) => setPlatformToRegenerate(event.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               >
-                <option value="">Sélectionnez une plateforme</option>
+                <option value="">Select a platform</option>
                 {campaign.platforms.map((platform) => (
                   <option key={platform} value={platform}>{platform}</option>
                 ))}
@@ -679,7 +679,7 @@ export default function ContentCampaignDetailPage() {
                 value={platformInstruction}
                 onChange={(event) => setPlatformInstruction(event.target.value)}
                 rows={2}
-                placeholder="Instruction optionnelle pour la plateforme…"
+                placeholder="Optional instruction for this platform…"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
               />
               <button
@@ -693,7 +693,7 @@ export default function ContentCampaignDetailPage() {
                 ) : (
                   <RefreshCcw className="mr-2 h-4 w-4" />
                 )}
-                Régénérer la plateforme
+                Regenerate platform
               </button>
             </div>
           )}
@@ -701,11 +701,11 @@ export default function ContentCampaignDetailPage() {
           {aiTab === "post" && (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Régénérer un post</p>
-                <p className="mt-0.5 text-sm text-slate-500">Régénère un post individuel par son index (commence à 0).</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Regenerate a post</p>
+                <p className="mt-0.5 text-sm text-slate-500">Regenerates an individual post by its index (starts at 0).</p>
               </div>
               <div className="flex items-center gap-3">
-                <label className="text-sm font-medium text-slate-700">Index du post</label>
+                <label className="text-sm font-medium text-slate-700">Post index</label>
                 <input
                   type="number"
                   min={0}
@@ -718,7 +718,7 @@ export default function ContentCampaignDetailPage() {
                 value={postInstruction}
                 onChange={(event) => setPostInstruction(event.target.value)}
                 rows={2}
-                placeholder="Instruction optionnelle pour ce post…"
+                placeholder="Optional instruction for this post…"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
               />
               <button
@@ -732,7 +732,7 @@ export default function ContentCampaignDetailPage() {
                 ) : (
                   <RefreshCcw className="mr-2 h-4 w-4" />
                 )}
-                Régénérer le post
+                Regenerate post
               </button>
             </div>
           )}
@@ -742,7 +742,7 @@ export default function ContentCampaignDetailPage() {
       {/* Posts section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">Posts de la campagne</h2>
+          <h2 className="text-xl font-bold text-slate-900">Campaign posts</h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
             {posts.length} post{posts.length > 1 ? "s" : ""}
           </span>
@@ -759,9 +759,9 @@ export default function ContentCampaignDetailPage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
               <FileText className="h-7 w-7 text-slate-400" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">Aucun post généré</h3>
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">No generated posts</h3>
             <p className="mt-1 text-sm text-slate-500">
-              Lancez une génération globale pour remplir cette campagne.
+              Start a global generation to fill this campaign.
             </p>
           </article>
         ) : (

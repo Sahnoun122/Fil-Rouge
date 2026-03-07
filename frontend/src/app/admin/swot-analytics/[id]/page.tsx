@@ -16,7 +16,7 @@ const formatDate = (value?: string): string => {
     return '-';
   }
 
-  return new Intl.DateTimeFormat('fr-FR', {
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
@@ -31,7 +31,7 @@ const joinList = (items?: string[]): string => {
 
 const renderMatrixList = (items?: string[]) => {
   if (!items || items.length === 0) {
-    return <p className="text-sm text-slate-500">Aucun point</p>;
+    return <p className="text-sm text-slate-500">No items</p>;
   }
 
   return (
@@ -60,7 +60,7 @@ export default function AdminSwotAnalyticsDetailPage() {
   if (isLoadingSwot) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-600">Chargement du SWOT...</p>
+        <p className="text-sm text-slate-600">Loading SWOT...</p>
       </section>
     );
   }
@@ -71,14 +71,14 @@ export default function AdminSwotAnalyticsDetailPage() {
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
           <div>
-            <h1 className="text-lg font-semibold text-red-800">SWOT introuvable</h1>
-            <p className="mt-1 text-sm text-red-700">{error || 'Ce SWOT est indisponible.'}</p>
+            <h1 className="text-lg font-semibold text-red-800">SWOT not found</h1>
+            <p className="mt-1 text-sm text-red-700">{error || 'This SWOT is unavailable.'}</p>
             <Link
               href="/admin/swot-analytics"
               className="mt-4 inline-flex items-center rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour a la liste
+              Back to list
             </Link>
           </div>
         </div>
@@ -96,11 +96,11 @@ export default function AdminSwotAnalyticsDetailPage() {
               className="mb-2 inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Retour aux SWOT analytics
+              Back to SWOT analytics
             </Link>
             <h1 className="text-2xl font-semibold text-slate-900">{swot.title}</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Cree le {formatDate(swot.createdAt)} | Mis a jour le {formatDate(swot.updatedAt)}
+              Created on {formatDate(swot.createdAt)} | Updated on {formatDate(swot.updatedAt)}
             </p>
           </div>
 
@@ -109,24 +109,24 @@ export default function AdminSwotAnalyticsDetailPage() {
               swot.isAiGenerated ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
             }`}
           >
-            {swot.isAiGenerated ? 'SWOT IA' : 'SWOT Manuel'}
+            {swot.isAiGenerated ? 'AI SWOT' : 'Manual SWOT'}
           </span>
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Utilisateur</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">User</p>
           <p className="mt-3 flex items-center text-sm font-medium text-slate-900">
             <User className="mr-2 h-4 w-4 text-slate-500" />
             {swot.user.fullName}
           </p>
           <p className="mt-1 text-sm text-slate-600">{swot.user.email}</p>
-          <p className="mt-1 text-sm text-slate-600">{swot.user.companyName || 'Sans entreprise'}</p>
+          <p className="mt-1 text-sm text-slate-600">{swot.user.companyName || 'No company'}</p>
         </article>
 
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Strategie liee</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Linked strategy</p>
           <p className="mt-3 flex items-center text-sm font-medium text-slate-900">
             <Building2 className="mr-2 h-4 w-4 text-slate-500" />
             {swot.strategy.businessName}
@@ -136,7 +136,7 @@ export default function AdminSwotAnalyticsDetailPage() {
             href={`/admin/strategies/${swot.strategyId}`}
             className="mt-3 inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            Voir la strategie
+            View strategy
           </Link>
         </article>
       </section>
@@ -145,23 +145,23 @@ export default function AdminSwotAnalyticsDetailPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Inputs</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div>
-            <p className="text-sm font-semibold text-slate-700">Notes internes</p>
+            <p className="text-sm font-semibold text-slate-700">Internal notes</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{swot.inputs.notesInternes || '-'}</p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">Notes externes</p>
+            <p className="text-sm font-semibold text-slate-700">External notes</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{swot.inputs.notesExternes || '-'}</p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">Concurrents</p>
+            <p className="text-sm font-semibold text-slate-700">Competitors</p>
             <p className="mt-1 text-sm text-slate-600">{joinList(swot.inputs.concurrents)}</p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">Ressources</p>
+            <p className="text-sm font-semibold text-slate-700">Resources</p>
             <p className="mt-1 text-sm text-slate-600">{joinList(swot.inputs.ressources)}</p>
           </div>
           <div className="md:col-span-2">
-            <p className="text-sm font-semibold text-slate-700">Objectifs</p>
+            <p className="text-sm font-semibold text-slate-700">Objectives</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{swot.inputs.objectifs || '-'}</p>
           </div>
         </div>

@@ -17,7 +17,7 @@ export default function NewStrategyPage() {
       const newStrategy = await generateStrategy(data);
       
       // Afficher un message de succès
-      toast.success('Stratégie générée avec succès !', {
+      toast.success('Strategy generated successfully!', {
         duration: 4000,
         position: 'top-right',
       });
@@ -26,7 +26,7 @@ export default function NewStrategyPage() {
       router.push(`/user/strategies/${newStrategy._id}`);
     } catch (error) {
       // Afficher un message d'erreur
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la génération';
+      const errorMessage = error instanceof Error ? error.message : 'Error during generation';
       toast.error(errorMessage, {
         duration: 5000,
         position: 'top-right',
@@ -46,11 +46,11 @@ export default function NewStrategyPage() {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Créer une Stratégie Marketing
+            Create a Marketing Strategy
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Générez une stratégie marketing complète et personnalisée avec l'intelligence artificielle.
-            Remplissez le formulaire ci-dessous pour commencer.
+            Generate a complete personalized marketing strategy with AI.
+            Fill in the form below to get started.
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export default function NewStrategyPage() {
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center">
               <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
               <div>
-                <h3 className="font-medium text-red-900">Erreur de génération</h3>
+                <h3 className="font-medium text-red-900">Generation error</h3>
                 <p className="text-red-700 mt-1">{error}</p>
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function NewStrategyPage() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Ce que vous allez obtenir
+              What you will get
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -87,16 +87,16 @@ export default function NewStrategyPage() {
               <div className="text-center">
                 <div className="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                    AVANT
+                    BEFORE
                   </div>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  Phase d'Acquisition
+                  Acquisition Phase
                 </h3>
                 <ul className="text-gray-600 text-sm space-y-2">
-                  <li>• Analyse du marché cible</li>
-                  <li>• Message marketing personnalisé</li>
-                  <li>• Stratégie de canaux de communication</li>
+                  <li>• Target market analysis</li>
+                  <li>• Personalized marketing message</li>
+                  <li>• Communication channel strategy</li>
                 </ul>
               </div>
 
@@ -104,16 +104,16 @@ export default function NewStrategyPage() {
               <div className="text-center">
                 <div className="bg-green-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                    PENDANT
+                    DURING
                   </div>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  Phase de Conversion
+                  Conversion Phase
                 </h3>
                 <ul className="text-gray-600 text-sm space-y-2">
-                  <li>• Stratégie de capture de prospects</li>
-                  <li>• Séquences de nurturing</li>
-                  <li>• Optimisation de la conversion</li>
+                  <li>• Lead capture strategy</li>
+                  <li>• Nurturing sequences</li>
+                  <li>• Conversion optimization</li>
                 </ul>
               </div>
 
@@ -121,16 +121,16 @@ export default function NewStrategyPage() {
               <div className="text-center">
                 <div className="bg-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <div className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                    APRÈS
+                    AFTER
                   </div>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  Phase de Fidélisation
+                  Retention Phase
                 </h3>
                 <ul className="text-gray-600 text-sm space-y-2">
-                  <li>• Amélioration de l'expérience client</li>
-                  <li>• Stratégies d'upsell/cross-sell</li>
-                  <li>• Système de recommandation</li>
+                  <li>• Customer experience improvement</li>
+                  <li>• Upsell/cross-sell strategies</li>
+                  <li>• Referral system</li>
                 </ul>
               </div>
               
@@ -141,15 +141,15 @@ export default function NewStrategyPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">30+</div>
-              <p className="text-gray-600">Points d'analyse détaillés</p>
+              <p className="text-gray-600">Detailed analysis points</p>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">3</div>
-              <p className="text-gray-600">Phases stratégiques complètes</p>
+              <p className="text-gray-600">Complete strategic phases</p>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
               <div className="text-3xl font-bold text-purple-600 mb-2">100%</div>
-              <p className="text-gray-600">Personnalisé pour votre business</p>
+              <p className="text-gray-600">Personalized for your business</p>
             </div>
           </div>
 
@@ -157,10 +157,10 @@ export default function NewStrategyPage() {
           <div className="mt-8 text-center">
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                🚀 Prêt à transformer votre marketing ?
+                🚀 Ready to transform your marketing?
               </h3>
               <p className="text-gray-600">
-                Remplissez le formulaire ci-dessus et obtenez votre stratégie complète en moins de 2 minutes.
+                Fill in the form above and get your complete strategy in less than 2 minutes.
               </p>
             </div>
           </div>

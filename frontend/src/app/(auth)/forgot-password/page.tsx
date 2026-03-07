@@ -4,8 +4,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="bg-white rounded-xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mot de passe oublié</h1>
-        <p className="text-gray-600">Entrez votre email pour réinitialiser votre mot de passe</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password</h1>
+        <p className="text-gray-600">Enter your email to reset your password</p>
       </div>
       
       <div className="space-y-6">
@@ -16,12 +16,12 @@ export default function ForgotPasswordPage() {
           <input
             type="email"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="votre@email.com"
+            placeholder="your@email.com"
           />
         </div>
         
         <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-colors">
-          Envoyer le lien de réinitialisation
+          Send reset link
         </button>
       </div>
     </div>

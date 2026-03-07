@@ -18,7 +18,7 @@ import useStrategiesList from '@/src/hooks/useStrategies';
 import strategiesService from '@/src/services/strategiesService';
 // import { strategiesService } from '../../../services/strategiesService';
 
-// Composant de test pour les services
+// Test component for services
 const ApiTestPanel = () => {
   const [testResults, setTestResults] = useState<Record<string, any>>({});
   const [isRunning, setIsRunning] = useState<string | null>(null);
@@ -34,7 +34,7 @@ const ApiTestPanel = () => {
     } catch (error: any) {
       setTestResults(prev => ({
         ...prev,
-        [testName]: { success: false, error: error.message || 'Erreur inconnue' }
+        [testName]: { success: false, error: error.message || 'Unknown error' }
       }));
     } finally {
       setIsRunning(null);
@@ -44,20 +44,20 @@ const ApiTestPanel = () => {
   const tests = [
     {
       name: 'health',
-      label: 'Test de connexion API',
-      description: 'Vérifie que l\'API backend est accessible',
+      label: 'API Connection Test',
+      description: 'Checks that the backend API is accessible',
       testFn: () => fetch('/api/health').then(r => r.json())
     },
     {
       name: 'auth-check',
-      label: 'Vérification authentification',
-      description: 'Teste si le token JWT est valide',
+      label: 'Authentication Check',
+      description: 'Tests whether the JWT token is valid',
       testFn: () => strategiesService.getAllStrategies(1, 1)
     },
     {
       name: 'types-validation',
-      label: 'Validation des types',
-      description: 'Vérifie la cohérence des types TypeScript',
+      label: 'Type Validation',
+      description: 'Checks TypeScript type consistency',
       testFn: () => Promise.resolve({
         businessInfoFields: ['businessName', 'industry', 'targetAudience', 'mainObjective', 'budget', 'location', 'tone'],
         strategyFields: ['_id', 'businessInfo', 'generatedStrategy', 'createdAt', 'updatedAt'],
@@ -70,7 +70,7 @@ const ApiTestPanel = () => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
         <TestTube className="w-5 h-5 mr-2" />
-        Tests API et Services
+        API & Services Tests
       </h3>
       
       <div className="space-y-4">
@@ -88,7 +88,7 @@ const ApiTestPanel = () => {
                 ) : (
                   <Play className="w-4 h-4 mr-1" />
                 )}
-                Tester
+                Test
               </button>
             </div>
             
@@ -109,7 +109,7 @@ const ApiTestPanel = () => {
                   <span className={`font-medium ${
                     testResults[test.name].success ? 'text-green-900' : 'text-red-900'
                   }`}>
-                    {testResults[test.name].success ? 'Succès' : 'Échec'}
+                    {testResults[test.name].success ? 'Success' : 'Failure'}
                   </span>
                 </div>
                 
@@ -133,7 +133,7 @@ const ApiTestPanel = () => {
   );
 };
 
-// Composant d'informations sur les hooks
+// Hook information component
 const HooksInfo = () => {
   const { strategies, pagination, isLoading, error } = useStrategiesList();
   
@@ -141,7 +141,7 @@ const HooksInfo = () => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
         <Code className="w-5 h-5 mr-2" />
-        État des Hooks
+        Hooks State
       </h3>
       
       <div className="space-y-4">
@@ -150,11 +150,11 @@ const HooksInfo = () => {
             <h4 className="font-medium text-gray-900 mb-2">useStrategiesList</h4>
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
-                <span className="text-gray-600">Stratégies:</span>
+                <span className="text-gray-600">Strategies:</span>
                 <span className="font-mono">{strategies.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Page actuelle:</span>
+                <span className="text-gray-600">Current page:</span>
                 <span className="font-mono">{pagination.page}</span>
               </div>
               <div className="flex justify-between">
@@ -162,13 +162,13 @@ const HooksInfo = () => {
                 <span className="font-mono">{pagination.total}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Chargement:</span>
+                <span className="text-gray-600">Loading:</span>
                 <span className={`font-mono ${isLoading ? 'text-orange-600' : 'text-green-600'}`}>
                   {isLoading ? 'true' : 'false'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Erreur:</span>
+                <span className="text-gray-600">Error:</span>
                 <span className={`font-mono ${error ? 'text-red-600' : 'text-green-600'}`}>
                   {error ? 'true' : 'false'}
                 </span>
@@ -179,7 +179,7 @@ const HooksInfo = () => {
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-2">useStrategies (Actions)</h4>
             <div className="text-sm space-y-2">
-              <div className="text-gray-600">Fonctions disponibles:</div>
+              <div className="text-gray-600">Available functions:</div>
               <ul className="space-y-1 font-mono text-xs">
                 <li>• createStrategy</li>
                 <li>• updateStrategy</li>
@@ -192,7 +192,7 @@ const HooksInfo = () => {
         
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h4 className="font-medium text-red-900 mb-2">Erreur détectée</h4>
+            <h4 className="font-medium text-red-900 mb-2">Error detected</h4>
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
@@ -201,7 +201,7 @@ const HooksInfo = () => {
   );
 };
 
-// Composant principal de la page de test
+// Main test page component
 export default function StrategyTestPage() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -213,10 +213,10 @@ export default function StrategyTestPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
                 <TestTube className="w-8 h-8 mr-3 text-blue-600" />
-                Tests & Développement
+                Tests & Development
               </h1>
               <p className="text-gray-600 text-lg">
-                Page de test pour valider l'intégration complète du système de stratégies
+                Test page to validate the complete integration of the strategy system
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -225,14 +225,14 @@ export default function StrategyTestPage() {
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Tester Création
+                Test Creation
               </Link>
               <Link 
                 href="/user/strategies"
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Voir Liste
+                View List
               </Link>
             </div>
           </div>
@@ -242,7 +242,7 @@ export default function StrategyTestPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <Database className="w-5 h-5 mr-2" />
-            Architecture Implémentée
+            Implemented Architecture
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -258,35 +258,35 @@ export default function StrategyTestPage() {
             </div>
             
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h3 className="font-semibold text-green-900 mb-2">Services API</h3>
+              <h3 className="font-semibold text-green-900 mb-2">API Services</h3>
               <ul className="text-sm text-green-800 space-y-1">
                 <li>• strategiesService.ts</li>
-                <li>• Authentification JWT</li>
-                <li>• CRUD complet</li>
-                <li>• Génération IA</li>
-                <li>• Gestion d'erreurs</li>
+                <li>• JWT Authentication</li>
+                <li>• Full CRUD</li>
+                <li>• AI Generation</li>
+                <li>• Error Handling</li>
               </ul>
             </div>
             
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h3 className="font-semibold text-purple-900 mb-2">Hooks Personnalisés</h3>
+              <h3 className="font-semibold text-purple-900 mb-2">Custom Hooks</h3>
               <ul className="text-sm text-purple-800 space-y-1">
                 <li>• useStrategy</li>
                 <li>• useStrategiesList</li>
                 <li>• useStrategyActions</li>
-                <li>• États & Pagination</li>
+                <li>• States & Pagination</li>
                 <li>• Cache & Refresh</li>
               </ul>
             </div>
             
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <h3 className="font-semibold text-orange-900 mb-2">Composants UI</h3>
+              <h3 className="font-semibold text-orange-900 mb-2">UI Components</h3>
               <ul className="text-sm text-orange-800 space-y-1">
                 <li>• StrategyForm</li>
                 <li>• StrategyCard</li>
                 <li>• Pages CRUD</li>
-                <li>• Validation Zod</li>
-                <li>• États de chargement</li>
+                <li>• Zod Validation</li>
+                <li>• Loading States</li>
               </ul>
             </div>
           </div>
@@ -302,7 +302,7 @@ export default function StrategyTestPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Zap className="w-5 h-5 mr-2" />
-            Navigation Rapide
+            Quick Navigation
           </h3>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -312,8 +312,8 @@ export default function StrategyTestPage() {
             >
               <div>
                 <div className="text-2xl mb-2">📊</div>
-                <div className="font-medium text-gray-900">Liste</div>
-                <div className="text-xs text-gray-500">Voir toutes</div>
+                <div className="font-medium text-gray-900">List</div>
+                <div className="text-xs text-gray-500">View all</div>
               </div>
             </Link>
             
@@ -323,24 +323,24 @@ export default function StrategyTestPage() {
             >
               <div>
                 <div className="text-2xl mb-2">➕</div>
-                <div className="font-medium text-gray-900">Créer</div>
-                <div className="text-xs text-gray-500">Nouvelle stratégie</div>
+                <div className="font-medium text-gray-900">Create</div>
+                <div className="text-xs text-gray-500">New strategy</div>
               </div>
             </Link>
             
             <div className="flex items-center justify-center p-4 border border-gray-200 rounded-lg bg-gray-100 text-center">
               <div>
                 <div className="text-2xl mb-2">👁️</div>
-                <div className="font-medium text-gray-400">Détails</div>
-                <div className="text-xs text-gray-400">Sélectionner d'abord</div>
+                <div className="font-medium text-gray-400">Details</div>
+                <div className="text-xs text-gray-400">Select one first</div>
               </div>
             </div>
             
             <div className="flex items-center justify-center p-4 border border-gray-200 rounded-lg bg-gray-100 text-center">
               <div>
                 <div className="text-2xl mb-2">✏️</div>
-                <div className="font-medium text-gray-400">Éditer</div>
-                <div className="text-xs text-gray-400">Sélectionner d'abord</div>
+                <div className="font-medium text-gray-400">Edit</div>
+                <div className="text-xs text-gray-400">Select one first</div>
               </div>
             </div>
           </div>
@@ -350,39 +350,39 @@ export default function StrategyTestPage() {
         <div className="bg-gray-900 text-white rounded-xl p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
             <Code className="w-5 h-5 mr-2" />
-            Instructions pour Développeurs
+            Developer Instructions
           </h3>
           
           <div className="space-y-4 text-sm">
             <div>
-              <h4 className="font-medium text-gray-200 mb-2">1. Vérifications Préliminaires</h4>
+              <h4 className="font-medium text-gray-200 mb-2">1. Preliminary Checks</h4>
               <ul className="list-disc list-inside text-gray-300 space-y-1">
-                <li>Backend NestJS démarré sur le bon port</li>
-                <li>Base de données MongoDB connectée</li>
-                <li>Variables d'environnement configurées</li>
-                <li>Token JWT valide dans localStorage</li>
+                <li>NestJS backend started on the correct port</li>
+                <li>MongoDB database connected</li>
+                <li>Environment variables configured</li>
+                <li>Valid JWT token in localStorage</li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-medium text-gray-200 mb-2">2. Test du Flux Complet</h4>
+              <h4 className="font-medium text-gray-200 mb-2">2. Full Flow Test</h4>
               <ul className="list-disc list-inside text-gray-300 space-y-1">
-                <li>Créer une nouvelle stratégie via le formulaire</li>
-                <li>Vérifier l'affichage dans la liste</li>
-                <li>Ouvrir les détails et tester la régénération</li>
-                <li>Modifier la stratégie et valider les changements</li>
-                <li>Supprimer pour nettoyer</li>
+                <li>Create a new strategy via the form</li>
+                <li>Verify the display in the list</li>
+                <li>Open the details and test regeneration</li>
+                <li>Edit the strategy and validate the changes</li>
+                <li>Delete to clean up</li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-medium text-gray-200 mb-2">3. Points de Validation</h4>
+              <h4 className="font-medium text-gray-200 mb-2">3. Validation Points</h4>
               <ul className="list-disc list-inside text-gray-300 space-y-1">
-                <li>Validation Zod des formulaires</li>
-                <li>États de chargement et d'erreur</li>
-                <li>Pagination et recherche</li>
-                <li>Responsive design mobile</li>
-                <li>Toasts de notification</li>
+                <li>Zod form validation</li>
+                <li>Loading and error states</li>
+                <li>Pagination and search</li>
+                <li>Mobile responsive design</li>
+                <li>Notification toasts</li>
               </ul>
             </div>
           </div>

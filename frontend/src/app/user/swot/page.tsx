@@ -45,7 +45,7 @@ const PAGE = 1;
 const LIMIT = 10;
 
 const formatDate = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', {
+  new Date(value).toLocaleDateString('en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -124,14 +124,14 @@ export default function UserSwotListPage() {
 
       const payload = response.data;
       if (!payload) {
-        throw new Error('Reponse SWOT invalide');
+        throw new Error('Invalid SWOT response');
       }
 
       const items = payload.swots ?? [];
       setSwots(items);
       await loadStrategyNames(items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des SWOT');
+      setError(err instanceof Error ? err.message : 'Error loading SWOT analyses');
     } finally {
       setIsLoading(false);
     }
@@ -176,9 +176,9 @@ export default function UserSwotListPage() {
 
       setSwots((prev) => prev.filter((item) => item._id !== deleteTarget._id));
       setDeleteTarget(null);
-      toast.success('SWOT supprime avec succes');
+      toast.success('SWOT deleted successfully');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression');
+      toast.error(err instanceof Error ? err.message : 'Error deleting SWOT');
     } finally {
       setIsDeleting(false);
     }
@@ -190,9 +190,9 @@ export default function UserSwotListPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">SWOT Analytics</p>
-            <h1 className="text-3xl font-bold">Mes SWOT</h1>
+            <h1 className="text-3xl font-bold">My SWOT Analyses</h1>
             <p className="mt-2 text-sm text-slate-200">
-              Consultez, recherchez et gerez vos analyses SWOT en un seul espace.
+              View, search, and manage your SWOT analyses in one place.
             </p>
           </div>
           <Link
@@ -200,7 +200,7 @@ export default function UserSwotListPage() {
             className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Creer SWOT
+            Create SWOT
           </Link>
         </div>
       </section>
@@ -211,20 +211,20 @@ export default function UserSwotListPage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Rechercher par titre ou strategie..."
+            placeholder="Search by title or strategy..."
             className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:bg-white focus:ring-2"
           />
         </label>
         {strategyFilter ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-200">
-              Filtre strategie: {strategyNames[strategyFilter] || strategyFilter}
+              Strategy filter: {strategyNames[strategyFilter] || strategyFilter}
             </span>
             <Link
               href="/swot"
               className="inline-flex rounded-full border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
             >
-              Retirer le filtre
+              Remove filter
             </Link>
           </div>
         ) : null}
@@ -237,7 +237,7 @@ export default function UserSwotListPage() {
             onClick={() => void loadSwots()}
             className="mt-3 rounded-lg border border-rose-300 px-3 py-1.5 font-medium text-rose-700 transition hover:bg-rose-100"
           >
-            Reessayer
+            Retry
           </button>
         </section>
       ) : null}
@@ -246,16 +246,16 @@ export default function UserSwotListPage() {
         <SwotTableSkeleton />
       ) : filteredAndSortedSwots.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Aucun SWOT trouve</h2>
+          <h2 className="text-xl font-semibold text-slate-900">No SWOT found</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Commencez par creer votre premiere analyse SWOT.
+            Start by creating your first SWOT analysis.
           </p>
           <Link
             href="/user/swot/new"
             className="mt-6 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Creer SWOT
+            Create SWOT
           </Link>
         </section>
       ) : (
@@ -265,16 +265,16 @@ export default function UserSwotListPage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Titre
+                    Title
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Strategie associee
+                    Linked strategy
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                     IA
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Cree le
+                    Created on
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                     Actions
@@ -300,7 +300,7 @@ export default function UserSwotListPage() {
                             : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
                         }`}
                       >
-                        {item.isAiGenerated ? 'Oui' : 'Non'}
+                        {item.isAiGenerated ? 'Yes' : 'No'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{formatDate(item.createdAt)}</td>
@@ -336,11 +336,11 @@ export default function UserSwotListPage() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-3 flex items-center gap-2 text-rose-700">
               <AlertTriangle className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Confirmer la suppression</h3>
+              <h3 className="text-lg font-semibold">Confirm deletion</h3>
             </div>
             <p className="text-sm text-slate-600">
-              Voulez-vous supprimer le SWOT <span className="font-semibold text-slate-900">{deleteTarget.title}</span> ?
-              Cette action est irreversible.
+              Do you want to delete the SWOT <span className="font-semibold text-slate-900">{deleteTarget.title}</span>?
+              This action is irreversible.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -349,7 +349,7 @@ export default function UserSwotListPage() {
                 disabled={isDeleting}
                 className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="button"
@@ -358,7 +358,7 @@ export default function UserSwotListPage() {
                 className="inline-flex items-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Supprimer
+                Delete
               </button>
             </div>
           </div>

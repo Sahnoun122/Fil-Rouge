@@ -37,7 +37,7 @@ function extractGeneratedPostIndex(notes?: string | null): number | null {
 }
 
 function formatDateTime(value: string) {
-  return new Date(value).toLocaleString('fr-FR', {
+  return new Date(value).toLocaleString('en-US', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
@@ -47,9 +47,9 @@ function formatDateTime(value: string) {
 }
 
 function formatStatus(status: ScheduledPost['status']) {
-  if (status === 'published') return 'Publie';
-  if (status === 'late') return 'En retard';
-  return 'Planifie';
+  if (status === 'published') return 'Published';
+  if (status === 'late') return 'Late';
+  return 'Scheduled';
 }
 
 function matchGeneratedPost(
@@ -120,7 +120,7 @@ export default function PlanningDetailPage() {
         toast.error(
           requestError instanceof Error
             ? requestError.message
-            : 'Erreur lors du chargement du planning',
+            : 'Error loading schedule',
         );
       } finally {
         setIsLoading(false);
@@ -142,16 +142,16 @@ export default function PlanningDetailPage() {
   if (!scheduledPost) {
     return (
       <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6">
-        <h1 className="text-xl font-bold text-rose-700">Planning introuvable</h1>
+        <h1 className="text-xl font-bold text-rose-700">Schedule not found</h1>
         <p className="mt-2 text-sm text-rose-600">
-          Cette publication planifiee n est plus accessible.
+          This scheduled post is no longer available.
         </p>
         <Link
           href="/calendar"
           className="mt-4 inline-flex items-center rounded-xl border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Retour calendrier
+          Back to calendar
         </Link>
       </div>
     );
@@ -180,25 +180,25 @@ export default function PlanningDetailPage() {
               className="inline-flex items-center text-sm font-medium text-stone-600 transition hover:text-stone-950"
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Retour au planning
+              Back to schedule
             </Link>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-              Planning detail
+              Schedule detail
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-950">
-              {generatedPost?.title || scheduledPost.title || 'Publication planifiee'}
+              {generatedPost?.title || scheduledPost.title || 'Scheduled post'}
             </h1>
             <p className="mt-3 text-sm leading-6 text-stone-600">
-              Vue detaillee du planning avec les donnees de publication et le contenu genere par l IA.
+              Detailed view of the schedule with publication data and AI-generated content.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-cyan-200 bg-cyan-50/80 px-5 py-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-              Campagne
+              Campaign
             </p>
             <p className="mt-2 text-base font-semibold text-stone-950">
-              {campaign?.name || 'Campagne non liee'}
+              {campaign?.name || 'No linked campaign'}
             </p>
           </div>
         </div>
@@ -208,7 +208,7 @@ export default function PlanningDetailPage() {
         <article className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-sm">
           <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
             <CalendarClock className="h-3.5 w-3.5" />
-            Planification
+            Scheduled
           </p>
           <p className="mt-3 text-lg font-semibold text-stone-950">
             {formatDateTime(scheduledPost.scheduledAt)}
@@ -248,7 +248,7 @@ export default function PlanningDetailPage() {
           <div>
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
               <Sparkles className="h-3.5 w-3.5" />
-              Contenu genere par l'IA
+              AI-generated content
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-stone-950">
               {generatedPost?.title || scheduledPost.title || 'Sans titre'}
@@ -303,7 +303,7 @@ export default function PlanningDetailPage() {
           <article className="rounded-[30px] border border-stone-200 bg-white p-6 shadow-sm">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
               <Clock3 className="h-3.5 w-3.5" />
-              Informations de planning
+              Schedule information
             </p>
             <dl className="mt-4 space-y-4 text-sm text-stone-700">
               <div className="flex items-start justify-between gap-4">
@@ -319,7 +319,7 @@ export default function PlanningDetailPage() {
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <dt>Platforme</dt>
+                <dt>Platform</dt>
                 <dd className="text-right font-semibold text-stone-950">
                   {scheduledPost.platform}
                 </dd>
@@ -331,7 +331,7 @@ export default function PlanningDetailPage() {
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <dt>Statut</dt>
+                <dt>Status</dt>
                 <dd className="text-right font-semibold text-stone-950">
                   {formatStatus(scheduledPost.status)}
                 </dd>
@@ -355,7 +355,7 @@ export default function PlanningDetailPage() {
                   </span>
                 ))
               ) : (
-                <span className="text-sm text-stone-500">Aucun hashtag</span>
+                <span className="text-sm text-stone-500">No hashtags</span>
               )}
             </div>
           </article>

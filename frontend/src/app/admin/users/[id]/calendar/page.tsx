@@ -18,12 +18,12 @@ import {
 import { useAdminUser, useAdminUserCalendar } from '@/src/hooks/useAdmin';
 import type { ScheduledPost } from '@/src/types/calendar.types';
 
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'full',
   timeStyle: 'short',
 });
 
-const TIME_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   hour: '2-digit',
   minute: '2-digit',
 });
@@ -70,9 +70,9 @@ function formatTime(value: string) {
 }
 
 function formatStatus(status: ScheduledPost['status']) {
-  if (status === 'published') return 'Publie';
-  if (status === 'late') return 'En retard';
-  return 'Planifie';
+  if (status === 'published') return 'Published';
+  if (status === 'late') return 'Late';
+  return 'Scheduled';
 }
 
 function groupPostsByDay(posts: ScheduledPost[]) {
@@ -162,7 +162,7 @@ export default function AdminUserCalendarPage() {
     return (
       <div className="min-h-screen bg-slate-50 p-8">
         <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-8 text-slate-500 shadow-sm">
-          Chargement du calendrier utilisateur...
+          Loading user calendar...
         </div>
       </div>
     );
@@ -173,16 +173,16 @@ export default function AdminUserCalendarPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
           <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-slate-900">Calendrier introuvable</h2>
+          <h2 className="mb-2 text-2xl font-bold text-slate-900">Calendar not found</h2>
           <p className="mb-6 text-slate-600">
-            {error || 'Impossible de charger ce calendrier utilisateur.'}
+            {error || 'Unable to load this user calendar.'}
           </p>
           <Link
             href={`/admin/users/${userId}`}
             className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-white transition-colors hover:bg-slate-800"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour au profil
+            Back to profile
           </Link>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function AdminUserCalendarPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-6 flex items-center space-x-2 text-sm text-slate-500">
           <Link href="/admin/users" className="transition-colors hover:text-slate-700">
-            Utilisateurs admin
+            Admin users
           </Link>
           <span>-</span>
           <Link
@@ -204,7 +204,7 @@ export default function AdminUserCalendarPage() {
             {user.fullName || user.email}
           </Link>
           <span>-</span>
-          <span className="font-medium text-slate-900">Calendrier</span>
+          <span className="font-medium text-slate-900">Calendar</span>
         </nav>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -214,11 +214,11 @@ export default function AdminUserCalendarPage() {
                 Admin calendar
               </p>
               <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
-                Calendrier de {user.fullName || user.email}
+                {user.fullName || user.email}&apos;s Calendar
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Vue admin centralisee des publications programmees de cet utilisateur,
-                avec lecture par jour, statut, plateforme et acces direct aux campagnes.
+                Admin centralized view of scheduled posts for this user,
+                by day, status, platform, and campaign links.
               </p>
             </div>
 
@@ -228,7 +228,7 @@ export default function AdminUserCalendarPage() {
                 className="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour profil
+                Back to profile
               </Link>
             </div>
           </div>
@@ -236,19 +236,19 @@ export default function AdminUserCalendarPage() {
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Publications</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Posts</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">{stats.total}</p>
           </article>
           <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Planifiees</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Scheduled</p>
             <p className="mt-2 text-3xl font-bold text-emerald-900">{stats.planned}</p>
           </article>
           <article className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Publiees</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Published</p>
             <p className="mt-2 text-3xl font-bold text-cyan-900">{stats.published}</p>
           </article>
           <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">En retard</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Late</p>
             <p className="mt-2 text-3xl font-bold text-amber-900">{stats.late}</p>
           </article>
         </section>
@@ -256,12 +256,12 @@ export default function AdminUserCalendarPage() {
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-900">Filtres du calendrier</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Calendar filters</h2>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <label className="text-sm text-slate-600">
-              <span className="mb-2 block font-medium">Date de debut</span>
+              <span className="mb-2 block font-medium">Start date</span>
               <input
                 type="date"
                 value={rangeStart}
@@ -271,7 +271,7 @@ export default function AdminUserCalendarPage() {
             </label>
 
             <label className="text-sm text-slate-600">
-              <span className="mb-2 block font-medium">Date de fin</span>
+              <span className="mb-2 block font-medium">End date</span>
               <input
                 type="date"
                 value={rangeEnd}
@@ -281,13 +281,13 @@ export default function AdminUserCalendarPage() {
             </label>
 
             <label className="text-sm text-slate-600">
-              <span className="mb-2 block font-medium">Plateforme</span>
+              <span className="mb-2 block font-medium">Platform</span>
               <select
                 value={platform}
                 onChange={(event) => setPlatform(event.target.value as typeof platform)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-slate-900"
               >
-                <option value="all">Toutes</option>
+                <option value="all">All</option>
                 <option value="instagram">Instagram</option>
                 <option value="tiktok">TikTok</option>
                 <option value="facebook">Facebook</option>
@@ -301,16 +301,16 @@ export default function AdminUserCalendarPage() {
             </label>
 
             <label className="text-sm text-slate-600">
-              <span className="mb-2 block font-medium">Statut</span>
+              <span className="mb-2 block font-medium">Status</span>
               <select
                 value={status}
                 onChange={(event) => setStatus(event.target.value as typeof status)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-slate-900"
               >
-                <option value="all">Tous</option>
-                <option value="planned">Planifie</option>
-                <option value="published">Publie</option>
-                <option value="late">En retard</option>
+                <option value="all">All</option>
+                <option value="planned">Scheduled</option>
+                <option value="published">Published</option>
+                <option value="late">Late</option>
               </select>
             </label>
 
@@ -321,7 +321,7 @@ export default function AdminUserCalendarPage() {
                 className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
                 <TimerReset className="mr-2 h-4 w-4" />
-                Actualiser
+                Refresh
               </button>
             </div>
           </div>
@@ -331,24 +331,24 @@ export default function AdminUserCalendarPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Planning utilisateur
+                User schedule
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-                Agenda editorial
+                Editorial calendar
               </h2>
             </div>
             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-              {posts.length} publication(s)
+              {posts.length} post(s)
             </span>
           </div>
 
           {isLoadingCalendar ? (
             <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-              Chargement du calendrier...
+              Loading calendar...
             </div>
           ) : postsByDay.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-              Aucune publication planifiee sur la periode selectionnee.
+              No posts scheduled for the selected period.
             </div>
           ) : (
             <div className="mt-6 space-y-6">
@@ -394,10 +394,10 @@ export default function AdminUserCalendarPage() {
                           <div>
                             <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                               <Clock3 className="h-3.5 w-3.5" />
-                              Publication
+                              Post
                             </p>
                             <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">
-                              {post.title || 'Publication sans titre'}
+                              {post.title || 'Untitled post'}
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
                               {formatDateTime(post.scheduledAt)}
@@ -435,7 +435,7 @@ export default function AdminUserCalendarPage() {
 
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
                             <div className="text-xs text-slate-500">
-                              {post.campaignId ? `Campagne ${post.campaignId}` : 'Sans campagne'}
+                              {post.campaignId ? `Campaign ${post.campaignId}` : 'No campaign'}
                             </div>
 
                             <div className="flex flex-wrap gap-2">
@@ -444,14 +444,14 @@ export default function AdminUserCalendarPage() {
                                   href={`/admin/content/${post.campaignId}`}
                                   className="inline-flex items-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                                 >
-                                  Voir campagne
+                                  View campaign
                                   <ExternalLink className="ml-2 h-3.5 w-3.5" />
                                 </Link>
                               ) : null}
 
                               <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
                                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                                Detail admin
+                                Admin detail
                               </span>
                             </div>
                           </div>

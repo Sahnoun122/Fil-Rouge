@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAdminContents } from '@/src/hooks/useAdmin';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
@@ -29,8 +29,8 @@ const formatMode = (value: string): string => {
 const formatObjective = (value: string): string => {
   const labels: Record<string, string> = {
     leads: 'Leads',
-    sales: 'Ventes',
-    awareness: 'Notoriete',
+    sales: 'Sales',
+    awareness: 'Awareness',
     engagement: 'Engagement',
   };
 
@@ -85,27 +85,27 @@ export default function AdminContentPage() {
     <section className="space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Administration</p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Campagnes content des utilisateurs</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Users' Content Campaigns</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Consultez les campagnes de contenu generees depuis les strategies des utilisateurs.
+          View content campaigns generated from user strategies.
         </p>
       </header>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <label className="flex flex-1 flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recherche</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Search</span>
             <input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Nom user, email, entreprise, campagne, business"
+              placeholder="Username, email, company, campaign, business"
               className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
               type="text"
             />
           </label>
 
           <p className="text-sm text-slate-500">
-            Total: <span className="font-semibold text-slate-700">{totalCampaigns}</span> campagnes
+            Total: <span className="font-semibold text-slate-700">{totalCampaigns}</span> campaigns
           </p>
         </div>
 
@@ -127,13 +127,13 @@ export default function AdminContentPage() {
             <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Utilisateur</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">User</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Email</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Campagne</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Campaign</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Mode</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Plateformes</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Platforms</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Posts</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600">Cree le</th>
+                  <th className="px-4 py-3 font-semibold text-slate-600">Created</th>
                   <th className="px-4 py-3 font-semibold text-slate-600">Action</th>
                 </tr>
               </thead>
@@ -142,13 +142,13 @@ export default function AdminContentPage() {
                 {isLoadingContents ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-slate-500" colSpan={8}>
-                      Chargement des campagnes...
+                      Loading campaigns...
                     </td>
                   </tr>
                 ) : campaigns.length === 0 ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-slate-500" colSpan={8}>
-                      Aucune campagne content trouvee.
+                      No content campaigns found.
                     </td>
                   </tr>
                 ) : (
@@ -174,7 +174,7 @@ export default function AdminContentPage() {
                           href={`/admin/content/${campaign.id}`}
                           className="inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                         >
-                          Consulter
+                          View
                         </Link>
                       </td>
                     </tr>
@@ -197,7 +197,7 @@ export default function AdminContentPage() {
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
             >
-              Precedent
+              Previous
             </button>
             <button
               onClick={() => onPageChange(currentPage + 1)}
@@ -205,7 +205,7 @@ export default function AdminContentPage() {
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
             >
-              Suivant
+              Next
             </button>
           </div>
         </footer>
