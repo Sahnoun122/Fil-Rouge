@@ -8,11 +8,31 @@ import {
   ArrowLeft,
   Bot,
   CalendarDays,
+  CalendarCheck2,
+  Clock,
   FileText,
+  Hash,
   Loader2,
   RefreshCcw,
   Sparkles,
+  Zap,
 } from "lucide-react";
+
+const platformColorMap: Record<string, string> = {
+  instagram: "bg-pink-100 text-pink-700",
+  tiktok: "bg-slate-900 text-white",
+  facebook: "bg-blue-100 text-blue-700",
+  linkedin: "bg-blue-50 text-blue-800",
+  youtube: "bg-red-100 text-red-700",
+  pinterest: "bg-red-50 text-red-600",
+  x: "bg-slate-800 text-white",
+  snapchat: "bg-yellow-100 text-yellow-700",
+  threads: "bg-slate-100 text-slate-700",
+};
+
+function getPlatformClass(platform: string) {
+  return platformColorMap[platform.toLowerCase()] ?? "bg-slate-100 text-slate-700";
+}
 import { useContentCampaign } from "@/src/hooks/useContentCampaigns";
 import type {
   AutoScheduleCampaignDto,
@@ -108,9 +128,14 @@ function formatDateTime(value?: string): string {
 function DetailSkeleton() {
   return (
     <div className="space-y-5">
-      <div className="h-32 animate-pulse rounded-[28px] border border-stone-200 bg-stone-100" />
-      <div className="h-40 animate-pulse rounded-[28px] border border-stone-200 bg-stone-100" />
-      <div className="h-96 animate-pulse rounded-[28px] border border-stone-200 bg-stone-100" />
+      <div className="h-44 animate-pulse rounded-[28px] border border-slate-200 bg-linear-to-r from-slate-100 to-slate-50" />
+      <div className="grid gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+        ))}
+      </div>
+      <div className="h-40 animate-pulse rounded-[28px] border border-slate-200 bg-slate-100" />
+      <div className="h-64 animate-pulse rounded-[28px] border border-slate-200 bg-slate-100" />
     </div>
   );
 }
@@ -136,6 +161,7 @@ export default function ContentCampaignDetailPage() {
   const [postIndexInput, setPostIndexInput] = useState("0");
   const [postInstruction, setPostInstruction] = useState("");
   const [isScheduling, setIsScheduling] = useState(false);
+  const [aiTab, setAiTab] = useState<"global" | "platform" | "post">("global");
 
   const posts = useMemo(
     () =>
@@ -242,16 +268,14 @@ export default function ContentCampaignDetailPage() {
 
   if (!campaign) {
     return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6">
-        <h1 className="text-xl font-bold text-rose-700">
-          Campagne introuvable
-        </h1>
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
+        <h1 className="text-xl font-bold text-rose-700">Campagne introuvable</h1>
         <p className="mt-2 text-sm text-rose-600">
-          {error || "Cette campagne n est plus accessible."}
+          {error || "Cette campagne n'est plus accessible."}
         </p>
         <Link
           href="/user/content"
-          className="mt-4 inline-flex items-center rounded-xl border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+          className="mt-4 inline-flex items-center rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Retour
@@ -267,43 +291,40 @@ export default function ContentCampaignDetailPage() {
         toastOptions={{
           duration: 3500,
           style: {
-            borderRadius: "18px",
-            border: "1px solid #e7e5e4",
-            background: "#fffaf4",
-            color: "#1c1917",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
+            background: "#ffffff",
+            color: "#0f172a",
+            fontSize: "14px",
           },
         }}
       />
 
-      <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(245,247,250,0.98)_38%,_rgba(229,231,235,0.92)_100%)] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]">
-        <div className="flex flex-wrap items-start justify-between gap-6">
+      {/* Hero section */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-linear-to-br from-white via-slate-50 to-slate-100 p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="max-w-3xl">
             <Link
               href="/user/content"
-              className="inline-flex items-center text-sm font-medium text-stone-600 transition hover:text-stone-950"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900"
             >
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               Retour aux campagnes
             </Link>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-              Content campaign
+            <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Campagne content
             </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-950">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
               {campaign.name}
             </h1>
-            <p className="mt-3 text-sm leading-6 text-stone-600">
-              Cette page reste concentree sur la campagne. La lecture du
-              planning se fait dans le calendrier, avec une vue plus propre et
-              plus operationnelle.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full bg-stone-950 px-3 py-1 text-xs font-semibold text-white">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
                 {campaign.mode}
               </span>
               {campaign.platforms.map((platform) => (
                 <span
                   key={platform}
-                  className="rounded-full border border-stone-300 bg-white/80 px-3 py-1 text-xs font-medium text-stone-700"
+                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${getPlatformClass(platform)}`}
                 >
                   {platform}
                 </span>
@@ -313,85 +334,89 @@ export default function ContentCampaignDetailPage() {
 
           <Link
             href={`/user/content/new?strategyId=${campaign.strategyId}`}
-            className="inline-flex items-center rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
+            className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
             Nouvelle campagne
           </Link>
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-4">
-        <article className="rounded-[24px] border border-stone-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.14em] text-stone-500">
-            Posts generes
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-stone-950">
-            {posts.length}
-          </p>
+      {/* Stats */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <article className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-50">
+            <Hash className="h-4 w-4 text-cyan-600" />
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Posts générés</p>
+            <p className="mt-0.5 text-2xl font-bold text-slate-900">{posts.length}</p>
+          </div>
         </article>
-        <article className="rounded-[24px] border border-stone-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.14em] text-stone-500">
-            Posts planifies
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-stone-950">
-            {scheduledCount}
-          </p>
+        <article className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+            <CalendarCheck2 className="h-4 w-4 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Planifiés</p>
+            <p className="mt-0.5 text-2xl font-bold text-slate-900">{scheduledCount}</p>
+          </div>
         </article>
-        <article className="rounded-[24px] border border-stone-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.14em] text-stone-500">
-            Frequence
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-stone-950">
-            {campaign.campaignSummary?.postingPlan?.frequencyPerWeek ?? "-"}
-          </p>
+        <article className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50">
+            <Zap className="h-4 w-4 text-purple-600" />
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Fréquence / sem.</p>
+            <p className="mt-0.5 text-2xl font-bold text-slate-900">
+              {campaign.campaignSummary?.postingPlan?.frequencyPerWeek ?? "-"}
+            </p>
+          </div>
         </article>
-        <article className="rounded-[24px] border border-stone-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.14em] text-stone-500">
-            Mise a jour
-          </p>
-          <p className="mt-2 text-sm font-semibold text-stone-950">
-            {formatDateTime(campaign.updatedAt)}
-          </p>
+        <article className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50">
+            <Clock className="h-4 w-4 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Mise à jour</p>
+            <p className="mt-0.5 text-sm font-bold text-slate-900">{formatDateTime(campaign.updatedAt)}</p>
+          </div>
         </article>
       </section>
 
-      <section className="rounded-[28px] border border-cyan-200 bg-[linear-gradient(135deg,rgba(236,254,255,0.95),rgba(255,255,255,1))] p-6 shadow-sm">
+      {/* Planning section */}
+      <section className="overflow-hidden rounded-2xl border border-cyan-100 bg-linear-to-r from-cyan-50/80 to-white p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-600">
               Planification automatique
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-stone-950">
-              Generer le planning puis travailler dans le calendrier
+            <h2 className="mt-2 text-xl font-bold text-slate-900">
+              Générer le planning et travailler dans le calendrier
             </h2>
-            <p className="mt-2 text-sm leading-6 text-stone-700">
+            <p className="mt-1.5 text-sm leading-6 text-slate-600">
               Un seul clic applique les heuristiques de planification,
-              enregistre les horaires et synchronise la campagne avec le module
-              calendrier.
+              enregistre les horaires et synchronise avec le calendrier.
             </p>
           </div>
-
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={handleGeneratePlanning}
               disabled={isScheduling || isSubmitting}
-              className="inline-flex items-center rounded-2xl bg-stone-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center rounded-xl bg-linear-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isScheduling ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <CalendarDays className="mr-2 h-4 w-4" />
               )}
-              Generer un planning
+              Générer un planning
             </button>
             <button
               type="button"
-              onClick={() =>
-                router.push(`/calendar?campaignId=${campaign._id}`)
-              }
-              className="inline-flex items-center rounded-2xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-800 transition hover:bg-stone-50"
+              onClick={() => router.push(`/calendar?campaignId=${campaign._id}`)}
+              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               <CalendarDays className="mr-2 h-4 w-4" />
               Ouvrir le calendrier
@@ -400,114 +425,164 @@ export default function ContentCampaignDetailPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <article className="space-y-4 rounded-[28px] border border-stone-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-950">
-            Generation globale
-          </h2>
-          <textarea
-            value={generateInstruction}
-            onChange={(event) => setGenerateInstruction(event.target.value)}
-            rows={3}
-            placeholder="Instruction optionnelle (ex: accent sur conversion mobile)."
-            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-          />
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isSubmitting}
-            className="inline-flex items-center rounded-2xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-60"
-          >
-            {isSubmitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Bot className="mr-2 h-4 w-4" />
-            )}
-            Generer le contenu
-          </button>
-        </article>
+      {/* AI Actions - tabbed panel */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* Tab bar */}
+        <div className="flex border-b border-slate-100 bg-slate-50/60">
+          {([
+            { id: "global", label: "Générer", icon: Bot },
+            { id: "platform", label: "Par plateforme", icon: RefreshCcw },
+            { id: "post", label: "Par post", icon: FileText },
+          ] as const).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setAiTab(id)}
+              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-colors ${
+                aiTab === id
+                  ? "border-b-2 border-cyan-500 bg-white text-cyan-600"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
 
-        <article className="space-y-4 rounded-[28px] border border-stone-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-950">Regeneration</h2>
-          <select
-            value={platformToRegenerate}
-            onChange={(event) => setPlatformToRegenerate(event.target.value)}
-            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-          >
-            <option value="">Selectionnez une plateforme</option>
-            {campaign.platforms.map((platform) => (
-              <option key={platform} value={platform}>
-                {platform}
-              </option>
-            ))}
-          </select>
-          <textarea
-            value={platformInstruction}
-            onChange={(event) => setPlatformInstruction(event.target.value)}
-            rows={2}
-            placeholder="Instruction optionnelle pour la plateforme."
-            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-          />
-          <button
-            type="button"
-            onClick={handleRegeneratePlatform}
-            disabled={isSubmitting}
-            className="inline-flex items-center rounded-2xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 disabled:opacity-60"
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Regenerer la plateforme
-          </button>
+        <div className="p-6">
+          {aiTab === "global" && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Génération globale</p>
+                <p className="mt-0.5 text-sm text-slate-500">Génère tous les posts pour l'ensemble des plateformes sélectionnées.</p>
+              </div>
+              <textarea
+                value={generateInstruction}
+                onChange={(event) => setGenerateInstruction(event.target.value)}
+                rows={3}
+                placeholder="Instruction optionnelle (ex: accent sur la conversion mobile)…"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
+              />
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isSubmitting}
+                className="inline-flex items-center rounded-xl bg-linear-to-r from-slate-800 to-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:from-slate-700 hover:to-slate-800 disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Bot className="mr-2 h-4 w-4" />
+                )}
+                Générer le contenu
+              </button>
+            </div>
+          )}
 
-          <div className="h-px bg-stone-200" />
+          {aiTab === "platform" && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Régénérer une plateforme</p>
+                <p className="mt-0.5 text-sm text-slate-500">Régénère tous les posts d'une plateforme spécifique.</p>
+              </div>
+              <select
+                value={platformToRegenerate}
+                onChange={(event) => setPlatformToRegenerate(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              >
+                <option value="">Sélectionnez une plateforme</option>
+                {campaign.platforms.map((platform) => (
+                  <option key={platform} value={platform}>{platform}</option>
+                ))}
+              </select>
+              <textarea
+                value={platformInstruction}
+                onChange={(event) => setPlatformInstruction(event.target.value)}
+                rows={2}
+                placeholder="Instruction optionnelle pour la plateforme…"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
+              />
+              <button
+                type="button"
+                onClick={handleRegeneratePlatform}
+                disabled={isSubmitting}
+                className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                )}
+                Régénérer la plateforme
+              </button>
+            </div>
+          )}
 
-          <input
-            type="number"
-            min={0}
-            value={postIndexInput}
-            onChange={(event) => setPostIndexInput(event.target.value)}
-            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-          />
-          <textarea
-            value={postInstruction}
-            onChange={(event) => setPostInstruction(event.target.value)}
-            rows={2}
-            placeholder="Instruction optionnelle pour le post."
-            className="w-full rounded-2xl border border-stone-300 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-          />
-          <button
-            type="button"
-            onClick={handleRegeneratePost}
-            disabled={isSubmitting}
-            className="inline-flex items-center rounded-2xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 disabled:opacity-60"
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Regenerer le post
-          </button>
-        </article>
+          {aiTab === "post" && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Régénérer un post</p>
+                <p className="mt-0.5 text-sm text-slate-500">Régénère un post individuel par son index (commence à 0).</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-slate-700">Index du post</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={postIndexInput}
+                  onChange={(event) => setPostIndexInput(event.target.value)}
+                  className="w-28 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                />
+              </div>
+              <textarea
+                value={postInstruction}
+                onChange={(event) => setPostInstruction(event.target.value)}
+                rows={2}
+                placeholder="Instruction optionnelle pour ce post…"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
+              />
+              <button
+                type="button"
+                onClick={handleRegeneratePost}
+                disabled={isSubmitting}
+                className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                )}
+                Régénérer le post
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
+      {/* Posts section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-stone-950">
-            Posts de la campagne
-          </h2>
-          <span className="text-sm text-stone-600">{posts.length} posts</span>
+          <h2 className="text-xl font-bold text-slate-900">Posts de la campagne</h2>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+            {posts.length} post{posts.length > 1 ? "s" : ""}
+          </span>
         </div>
 
         {error ? (
-          <article className="rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <article className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
           </article>
         ) : null}
 
         {posts.length === 0 ? (
-          <article className="rounded-[28px] border border-dashed border-stone-300 bg-white p-10 text-center">
-            <FileText className="mx-auto h-9 w-9 text-stone-400" />
-            <h3 className="mt-3 text-lg font-semibold text-stone-950">
-              Aucun post genere
-            </h3>
-            <p className="mt-1 text-sm text-stone-600">
-              Lancez une generation globale pour remplir cette campagne.
+          <article className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+              <FileText className="h-7 w-7 text-slate-400" />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">Aucun post généré</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Lancez une génération globale pour remplir cette campagne.
             </p>
           </article>
         ) : (
@@ -515,28 +590,25 @@ export default function ContentCampaignDetailPage() {
             {posts.map((post) => (
               <article
                 key={post._id || `${post.platform}-${post.index}`}
-                className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm"
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
-                      #{post.index}
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                      {post.index}
                     </span>
-                    <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${getPlatformClass(post.platform)}`}>
                       {post.platform}
                     </span>
-                    <span className="rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-medium text-cyan-800">
+                    <span className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-xs font-medium text-cyan-700">
                       {post.type}
                     </span>
                   </div>
-                  <p className="text-xs text-stone-500">
-                    {scheduleText(post.schedule)}
-                  </p>
+                  <p className="text-xs font-medium text-slate-400">{scheduleText(post.schedule)}</p>
                 </div>
-
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
-                  {post.caption}
-                </p>
+                <div className="px-5 py-4">
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{post.caption}</p>
+                </div>
               </article>
             ))}
           </div>
