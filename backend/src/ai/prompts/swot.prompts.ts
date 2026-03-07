@@ -8,6 +8,7 @@ interface BusinessInfo {
   mainObjective?: string;
   tone?: string;
   budget?: number | string;
+  language?: string;
   [key: string]: unknown;
 }
 
@@ -60,6 +61,7 @@ Regles obligatoires:
 - Chaque element doit etre specifique au contexte (pas de formulation generique).
 - Evite les doublons, formulations vagues et banalites.
 - Formulation orientee action/impact business.
+- Langue: ${businessInfo.language ? `Reponds ENTIEREMENT en ${businessInfo.language}. Tous les elements doivent etre rediges en ${businessInfo.language}.` : 'Detecte la langue depuis le contexte business et les inputs, puis reponds dans cette meme langue de facon coherente.'}
 - Pas de blabla.
 - JSON strict.
 - Interdit: markdown, commentaires, texte hors JSON.
@@ -108,6 +110,7 @@ Regles obligatoires:
 - Supprime le generique, garde le concret et contextualise.
 - Ameliore la clarte et l'utilite actionnable de chaque point.
 - Evite les doublons et les points non verificables.
+- Langue: ${(userInputs as BusinessInfo).language ? `Reponds ENTIEREMENT en ${(userInputs as BusinessInfo).language}.` : 'Reponds dans la meme langue que le contexte business fourni.'}
 - Pas de blabla.
 - JSON strict.
 - Interdit: markdown, commentaires, texte hors JSON.

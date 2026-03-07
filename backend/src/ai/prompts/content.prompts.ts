@@ -160,13 +160,17 @@ export function buildGenerateContentCampaignPrompt(
   const normalizedPlatforms = normalizePlatforms(platforms);
   const frequencyPerWeek = resolveFrequencyPerWeek(inputs ?? {});
   const durationWeeks = resolveDurationWeeks(inputs ?? {});
+  const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
+  const langRule = contentLang === 'auto'
+    ? 'Detect the language from the business context and user inputs, then write ALL content in that same language consistently.'
+    : `${contentLang}. Write EVERY text field (title, caption, description, hook, cta, suggestedVisual, adCopyVariants, contentPillars) entirely in ${contentLang}.`;
 
   return `Tu es un expert senior en social media et content marketing.
 
 Mission:
 1) Analyse la strategie marketing fournie (Avant/Pendant/Apres).
 2) Relie cette strategie au contexte business et aux plateformes.
-3) Genere du contenu concret, en francais uniquement.
+3) Genere du contenu concret dans la langue specifiee.
 
 Mode: ${normalizedMode}
 Plateformes cibles: ${normalizedPlatforms.join(', ') || 'Aucune'}
@@ -187,7 +191,7 @@ Instruction supplementaire:
 ${instruction?.trim() || 'Aucune instruction supplementaire.'}
 
 Regles globales:
-- Francais uniquement.
+- Langue: ${langRule}
 - Contenu concret, specifique et actionnable.
 - JSON valide uniquement.
 - Interdit: markdown, commentaires, texte hors JSON.
@@ -235,13 +239,17 @@ export function buildRegeneratePlatformPrompt(
   instruction?: string,
 ): string {
   const normalizedMode = normalizeMode(mode);
+  const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
+  const langRule = contentLang === 'auto'
+    ? 'Detect the language from the business context and inputs, then write ALL content in that same language.'
+    : `${contentLang}. Write EVERY text field entirely in ${contentLang}.`;
 
   return `Tu es un expert senior en social media et content marketing.
 
 Mission:
 1) Analyse la strategie (Avant/Pendant/Apres).
 2) Analyse les posts existants de la plateforme ${platform}.
-3) Regenere uniquement des posts pour ${platform}, en francais uniquement.
+3) Regenere uniquement des posts pour ${platform} dans la langue specifiee.
 
 Mode: ${normalizedMode}
 Plateforme cible unique: ${platform}
@@ -267,7 +275,7 @@ Instruction supplementaire:
 ${instruction?.trim() || 'Aucune instruction supplementaire.'}
 
 Regles globales:
-- Francais uniquement.
+- Langue: ${langRule}
 - platform doit toujours etre "${platform}".
 - JSON valide uniquement.
 - Interdit: markdown, commentaires, texte hors JSON.
@@ -323,13 +331,17 @@ export function buildRegenerateSinglePostPrompt(
   instruction?: string,
 ): string {
   const normalizedMode = normalizeMode(mode);
+  const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
+  const langRule = contentLang === 'auto'
+    ? 'Detect the language from the business context and inputs, then write ALL content in that same language.'
+    : `${contentLang}. Write EVERY text field entirely in ${contentLang}.`;
 
   return `Tu es un expert senior en social media et content marketing.
 
 Mission:
 1) Analyse la strategie (Avant/Pendant/Apres).
 2) Analyse le post existant.
-3) Regenere un seul post pour ${platform}, en francais uniquement.
+3) Regenere un seul post pour ${platform} dans la langue specifiee.
 
 Mode: ${normalizedMode}
 Plateforme cible: ${platform}
@@ -355,7 +367,7 @@ Instruction supplementaire:
 ${instruction?.trim() || 'Aucune instruction supplementaire.'}
 
 Regles globales:
-- Francais uniquement.
+- Langue: ${langRule}
 - platform doit toujours etre "${platform}".
 - JSON valide uniquement.
 - Interdit: markdown, commentaires, texte hors JSON.
@@ -414,6 +426,10 @@ export function buildAutoScheduleAdvicePrompt(
         .filter((pillar) => pillar.length > 0),
     ),
   );
+  const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
+  const langRule = contentLang === 'auto'
+    ? 'Detect the language from the business context and respond in that same language.'
+    : `Respond entirely in ${contentLang}. All notes and labels must be in ${contentLang}.`;
 
   return `Tu es un expert senior en social media planning.
 
@@ -441,7 +457,7 @@ ${toPrettyJson({
 })}
 
 Regles obligatoires:
-- Francais uniquement.
+- Langue: ${langRule}
 - Concret.
 - Pas de blabla.
 - Retourner uniquement du JSON strict.

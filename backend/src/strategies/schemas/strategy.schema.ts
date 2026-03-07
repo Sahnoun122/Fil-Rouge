@@ -45,6 +45,9 @@ export class BusinessInfo {
 
   @Prop()
   budget?: number;
+
+  @Prop()
+  language?: string;
 }
 
 // Schéma pour le marché cible

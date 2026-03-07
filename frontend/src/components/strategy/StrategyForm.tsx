@@ -19,6 +19,7 @@ import {
   Tone,
   OBJECTIVE_OPTIONS,
   TONE_OPTIONS,
+  LANGUAGE_OPTIONS,
 } from "../../types/strategy.types";
 
 // Schema de validation Zod
@@ -57,6 +58,7 @@ const strategySchema = z.object({
     .min(0, "Le budget doit être supérieur ou égal à 0")
     .max(10000000, "Le budget ne peut pas dépasser 10 millions")
     .optional(),
+  language: z.string().optional(),
 });
 
 type StrategyFormData = z.infer<typeof strategySchema>;
@@ -91,6 +93,7 @@ export default function StrategyForm({
       mainObjective: initialData?.mainObjective || MainObjective.LEADS,
       tone: initialData?.tone || Tone.PROFESSIONAL,
       budget: initialData?.budget || undefined,
+      language: initialData?.language || 'French',
     },
     mode: "onChange",
   });
@@ -359,6 +362,24 @@ export default function StrategyForm({
                 </p>
               )}
             </div>
+
+            {/* Langue de génération */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Langue de génération
+              </label>
+              <select
+                {...register("language")}
+                className="w-full px-4 py-3 border border-gray-300 hover:border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                disabled={isLoading}
+              >
+                {LANGUAGE_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -400,6 +421,12 @@ export default function StrategyForm({
                   }
                 </span>
               </div>
+              <div>
+                <span className="font-medium text-blue-900">Langue:</span>
+                <span className="ml-2 text-blue-700">
+                  {LANGUAGE_OPTIONS.find((opt) => opt.value === watchedData.language)?.label || watchedData.language || 'Français'}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -423,7 +450,7 @@ export default function StrategyForm({
             className={`inline-flex items-center px-8 py-3 text-white font-semibold rounded-lg transition-all duration-200 ${
               isLoading || !isValid
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
+                : "bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
             }`}
           >
             {isLoading ? (

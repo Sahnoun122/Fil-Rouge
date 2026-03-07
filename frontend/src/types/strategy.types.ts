@@ -25,6 +25,7 @@ export interface GenerateStrategyDto {
   mainObjective: MainObjective;
   tone: Tone;
   budget?: number;
+  language?: string;
 }
 
 // Types pour les informations business
@@ -37,6 +38,7 @@ export interface BusinessInfo {
   mainObjective: MainObjective;
   tone: Tone;
   budget?: number;
+  language?: string;
 }
 
 // Types pour la structure de la stratégie générée
@@ -207,3 +209,19 @@ export const TONE_OPTIONS = Object.entries(TONE_LABELS).map(([value, label]) => 
   value: value as Tone,
   label,
 }));
+
+// Langues prises en charge pour la génération IA
+export const LANGUAGE_OPTIONS = [
+  { value: 'French', label: 'Français' },
+  { value: 'English', label: 'English' },
+  { value: 'Arabic', label: 'العربية' },
+  { value: 'Spanish', label: 'Español' },
+  { value: 'German', label: 'Deutsch' },
+  { value: 'Italian', label: 'Italiano' },
+  { value: 'Portuguese', label: 'Português' },
+  { value: 'Dutch', label: 'Nederlands' },
+  { value: 'Russian', label: 'Русский' },
+  { value: 'Turkish', label: 'Türkçe' },
+  { value: 'Chinese', label: '中文' },
+  { value: 'Japanese', label: '日本語' },
+];

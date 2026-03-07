@@ -9,6 +9,7 @@ interface BusinessInfo {
   currentPosition?: string;
   competitors?: string;
   uniqueValue?: string;
+  language?: string;
 }
 
 /**
@@ -26,6 +27,11 @@ export function buildFullStrategyPrompt(businessInfo: BusinessInfo): string {
     timeline = "la période de mise en œuvre"
   } = businessInfo;
 
+  const language = businessInfo.language || 'auto';
+  const langRule = language === 'auto'
+    ? 'Detect the language from the business context and inputs, then respond consistently in that same language throughout the entire output.'
+    : `Respond ENTIRELY in ${language}. Every field value, description, example, and text must be written in ${language}.`;
+
   return `En tant qu'expert en stratégie marketing, créez un "One Page Marketing Plan" complet et professionnel pour ${companyName} dans ${industry}.
 
 INFORMATIONS CONTEXTUELLES :
@@ -41,7 +47,7 @@ CONSIGNES STRICTES :
 1. Répondez UNIQUEMENT avec un JSON valide, sans texte avant ou après
 2. Structure obligatoire : Avant/Pendant/Après
 3. Maximum 6 éléments concrets par section
-4. Contenu 100% en français, professionnel et actionnable
+4. ${langRule}
 5. Évitez les généralités, donnez des actions spécifiques
 
 FORMAT JSON ATTENDU :
@@ -120,6 +126,11 @@ export function buildRegenerateSectionPrompt(
     targetAudience = "la clientèle cible" 
   } = businessInfo;
 
+  const language = businessInfo.language || 'auto';
+  const langRule = language === 'auto'
+    ? 'Detect the language from the business context and inputs, then respond consistently in that same language.'
+    : `Respond ENTIRELY in ${language}. Every value and text must be written in ${language}.`;
+
   const sectionExamples = {
     'avant.marcheCible': `{
   "persona": "Description détaillée du persona (âge, profession, besoins, comportements)",
@@ -191,7 +202,7 @@ ${instruction}
 CONSIGNES STRICTES :
 1. Répondez UNIQUEMENT avec un JSON valide de la section demandée
 2. Respectez EXACTEMENT la structure attendue pour ${sectionKey}
-3. Contenu 100% en français, concret et professionnel
+3. ${langRule}
 4. Évitez de reproduire le contenu existant si demandé
 5. Adaptez le contenu au secteur ${industry}
 
@@ -215,6 +226,11 @@ export function buildImproveSectionPrompt(
     industry = "le secteur d'activité", 
     targetAudience = "la clientèle cible" 
   } = businessInfo;
+
+  const language = businessInfo.language || 'auto';
+  const langRule = language === 'auto'
+    ? 'Detect the language from the business context and inputs, then respond consistently in that same language.'
+    : `Respond ENTIRELY in ${language}. Every value and text must be written in ${language}.`;
 
   const sectionExamples = {
     'avant.marcheCible': `{
@@ -289,7 +305,7 @@ CONSIGNES STRICTES :
 2. CONSERVEZ la logique et l'orientation générale
 3. Respectez EXACTEMENT la structure attendue pour ${sectionKey}
 4. Améliorez la précision, la clarté et l'impact
-5. Contenu 100% en français, professionnel
+5. ${langRule}
 6. Rendez le contenu plus spécifique et actionnable
 
 FORMAT JSON ATTENDU pour ${sectionKey} améliorée :

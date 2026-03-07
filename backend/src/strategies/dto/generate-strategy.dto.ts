@@ -27,4 +27,8 @@ export class GenerateStrategyDto {
   @IsNumber()
   @Min(0)
   budget?: number;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
 }

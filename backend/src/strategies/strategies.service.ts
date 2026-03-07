@@ -33,6 +33,7 @@ export class StrategiesService {
         mainObjective: dto.mainObjective,
         tone: dto.tone,
         budget: dto.budget,
+        language: dto.language,
       };
 
       // Construction du prompt pour l'IA
@@ -44,6 +45,7 @@ export class StrategiesService {
         objectives: this.getObjectiveDescription(dto.mainObjective),
         budget: dto.budget ? `${dto.budget}€` : 'Budget non spécifié',
         timeline: 'À définir selon les besoins',
+        language: dto.language,
       };
 
       const prompt = buildFullStrategyPrompt(businessInfoForPrompt);
@@ -448,6 +450,7 @@ export class StrategiesService {
         products: strategy.businessInfo.productOrService,
         objectives: this.getObjectiveDescription(strategy.businessInfo.mainObjective),
         budget: strategy.businessInfo.budget ? `${strategy.businessInfo.budget}€` : 'Budget non spécifié',
+        language: strategy.businessInfo.language,
       };
 
       // Construire le prompt de régénération
@@ -515,6 +518,7 @@ export class StrategiesService {
         products: strategy.businessInfo.productOrService,
         objectives: this.getObjectiveDescription(strategy.businessInfo.mainObjective),
         budget: strategy.businessInfo.budget ? `${strategy.businessInfo.budget}€` : 'Budget non spécifié',
+        language: strategy.businessInfo.language,
       };
 
       // Construire le prompt d'amélioration
