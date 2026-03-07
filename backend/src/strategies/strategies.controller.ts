@@ -152,6 +152,23 @@ export class StrategiesController {
   }
 
   /**
+   * Retourne la charge utile de la strategie pour export PDF
+   */
+  @Get(':id/export-pdf')
+  async exportPdf(
+    @Param('id') strategyId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user.id;
+    const payload = await this.strategiesService.buildPdfExportPayload(userId, strategyId);
+
+    return {
+      success: true,
+      data: payload,
+    };
+  }
+
+  /**
    * Met à jour les informations business d'une stratégie
    */
   @Patch(':id')

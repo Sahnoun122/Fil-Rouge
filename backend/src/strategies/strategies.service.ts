@@ -7,6 +7,41 @@ import { GenerateStrategyDto, UpdateStrategyDto, RegenerateSectionDto, ImproveSe
 import { buildFullStrategyPrompt, buildRegenerateSectionPrompt, buildImproveSectionPrompt } from '../ai/prompts/strategy.prompts';
 import { User, UserDocument } from '../users/entities/user.entity';
 
+type StrategyPhaseKey = 'avant' | 'pendant' | 'apres';
+
+export interface StrategyPdfExportSection {
+  key: string;
+  title: string;
+  content: unknown;
+}
+
+export interface StrategyPdfExportPhase {
+  key: StrategyPhaseKey;
+  title: string;
+  subtitle: string;
+  sections: StrategyPdfExportSection[];
+}
+
+export interface StrategyPdfExportPayload {
+  strategyId: string;
+  fileName: string;
+  exportedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  businessInfo: {
+    businessName: string;
+    industry: string;
+    productOrService: string;
+    targetAudience: string;
+    location: string;
+    mainObjective: MainObjective;
+    tone: Tone;
+    budget?: number;
+    language?: string;
+  };
+  phases: StrategyPdfExportPhase[];
+}
+
 @Injectable()
 export class StrategiesService {
   constructor(
@@ -202,6 +237,69 @@ export class StrategiesService {
         `Erreur lors de la récupération de la stratégie: ${error.message}`
       );
     }
+  }
+
+  /**
+   * Construit la charge utile pour export PDF d'une stratégie
+   */
+  async buildPdfExportPayload(userId: string, strategyId: string): Promise<StrategyPdfExportPayload> {
+    const strategy = await this.findOne(userId, strategyId);
+    const nowIso = new Date().toISOString();
+    const createdAt = strategy.createdAt ? new Date(strategy.createdAt).toISOString() : nowIso;
+    const updatedAt = strategy.updatedAt ? new Date(strategy.updatedAt).toISOString() : createdAt;
+
+    const phases: StrategyPdfExportPhase[] = [
+      {
+        key: 'avant',
+        title: 'Avant',
+        subtitle: 'Attirer et positionner la marque',
+        sections: [
+          { key: 'marcheCible', title: 'Marche cible', content: strategy.generatedStrategy?.avant?.marcheCible ?? null },
+          { key: 'messageMarketing', title: 'Message marketing', content: strategy.generatedStrategy?.avant?.messageMarketing ?? null },
+          { key: 'canauxCommunication', title: 'Canaux de communication', content: strategy.generatedStrategy?.avant?.canauxCommunication ?? null },
+        ],
+      },
+      {
+        key: 'pendant',
+        title: 'Pendant',
+        subtitle: 'Convertir et faire progresser les prospects',
+        sections: [
+          { key: 'captureProspects', title: 'Capture de prospects', content: strategy.generatedStrategy?.pendant?.captureProspects ?? null },
+          { key: 'nurturing', title: 'Nurturing', content: strategy.generatedStrategy?.pendant?.nurturing ?? null },
+          { key: 'conversion', title: 'Conversion', content: strategy.generatedStrategy?.pendant?.conversion ?? null },
+        ],
+      },
+      {
+        key: 'apres',
+        title: 'Apres',
+        subtitle: 'Fideliser et activer la recommandation',
+        sections: [
+          { key: 'experienceClient', title: 'Experience client', content: strategy.generatedStrategy?.apres?.experienceClient ?? null },
+          { key: 'augmentationValeurClient', title: 'Augmentation de la valeur client', content: strategy.generatedStrategy?.apres?.augmentationValeurClient ?? null },
+          { key: 'recommandation', title: 'Recommandation', content: strategy.generatedStrategy?.apres?.recommandation ?? null },
+        ],
+      },
+    ];
+
+    return {
+      strategyId: strategyId.toString(),
+      fileName: this.buildPdfFileName(strategy.businessInfo.businessName),
+      exportedAt: nowIso,
+      createdAt,
+      updatedAt,
+      businessInfo: {
+        businessName: strategy.businessInfo.businessName,
+        industry: strategy.businessInfo.industry,
+        productOrService: strategy.businessInfo.productOrService,
+        targetAudience: strategy.businessInfo.targetAudience,
+        location: strategy.businessInfo.location,
+        mainObjective: strategy.businessInfo.mainObjective,
+        tone: strategy.businessInfo.tone,
+        budget: strategy.businessInfo.budget,
+        language: strategy.businessInfo.language,
+      },
+      phases,
+    };
   }
 
   /**
@@ -677,5 +775,19 @@ export class StrategiesService {
 
   private escapeRegex(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private buildPdfFileName(businessName: string): string {
+    const normalized = businessName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60);
+
+    const suffix = new Date().toISOString().slice(0, 10);
+    const companyPart = normalized || 'strategie-marketing';
+    return `${companyPart}-${suffix}.pdf`;
   }
 }

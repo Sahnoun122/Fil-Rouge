@@ -15,14 +15,15 @@ import {
   DollarSign,
   Sparkles,
   Search,
-  Filter,
-  SortDesc,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStrategiesList } from '../../../hooks/useStrategies';
 import { Strategy, OBJECTIVE_LABELS, TONE_LABELS } from '../../../types/strategy.types';
+import strategiesService from '../../../services/strategiesService';
+import { generateStrategyPdf } from '../../../lib/strategyPdf';
 
 // Composant pour l'état vide
 const EmptyState = () => (
@@ -81,10 +82,18 @@ const LoadingSkeleton = () => (
 interface StrategyCardProps {
   strategy: Strategy;
   onDelete: (id: string) => void;
+  onDownload: (id: string) => void;
   isDeleting?: boolean;
+  isDownloading?: boolean;
 }
 
-const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardProps) => {
+const StrategyCard = ({
+  strategy,
+  onDelete,
+  onDownload,
+  isDeleting = false,
+  isDownloading = false,
+}: StrategyCardProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
 
@@ -97,10 +106,15 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
       try {
         await onDelete(strategy._id);
         toast.success('Strategy deleted successfully');
-      } catch (error) {
+      } catch {
         toast.error('Error deleting strategy');
       }
     }
+    setShowMenu(false);
+  };
+
+  const handleDownload = () => {
+    onDownload(strategy._id);
     setShowMenu(false);
   };
 
@@ -164,6 +178,14 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
                   View details
                 </button>
                 <button
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+                </button>
+                <button
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
@@ -211,12 +233,21 @@ const StrategyCard = ({ strategy, onDelete, isDeleting = false }: StrategyCardPr
       </div>
 
       {/* Action */}
-      <button
-        onClick={handleView}
-        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
-      >
-        View full strategy
-      </button>
+      <div className="space-y-2">
+        <button
+          onClick={handleView}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+        >
+          View full strategy
+        </button>
+        <button
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="w-full border border-gray-300 bg-white text-gray-700 text-sm font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+        >
+          {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+        </button>
+      </div>
     </div>
   );
 };
@@ -230,13 +261,13 @@ export default function StrategiesPage() {
     error,
     deleteStrategy,
     changePage,
-    changeLimit,
     refresh,
   } = useStrategiesList();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
   const [filterBy, setFilterBy] = useState<'all' | string>('all');
+  const [downloadingStrategyId, setDownloadingStrategyId] = useState<string | null>(null);
 
   // Filtrer et trier les stratégies
   const filteredStrategies = strategies
@@ -263,6 +294,19 @@ export default function StrategiesPage() {
 
   const handleDeleteStrategy = async (id: string) => {
     await deleteStrategy(id);
+  };
+
+  const handleDownloadStrategy = async (id: string) => {
+    setDownloadingStrategyId(id);
+    try {
+      const payload = await strategiesService.getStrategyPdfPayload(id);
+      generateStrategyPdf(payload);
+      toast.success('PDF generated successfully');
+    } catch {
+      toast.error('Error generating PDF');
+    } finally {
+      setDownloadingStrategyId(null);
+    }
   };
 
   if (isLoading && strategies.length === 0) {
@@ -380,7 +424,9 @@ export default function StrategiesPage() {
                   key={strategy._id}
                   strategy={strategy}
                   onDelete={handleDeleteStrategy}
+                  onDownload={handleDownloadStrategy}
                   isDeleting={isLoading}
+                  isDownloading={downloadingStrategyId === strategy._id}
                 />
               ))}
             </div>

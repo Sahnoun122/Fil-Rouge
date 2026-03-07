@@ -8,6 +8,7 @@ import {
   RegenerateSectionDto,
   ImproveSectionDto,
   UpdateSectionDto,
+  StrategyPdfExportPayload,
 } from '../types/strategy.types';
 import { TokenManager } from '../utils/fetcher';
 
@@ -111,6 +112,24 @@ class StrategiesService {
       return result.data;
     } catch (error) {
       console.error('Erreur lors du chargement de la stratégie:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Récupère les données structurées pour l'export PDF d'une stratégie
+   */
+  async getStrategyPdfPayload(id: string): Promise<StrategyPdfExportPayload> {
+    try {
+      const response = await fetch(`${this.baseURL}/strategies/${id}/export-pdf`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      const result = await this.handleResponse<ApiResponse<StrategyPdfExportPayload>>(response);
+      return result.data;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données d'export PDF:", error);
       throw error;
     }
   }

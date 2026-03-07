@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Download,
   Edit,
   Eye,
   FileText,
@@ -25,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useStrategy, useStrategies } from '@/src/hooks/useStrategies';
 import { OBJECTIVE_LABELS, TONE_LABELS } from '@/src/types/strategy.types';
+import strategiesService from '@/src/services/strategiesService';
+import { generateStrategyPdf } from '@/src/lib/strategyPdf';
 
 type SectionItem = {
   title: string;
@@ -260,6 +263,7 @@ export default function StrategyDetailPage() {
   const { regenerateSection, deleteStrategy } = useStrategies();
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
@@ -319,6 +323,21 @@ export default function StrategyDetailPage() {
   const handleRefresh = async () => {
     if (!strategyId) return;
     await loadStrategy(strategyId);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!strategyId) return;
+
+    setIsExporting(true);
+    try {
+      const payload = await strategiesService.getStrategyPdfPayload(strategyId);
+      generateStrategyPdf(payload);
+      toast.success('PDF generated successfully');
+    } catch {
+      toast.error('Error generating PDF');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (isLoading) {
@@ -422,6 +441,15 @@ export default function StrategyDetailPage() {
                 <Edit className="h-4 w-4" />
                 Edit
               </Link>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isExporting}
+                className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:bg-white/25 disabled:opacity-60"
+              >
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Generating...' : 'Download PDF'}
+              </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(true)}

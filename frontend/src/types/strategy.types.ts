@@ -155,6 +155,29 @@ export interface StrategiesResponse {
   pagination: PaginationInfo;
 }
 
+export interface StrategyPdfSection {
+  key: string;
+  title: string;
+  content: unknown;
+}
+
+export interface StrategyPdfPhase {
+  key: 'avant' | 'pendant' | 'apres';
+  title: string;
+  subtitle: string;
+  sections: StrategyPdfSection[];
+}
+
+export interface StrategyPdfExportPayload {
+  strategyId: string;
+  fileName: string;
+  exportedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  businessInfo: BusinessInfo;
+  phases: StrategyPdfPhase[];
+}
+
 // Types pour les DTOs de mise à jour
 export interface RegenerateSectionDto {
   sectionKey: string;
@@ -169,7 +192,7 @@ export interface ImproveSectionDto {
 
 export interface UpdateSectionDto {
   sectionKey: string;
-  newContent: any;
+  newContent: unknown;
 }
 
 // Utilitaires pour l'état de chargement

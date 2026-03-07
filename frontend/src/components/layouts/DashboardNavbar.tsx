@@ -48,8 +48,8 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
   const pageTitle = getPageTitleFromPath(pathname, resolvedRole);
   const quickAction =
     resolvedRole === 'admin'
-      ? { label: 'Gérer les utilisateurs', href: '/admin/users' }
-      : { label: 'Nouvelle stratégie', href: '/user/strategies/new' };
+      ? { label: 'Manage users', href: '/admin/users' }
+      : { label: 'New strategy', href: '/user/strategies/new' };
 
   const handleLogout = async () => {
     try {
@@ -71,7 +71,7 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
         {/* Left: page title */}
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 leading-tight">
-            {resolvedRole === 'admin' ? 'Espace admin' : 'Espace utilisateur'}
+            {resolvedRole === 'admin' ? 'Admin space' : 'User space'}
           </p>
           <h2 className="text-lg font-black text-slate-900 leading-tight truncate">{pageTitle}</h2>
         </div>
@@ -120,14 +120,14 @@ export default function DashboardNavbar({ role }: DashboardNavbarProps) {
           <button
             type="button"
             onClick={handleLogout}
-            title="Se déconnecter"
+            title="Log out"
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 transition hover:border-red-200 hover:bg-red-50 group"
           >
             <div className="w-6 h-6 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
               {initials}
             </div>
             <span className="hidden md:block text-xs font-semibold text-slate-700 group-hover:text-red-600 transition-colors max-w-25 truncate">
-              {user?.fullName?.split(' ')[0] || 'Utilisateur'}
+              {user?.fullName?.split(' ')[0] || 'User'}
             </span>
             <LogOut className="hidden md:block w-3.5 h-3.5 text-slate-400 group-hover:text-red-500 transition-colors" />
           </button>

@@ -166,18 +166,18 @@ const monitoringIcon = (
 
 export const userNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/user/dashboard", icon: dashboardIcon },
-  { name: "Mes strategies", href: "/user/strategies", icon: strategiesIcon },
+  { name: "My Strategies", href: "/user/strategies", icon: strategiesIcon },
   { name: "Content", href: "/user/content", icon: contentIcon },
   { name: "SWOT", href: "/user/swot", icon: analyticsIcon },
-  { name: "Calendrier", href: "/calendar", icon: calendarIcon },
-  { name: "Profil", href: "/user/profile", icon: profileIcon },
-  { name: "Parametres", href: "/user/settings", icon: settingsIcon },
+  { name: "Calendar", href: "/calendar", icon: calendarIcon },
+  { name: "Profile", href: "/user/profile", icon: profileIcon },
+  { name: "Settings", href: "/user/settings", icon: settingsIcon },
 ];
 
 export const adminNavigation: NavigationItem[] = [
   { name: "Dashboard", href: "/admin/dashboard", icon: dashboardIcon },
-  { name: "Utilisateurs", href: "/admin/users", icon: userIcon },
-  { name: "Calendrier", href: "/admin/calendar", icon: calendarIcon },
+  { name: "Users", href: "/admin/users", icon: userIcon },
+  { name: "Calendar", href: "/admin/calendar", icon: calendarIcon },
   { name: "Strategies", href: "/admin/strategies", icon: strategiesIcon },
   { name: "Content", href: "/admin/content", icon: contentIcon },
   {
@@ -186,8 +186,8 @@ export const adminNavigation: NavigationItem[] = [
     icon: analyticsIcon,
   },
   { name: "Analytics", href: "/admin/analytics", icon: analyticsIcon },
-  { name: "AI monitoring", href: "/admin/ai-monitoring", icon: monitoringIcon },
-  { name: "Parametres", href: "/admin/settings", icon: settingsIcon },
+  { name: "AI Monitoring", href: "/admin/ai-monitoring", icon: monitoringIcon },
+  { name: "Settings", href: "/admin/settings", icon: settingsIcon },
 ];
 
 export const getNavigationForRole = (role: AppRole): NavigationItem[] => {
