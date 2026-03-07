@@ -41,9 +41,55 @@ const SCHEDULED_STATUS_LABELS: Record<string, string> = {
   late: "En retard",
 };
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function getTodayDateKey(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateKey(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (DATE_ONLY_PATTERN.test(trimmed)) {
+    return trimmed;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function toIsoRange(date: string, endOfDay = false) {
+  const dateKey = normalizeDateKey(date) ?? getTodayDateKey();
+  const [year, month, day] = dateKey.split("-").map((part) => Number(part));
+
   return new Date(
-    `${date}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`,
+    Date.UTC(
+      year,
+      month - 1,
+      day,
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
   ).toISOString();
 }
 
@@ -70,14 +116,15 @@ function getCurrentMonthRange(): CalendarRange {
 
 function buildCampaignRange(campaign: ContentCampaign): CalendarRange {
   const scheduledDates = campaign.generatedPosts
-    .map((post) => post.schedule?.date?.trim())
+    .map((post) => normalizeDateKey(post.schedule?.date))
     .filter((value): value is string => Boolean(value))
     .sort((left, right) => left.localeCompare(right));
 
-  const today = new Date().toISOString().slice(0, 10);
-  const resolvedStart = campaign.inputs?.startDate || scheduledDates[0] || today;
+  const today = getTodayDateKey();
+  const resolvedStart =
+    normalizeDateKey(campaign.inputs?.startDate) || scheduledDates[0] || today;
   const resolvedEnd =
-    campaign.inputs?.endDate ||
+    normalizeDateKey(campaign.inputs?.endDate) ||
     scheduledDates[scheduledDates.length - 1] ||
     resolvedStart;
 
