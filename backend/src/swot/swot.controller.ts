@@ -139,6 +139,18 @@ export class SwotController {
     };
   }
 
+  @Get('admin/:id/export-pdf')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async exportPdfForAdmin(@Param('id') swotId: string) {
+    const payload = await this.swotService.buildPdfExportPayloadForAdmin(swotId);
+
+    return {
+      success: true,
+      data: payload,
+    };
+  }
+
   @Get('admin/:id')
   @UseGuards(RolesGuard)
   @Roles('admin')
@@ -148,6 +160,20 @@ export class SwotController {
     return {
       success: true,
       data: swot,
+    };
+  }
+
+  @Get(':id/export-pdf')
+  async exportPdf(
+    @Param('id') swotId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user.id;
+    const payload = await this.swotService.buildPdfExportPayload(userId, swotId);
+
+    return {
+      success: true,
+      data: payload,
     };
   }
 

@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Edit3, Loader2, PenSquare, Save, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, Edit3, Loader2, PenSquare, Save, Sparkles, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { fetcher } from '@/src/utils/fetcher';
+import { generateSwotPdf } from '@/src/lib/swotPdf';
+import { SwotPdfExportPayload } from '@/src/types/swot.types';
 
 interface SwotInputs {
   notesInternes?: string;
@@ -119,6 +121,7 @@ export default function UserSwotDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [isImproveModalOpen, setIsImproveModalOpen] = useState(false);
   const [improveInstruction, setImproveInstruction] = useState('');
@@ -263,6 +266,29 @@ export default function UserSwotDetailPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!swotId) return;
+
+    setIsExporting(true);
+    try {
+      const response = await fetcher<SwotPdfExportPayload>(`/swot/${swotId}/export-pdf`, {
+        method: 'GET',
+        requireAuth: true,
+      });
+
+      if (!response.data) {
+        throw new Error('Invalid SWOT PDF payload');
+      }
+
+      generateSwotPdf(response.data);
+      toast.success('SWOT PDF generated');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error generating SWOT PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (isLoading) {
     return <SwotSkeleton />;
   }
@@ -271,7 +297,7 @@ export default function UserSwotDetailPage() {
     return <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-red-700">SWOT not found.</div>;
   }
 
-  const isBusy = isSaving || isImproving;
+  const isBusy = isSaving || isImproving || isExporting;
 
   return (
     <div className="space-y-6">
@@ -331,6 +357,15 @@ export default function UserSwotDetailPage() {
           >
             <Sparkles className="mr-2 h-4 w-4" />
             Improve with AI
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={isBusy}
+            className="inline-flex items-center rounded-xl border border-cyan-300 bg-white px-4 py-2.5 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? 'Generating...' : 'Download PDF'}
           </button>
         </div>
       </section>

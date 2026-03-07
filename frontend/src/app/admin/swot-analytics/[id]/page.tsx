@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { AlertCircle, ArrowLeft, Building2, Calendar, User } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Building2, Calendar, Download, User } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useAdminSwot } from '@/src/hooks/useAdmin';
+import AdminService from '@/src/services/adminService';
+import { generateSwotPdf } from '@/src/lib/swotPdf';
 
 const formatDate = (value?: string): string => {
   if (!value) {
@@ -49,6 +52,7 @@ export default function AdminSwotAnalyticsDetailPage() {
   const params = useParams();
   const swotId = params.id as string;
   const { swot, error, isLoadingSwot, loadSwot } = useAdminSwot();
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!swotId) {
@@ -56,6 +60,23 @@ export default function AdminSwotAnalyticsDetailPage() {
     }
     loadSwot(swotId).catch(() => undefined);
   }, [swotId, loadSwot]);
+
+  const handleDownloadPdf = async () => {
+    if (!swotId) {
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const payload = await AdminService.getSwotPdfPayload(swotId);
+      generateSwotPdf(payload);
+      toast.success('SWOT PDF generated');
+    } catch {
+      toast.error('Error generating SWOT PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoadingSwot) {
     return (
@@ -104,13 +125,24 @@ export default function AdminSwotAnalyticsDetailPage() {
             </p>
           </div>
 
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-              swot.isAiGenerated ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-            }`}
-          >
-            {swot.isAiGenerated ? 'AI SWOT' : 'Manual SWOT'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                swot.isAiGenerated ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {swot.isAiGenerated ? 'AI SWOT' : 'Manual SWOT'}
+            </span>
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isExporting}
+              className="inline-flex items-center rounded-lg border border-cyan-300 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              {isExporting ? 'Generating...' : 'Download PDF'}
+            </button>
+          </div>
         </div>
       </section>
 

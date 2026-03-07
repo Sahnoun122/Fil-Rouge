@@ -38,6 +38,35 @@ interface SwotInputsPayload {
   objectifs?: string;
 }
 
+export interface SwotPdfExportPayload {
+  swotId: string;
+  fileName: string;
+  title: string;
+  exportedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  isAiGenerated: boolean;
+  user: {
+    id: string;
+    fullName: string;
+    email: string;
+    companyName?: string;
+  };
+  strategy: {
+    id: string;
+    businessName: string;
+    industry: string;
+  };
+  inputs: {
+    notesInternes?: string;
+    notesExternes?: string;
+    concurrents: string[];
+    ressources: string[];
+    objectifs?: string;
+  };
+  matrix: SwotMatrix;
+}
+
 @Injectable()
 export class SwotService {
   private readonly swotKeys: SwotMatrixKey[] = [
@@ -149,6 +178,11 @@ export class SwotService {
     return this.getOwnedSwotOrThrow(userId, swotId);
   }
 
+  async buildPdfExportPayload(userId: string, swotId: string): Promise<SwotPdfExportPayload> {
+    const swotDocument = await this.getOwnedSwotOrThrow(userId, swotId);
+    return this.buildPdfExportPayloadInternal(swotDocument);
+  }
+
   async findAllForAdmin(
     page = 1,
     limit = 10,
@@ -188,6 +222,17 @@ export class SwotService {
     }
 
     return swot;
+  }
+
+  async buildPdfExportPayloadForAdmin(swotId: string): Promise<SwotPdfExportPayload> {
+    const swotObjectId = this.toObjectId(swotId, 'swotId');
+    const swotDocument = await this.swotModel.findById(swotObjectId).exec();
+
+    if (!swotDocument) {
+      throw new NotFoundException('SWOT introuvable');
+    }
+
+    return this.buildPdfExportPayloadInternal(swotDocument);
   }
 
   async deleteOne(userId: string, swotId: string): Promise<void> {
@@ -264,6 +309,73 @@ export class SwotService {
 
     const businessName = strategy.businessInfo?.businessName?.trim();
     return businessName ? `SWOT - ${businessName}` : 'SWOT';
+  }
+
+  private async buildPdfExportPayloadInternal(swotDocument: SwotDocument): Promise<SwotPdfExportPayload> {
+    const nowIso = new Date().toISOString();
+    const createdAt = swotDocument.createdAt
+      ? new Date(swotDocument.createdAt).toISOString()
+      : nowIso;
+    const updatedAt = swotDocument.updatedAt
+      ? new Date(swotDocument.updatedAt).toISOString()
+      : createdAt;
+
+    const [userSource, strategySource] = await Promise.all([
+      this.userModel
+        .findById(swotDocument.userId)
+        .select('fullName email companyName')
+        .lean()
+        .exec(),
+      this.strategyModel
+        .findById(swotDocument.strategyId)
+        .select('businessInfo.businessName businessInfo.industry')
+        .lean()
+        .exec(),
+    ]);
+
+    const userRecord = userSource as
+      | { _id: Types.ObjectId; fullName?: string; email?: string; companyName?: string }
+      | null;
+    const strategyRecord = strategySource as
+      | { _id: Types.ObjectId; businessInfo?: { businessName?: string; industry?: string } }
+      | null;
+    const inputs = (swotDocument.inputs ?? {}) as SwotInputsPayload;
+
+    const matrix: SwotMatrix = {
+      strengths: Array.isArray(swotDocument.swot?.strengths) ? swotDocument.swot.strengths : [],
+      weaknesses: Array.isArray(swotDocument.swot?.weaknesses) ? swotDocument.swot.weaknesses : [],
+      opportunities: Array.isArray(swotDocument.swot?.opportunities) ? swotDocument.swot.opportunities : [],
+      threats: Array.isArray(swotDocument.swot?.threats) ? swotDocument.swot.threats : [],
+    };
+
+    return {
+      swotId: swotDocument._id.toString(),
+      fileName: this.buildPdfFileName(swotDocument.title),
+      title: swotDocument.title,
+      exportedAt: nowIso,
+      createdAt,
+      updatedAt,
+      isAiGenerated: Boolean(swotDocument.isAiGenerated),
+      user: {
+        id: userRecord?._id?.toString() ?? swotDocument.userId.toString(),
+        fullName: userRecord?.fullName ?? 'Utilisateur',
+        email: userRecord?.email ?? '-',
+        companyName: userRecord?.companyName,
+      },
+      strategy: {
+        id: strategyRecord?._id?.toString() ?? swotDocument.strategyId.toString(),
+        businessName: strategyRecord?.businessInfo?.businessName ?? 'Strategie',
+        industry: strategyRecord?.businessInfo?.industry ?? '-',
+      },
+      inputs: {
+        notesInternes: this.toOptionalString(inputs.notesInternes),
+        notesExternes: this.toOptionalString(inputs.notesExternes),
+        concurrents: this.toStringArray(inputs.concurrents, 20),
+        ressources: this.toStringArray(inputs.ressources, 20),
+        objectifs: this.toOptionalString(inputs.objectifs),
+      },
+      matrix,
+    };
   }
 
   private normalizeInputs(inputs?: SwotInputsPayload): SwotInputsPayload {
@@ -417,5 +529,38 @@ export class SwotService {
 
   private escapeRegex(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private toOptionalString(value: unknown): string | undefined {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  private toStringArray(value: unknown, maxItems = 20): string[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .slice(0, maxItems);
+  }
+
+  private buildPdfFileName(title: string): string {
+    const normalized = title
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60);
+
+    const datePart = new Date().toISOString().slice(0, 10);
+    return `${normalized || 'swot'}-${datePart}.pdf`;
   }
 }

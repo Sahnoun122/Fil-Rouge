@@ -24,6 +24,7 @@ import {
   AdminUpdateUserPayload,
   SetUserBanPayload,
 } from "../types/admin.types";
+import type { SwotPdfExportPayload } from "../types/swot.types";
 import type { ScheduledPost } from "../types/calendar.types";
 
 type ApiEnvelope<T> = {
@@ -722,6 +723,19 @@ export class AdminService {
     }
 
     return normalizeAdminSwotDetail(response.data);
+  }
+
+  static async getSwotPdfPayload(swotId: string): Promise<SwotPdfExportPayload> {
+    const response = (await api.get(
+      `/swot/admin/${swotId}/export-pdf`,
+      true,
+    )) as ApiEnvelope<SwotPdfExportPayload>;
+
+    if (!response?.success || !response?.data) {
+      throw new Error(response?.message || "Impossible de recuperer le PDF SWOT");
+    }
+
+    return response.data;
   }
 
   static async getContents(

@@ -2,7 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { Download } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useAdminSwots } from '@/src/hooks/useAdmin';
+import AdminService from '@/src/services/adminService';
+import { generateSwotPdf } from '@/src/lib/swotPdf';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
@@ -35,6 +39,7 @@ export default function AdminSwotAnalyticsPage() {
   } = useAdminSwots({ page: 1, limit: 10 });
 
   const [searchInput, setSearchInput] = useState('');
+  const [downloadingSwotId, setDownloadingSwotId] = useState<string | null>(null);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -70,6 +75,19 @@ export default function AdminSwotAnalyticsPage() {
       });
     } catch {
       // handled by hook state
+    }
+  };
+
+  const handleDownloadPdf = async (swotId: string) => {
+    setDownloadingSwotId(swotId);
+    try {
+      const payload = await AdminService.getSwotPdfPayload(swotId);
+      generateSwotPdf(payload);
+      toast.success('SWOT PDF generated');
+    } catch {
+      toast.error('Error generating SWOT PDF');
+    } finally {
+      setDownloadingSwotId(null);
     }
   };
 
@@ -188,12 +206,23 @@ export default function AdminSwotAnalyticsPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-700">{formatDate(item.createdAt)}</td>
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/swot-analytics/${item.id}`}
-                          className="inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                        >
-                          View
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/swot-analytics/${item.id}`}
+                            className="inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          >
+                            View
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadPdf(item.id)}
+                            disabled={downloadingSwotId === item.id}
+                            className="inline-flex items-center gap-1 rounded-lg border border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            {downloadingSwotId === item.id ? 'Generating...' : 'PDF'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
