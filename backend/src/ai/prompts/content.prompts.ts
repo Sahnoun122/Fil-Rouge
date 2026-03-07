@@ -22,38 +22,54 @@ function normalizePlatforms(platforms: string[]): string[] {
   );
 }
 
+function getPlatformTypes(platform: string): string[] {
+  const lower = platform.toLowerCase();
+  if (lower === 'instagram') return ['reel', 'story', 'carousel', 'post'];
+  if (lower === 'tiktok') return ['video', 'story'];
+  if (lower === 'facebook') return ['post', 'reel', 'story'];
+  if (lower === 'linkedin') return ['post', 'article', 'story'];
+  if (lower === 'youtube') return ['short', 'video'];
+  if (lower === 'x') return ['tweet', 'thread'];
+  if (lower === 'pinterest') return ['pin', 'idea_pin'];
+  if (lower === 'snapchat') return ['story', 'snap'];
+  if (lower === 'threads') return ['post', 'thread'];
+  return ['post'];
+}
+
 function getPlatformStyleRule(platform: string): string {
   const lower = platform.toLowerCase();
+  const types = getPlatformTypes(platform);
+  const typesStr = types.join(', ');
 
-  if (lower === 'tiktok') {
-    return `${platform}: tres court, hook fort, ton dynamique, description courte orientee contexte video.`;
-  }
-  if (lower === 'snapchat') {
-    return `${platform}: ton direct, format story, message tres rapide a consommer, description courte et claire.`;
-  }
   if (lower === 'instagram') {
-    return `${platform}: caption avec hashtags, ton brand.`;
+    return `${platform} (types possibles: ${typesStr}): varie les types (reel=video courte immersive, story=ephemere interactif, carousel=contenu multi-slides, post=image statique). title = titre accrocheur du contenu. caption avec hashtags, ton brand aspiration nel.`;
+  }
+  if (lower === 'tiktok') {
+    return `${platform} (types possibles: ${typesStr}): video=contenu principal, story=format ephemere. title = titre du video/story (court, hook implicite). Hook ultra-fort en premiere phrase, ton dynamique natif Gen Z, description courte orientee contexte video.`;
   }
   if (lower === 'facebook') {
-    return `${platform}: plus descriptif, CTA clair.`;
+    return `${platform} (types possibles: ${typesStr}): post=texte+image, reel=video courte, story=ephemere. title = titre de la publication. Plus descriptif, audience large, CTA clair, ton accessible.`;
   }
   if (lower === 'linkedin') {
-    return `${platform}: ton professionnel, valeur et conseils.`;
+    return `${platform} (types possibles: ${typesStr}): post=publication standard, article=long form, story=ephemere. title = titre professionnel. Ton expert, valeur concrete, insights B2B, personnalisation marque employeur.`;
   }
   if (lower === 'youtube') {
-    return `${platform}: hook video, description utile pour contexte et recherche, CTA explicite.`;
+    return `${platform} (types possibles: ${typesStr}): short=video <60s, video=long form. title = titre YouTube optimise SEO (60 chars max). Hook video fort, description riche pour algorithme et recherche, CTA explicite.`;
   }
   if (lower === 'x') {
-    return `${platform}: message court, impact immediat, angle conversationnel.`;
+    return `${platform} (types possibles: ${typesStr}): tweet=message court, thread=serie de tweets. title = angle ou theme du tweet/thread. Message impact immediat, conversationnel, concis.`;
   }
   if (lower === 'pinterest') {
-    return `${platform}: ton inspirationnel, description SEO courte, promesse visuelle claire.`;
+    return `${platform} (types possibles: ${typesStr}): pin=epingle standard, idea_pin=serie slides. title = titre PIN optimise SEO (100 chars max). Ton inspirationnel, promesse visuelle claire, description SEO.`;
+  }
+  if (lower === 'snapchat') {
+    return `${platform} (types possibles: ${typesStr}): story=serie snaps, snap=snap unique. title = titre de la story/snap. Ton direct, immersif, message ultra-rapide a consommer.`;
   }
   if (lower === 'threads') {
-    return `${platform}: ton conversationnel, humain, spontané et engageant.`;
+    return `${platform} (types possibles: ${typesStr}): post=publication, thread=serie. title = sujet ou angle du thread. Ton conversationnel, humain, spontane et engageant.`;
   }
 
-  return `${platform}: adapte le style natif de la plateforme, reste concret et actionnable.`;
+  return `${platform} (types possibles: post): adapte le style natif. title = titre court et percutant. Reste concret et actionnable.`;
 }
 
 function isHashtagCompatible(platform: string): boolean {
@@ -76,8 +92,9 @@ function getPlatformGuide(platforms: string[]): string {
       const hashtagRule = isHashtagCompatible(platform)
         ? 'hashtags: 5 a 10, tableau de strings sans #.'
         : 'hashtags: tableau vide [].';
+      const types = getPlatformTypes(platform).join('|');
 
-      return `- ${getPlatformStyleRule(platform)} ${hashtagRule}`;
+      return `- ${getPlatformStyleRule(platform)} ${hashtagRule} | type doit etre l'un de: [${types}].`;
     })
     .join('\n');
 }
@@ -112,20 +129,22 @@ function resolveDurationWeeks(inputs: JsonObject): number {
 function buildModeRules(mode: ContentMode): string {
   if (mode === ContentMode.ADS) {
     return `Regles mode ADS:
-- Pour chaque plateforme, genere au minimum 2 posts.
-- Chaque post doit inclure: adCopyVariantA, adCopyVariantB, adCopyVariantC, hook (court), caption, description, cta (clair), suggestedVisual.
-- hashtags: 5 a 10 si la plateforme est compatible, sinon [].
-- Pour TikTok, Snapchat et YouTube, la description doit etre pertinente et distincte du caption.
-- Les ad copies doivent etre distinctes (A/B/C) et orientees conversion.`;
+- Pour chaque plateforme, genere au minimum 2 posts DISTINCTS avec des types differents (ex: reel + story pour Instagram).
+- CHAQUE post DOIT obligatoirement inclure: title (titre de l'annonce, court et percutant), type (natif a la plateforme), caption, description (distincte du caption, contexte/accroche supplementaire), hook (court, ultra-percutant), cta (clair et explicite), suggestedVisual (description visuelle concrete), adCopyVariantA, adCopyVariantB, adCopyVariantC (trois variantes distinctes orientees conversion), hashtags.
+- title pour ADS = headline de l'annonce (ex: "Decouvrez notre offre exclusive").
+- Les ad copies A/B/C doivent proposer 3 angles differents (emotion, benefice, urgence).
+- Pour TikTok, Snapchat et YouTube: description distincte et utile pour contexte video.
+- hashtags: 5 a 10 si la plateforme est compatible, sinon [].`;
   }
 
   return `Regles mode CONTENT_MARKETING:
 - Definis 3 a 5 content pillars dans campaignSummary.contentPillars.
-- Definis campaignSummary.postingPlan.frequencyPerWeek selon inputs.frequencyPerWeek (sinon valeur par defaut).
-- Definis campaignSummary.postingPlan.durationWeeks selon inputs (sinon valeur par defaut).
-- Pour chaque plateforme, genere au minimum 2 posts adaptes au format natif.
-- Chaque post doit inclure: format/type, caption, description, hook, cta (soft), suggestedVisual.
-- Pour TikTok, Snapchat et YouTube, la description doit etre pertinente et distincte du caption.
+- Definis campaignSummary.postingPlan.frequencyPerWeek et durationWeeks selon inputs.
+- Pour chaque plateforme, genere au minimum 2 posts DISTINCTS avec des types differents (ex: reel + carousel pour Instagram).
+- CHAQUE post DOIT obligatoirement inclure: title (titre du contenu, explicite et engageant), type (natif a la plateforme), caption, description (contexte editorial distinct du caption), hook (accroche cognitive courte), cta (soft, invitation naturelle), suggestedVisual (description concrete du visuel), hashtags.
+- title pour CONTENT_MARKETING = titre editorial du post (ex: "5 astuces pour doubler votre engagement").
+- Les types doivent varier entre les posts d'une meme plateforme.
+- Pour TikTok, Snapchat et YouTube: description distincte et utile.
 - hashtags: 5 a 10 si la plateforme est compatible, sinon [].`;
 }
 
@@ -189,15 +208,16 @@ Format de sortie strict:
     {
       "platform": "Instagram",
       "type": "reel",
-      "caption": "Texte principal",
-      "description": "Description utile du post",
-      "hook": "Hook court",
-      "cta": "CTA",
+      "title": "Titre court et percutant du contenu",
+      "caption": "Texte principal du post",
+      "description": "Description complementaire et contexte utile, distinct du caption",
+      "hook": "Hook ultra-court pour accrocher en 3 secondes",
+      "cta": "Appel a l'action explicite",
       "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
-      "suggestedVisual": "Suggestion de visuel",
-      "adCopyVariantA": "Variante A",
-      "adCopyVariantB": "Variante B",
-      "adCopyVariantC": "Variante C"
+      "suggestedVisual": "Description concrete du visuel recommande",
+      "adCopyVariantA": "Variante A - angle emotion",
+      "adCopyVariantB": "Variante B - angle benefice",
+      "adCopyVariantC": "Variante C - angle urgence"
     }
   ]
 }
@@ -229,6 +249,7 @@ Plateforme cible unique: ${platform}
 Guide style plateforme:
 - ${getPlatformStyleRule(platform)}
 - ${isHashtagCompatible(platform) ? 'hashtags: 5 a 10, tableau de strings sans #.' : 'hashtags: tableau vide [].'}
+- type doit etre l'un de: [${getPlatformTypes(platform).join(', ')}]. Varie les types entre posts.
 
 Contexte business:
 ${toPrettyJson(businessInfo)}
@@ -250,18 +271,22 @@ Regles globales:
 - platform doit toujours etre "${platform}".
 - JSON valide uniquement.
 - Interdit: markdown, commentaires, texte hors JSON.
+- CHAQUE post DOIT avoir: title, type, caption, description, hook, cta, suggestedVisual, hashtags.
 
 ${
   normalizedMode === ContentMode.ADS
     ? `Regles ADS:
-- Genere au minimum 2 posts.
-- Chaque post inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, description, cta clair, suggestedVisual.
-- Pour TikTok, Snapchat et YouTube, description distincte et utile.
+- Genere au minimum 2 posts DISTINCTS avec types differents.
+- title = headline de l'annonce (court et percutant).
+- Chaque post inclut adCopyVariantA (angle emotion), adCopyVariantB (angle benefice), adCopyVariantC (angle urgence).
+- description distincte du caption.
 - hashtags: 5 a 10 si compatible, sinon [].`
     : `Regles CONTENT_MARKETING:
-- Genere au minimum 2 posts adaptes a ${platform}.
-- Chaque post inclut type, caption, description, hook, cta soft, suggestedVisual.
-- Pour TikTok, Snapchat et YouTube, description distincte et utile.
+- Genere au minimum 2 posts DISTINCTS avec types differents.
+- title = titre editorial du contenu (explicite et engageant).
+- description = contexte editorial distinct du caption.
+- hook = accroche cognitive courte.
+- cta soft, invitation naturelle.
 - hashtags: 5 a 10 si compatible, sinon [].`
 }
 
@@ -271,15 +296,16 @@ Format de sortie strict:
     {
       "platform": "${platform}",
       "type": "post",
-      "caption": "Texte principal",
-      "description": "Description utile du post",
-      "hook": "Hook court",
-      "cta": "CTA",
+      "title": "Titre court et percutant",
+      "caption": "Texte principal du post",
+      "description": "Description complementaire distincte du caption",
+      "hook": "Hook ultra-court",
+      "cta": "Appel a l'action",
       "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
-      "suggestedVisual": "Suggestion de visuel",
-      "adCopyVariantA": "Variante A",
-      "adCopyVariantB": "Variante B",
-      "adCopyVariantC": "Variante C"
+      "suggestedVisual": "Description concrete du visuel",
+      "adCopyVariantA": "Variante A - angle emotion",
+      "adCopyVariantB": "Variante B - angle benefice",
+      "adCopyVariantC": "Variante C - angle urgence"
     }
   ]
 }
@@ -311,6 +337,7 @@ Plateforme cible: ${platform}
 Guide style plateforme:
 - ${getPlatformStyleRule(platform)}
 - ${isHashtagCompatible(platform) ? 'hashtags: 5 a 10, tableau de strings sans #.' : 'hashtags: tableau vide [].'}
+- type doit etre l'un de: [${getPlatformTypes(platform).join(', ')}].
 
 Contexte business:
 ${toPrettyJson(businessInfo)}
@@ -332,16 +359,20 @@ Regles globales:
 - platform doit toujours etre "${platform}".
 - JSON valide uniquement.
 - Interdit: markdown, commentaires, texte hors JSON.
+- Le post DOIT avoir: title, type, caption, description, hook, cta, suggestedVisual, hashtags.
 
 ${
   normalizedMode === ContentMode.ADS
     ? `Regles ADS:
-- Le post regenere inclut adCopyVariantA, adCopyVariantB, adCopyVariantC, hook court, caption, description, cta clair, suggestedVisual.
-- Pour TikTok, Snapchat et YouTube, description distincte et utile.
+- title = headline de l'annonce (court et percutant).
+- Le post inclut adCopyVariantA (emotion), adCopyVariantB (benefice), adCopyVariantC (urgence).
+- description distincte et utile.
 - hashtags: 5 a 10 si compatible, sinon [].`
     : `Regles CONTENT_MARKETING:
-- Le post regenere inclut type, caption, description, hook, cta soft, suggestedVisual.
-- Pour TikTok, Snapchat et YouTube, description distincte et utile.
+- title = titre editorial du contenu (explicite, engageant).
+- description = contexte editorial distinct du caption.
+- hook = accroche cognitive courte.
+- cta soft, naturel.
 - hashtags: 5 a 10 si compatible, sinon [].`
 }
 
@@ -349,15 +380,16 @@ Format de sortie strict (objet post uniquement):
 {
   "platform": "${platform}",
   "type": "post",
-  "caption": "Texte principal",
-  "description": "Description utile du post",
-  "hook": "Hook court",
-  "cta": "CTA",
+  "title": "Titre court et percutant",
+  "caption": "Texte principal du post",
+  "description": "Description complementaire distincte du caption",
+  "hook": "Hook ultra-court",
+  "cta": "Appel a l'action",
   "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
-  "suggestedVisual": "Suggestion de visuel",
-  "adCopyVariantA": "Variante A",
-  "adCopyVariantB": "Variante B",
-  "adCopyVariantC": "Variante C"
+  "suggestedVisual": "Description concrete du visuel",
+  "adCopyVariantA": "Variante A - angle emotion",
+  "adCopyVariantB": "Variante B - angle benefice",
+  "adCopyVariantC": "Variante C - angle urgence"
 }
 
 Retourne uniquement le JSON final.`;

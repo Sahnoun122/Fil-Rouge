@@ -9,12 +9,19 @@ import {
   Bot,
   CalendarDays,
   CalendarCheck2,
+  ChevronDown,
+  ChevronUp,
   Clock,
+  Eye,
   FileText,
   Hash,
   Loader2,
+  MessageSquare,
+  MonitorPlay,
   RefreshCcw,
   Sparkles,
+  Target,
+  Type,
   Zap,
 } from "lucide-react";
 
@@ -123,6 +130,178 @@ function formatDateTime(value?: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+type PostWithIndex = ContentCampaign["generatedPosts"][number] & { index: number };
+
+function PostCard({ post, mode }: { post: PostWithIndex; mode: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isAds = mode === "ADS";
+
+  const hasExtras =
+    post.hook ||
+    post.description ||
+    post.cta ||
+    post.suggestedVisual ||
+    (post.hashtags && post.hashtags.length > 0) ||
+    (isAds && (post.adCopyVariantA || post.adCopyVariantB || post.adCopyVariantC));
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      {/* Card header */}
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-linear-to-r from-slate-50 to-white px-5 py-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+            {post.index}
+          </span>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${getPlatformClass(post.platform)}`}>
+            {post.platform}
+          </span>
+          {post.type && (
+            <span className="flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold capitalize text-indigo-600">
+              <MonitorPlay className="h-3 w-3" />
+              {post.type}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-400">{scheduleText(post.schedule)}</span>
+          {hasExtras && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {expanded ? "Réduire" : "Détails"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="px-5 py-4 space-y-4">
+        {/* Title */}
+        {post.title && (
+          <div>
+            <div className="mb-1 flex items-center gap-1.5">
+              <Type className="h-3.5 w-3.5 text-slate-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Titre</span>
+            </div>
+            <p className="text-base font-bold text-slate-900">{post.title}</p>
+          </div>
+        )}
+
+        {/* Caption */}
+        <div>
+          <div className="mb-1 flex items-center gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Caption</span>
+          </div>
+          <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{post.caption}</p>
+        </div>
+      </div>
+
+      {/* Expanded details */}
+      {expanded && hasExtras && (
+        <div className="border-t border-slate-100 bg-slate-50/50 px-5 py-4 space-y-4">
+          {/* Hook */}
+          {post.hook && (
+            <div>
+              <div className="mb-1 flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Hook</span>
+              </div>
+              <p className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-2.5 text-sm font-medium italic text-amber-900">
+                &ldquo;{post.hook}&rdquo;
+              </p>
+            </div>
+          )}
+
+          {/* Description */}
+          {post.description && (
+            <div>
+              <div className="mb-1 flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Description</span>
+              </div>
+              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">{post.description}</p>
+            </div>
+          )}
+
+          {/* CTA */}
+          {post.cta && (
+            <div>
+              <div className="mb-1 flex items-center gap-1.5">
+                <Target className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Call to Action</span>
+              </div>
+              <span className="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">
+                {post.cta}
+              </span>
+            </div>
+          )}
+
+          {/* Ad copy variants (ADS mode) */}
+          {isAds && (post.adCopyVariantA || post.adCopyVariantB || post.adCopyVariantC) && (
+            <div>
+              <div className="mb-2 flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5 text-purple-500" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Variantes A/B/C</span>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { label: "A — Émotion", value: post.adCopyVariantA, color: "border-purple-100 bg-purple-50 text-purple-900" },
+                  { label: "B — Bénéfice", value: post.adCopyVariantB, color: "border-blue-100 bg-blue-50 text-blue-900" },
+                  { label: "C — Urgence", value: post.adCopyVariantC, color: "border-rose-100 bg-rose-50 text-rose-900" },
+                ].map(({ label, value, color }) =>
+                  value ? (
+                    <div key={label} className={`rounded-xl border px-4 py-3 ${color}`}>
+                      <p className="mb-1 text-xs font-bold uppercase tracking-wider opacity-60">{label}</p>
+                      <p className="text-sm leading-6">{value}</p>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Suggested visual */}
+          {post.suggestedVisual && (
+            <div>
+              <div className="mb-1 flex items-center gap-1.5">
+                <MonitorPlay className="h-3.5 w-3.5 text-cyan-500" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Visuel suggéré</span>
+              </div>
+              <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-2.5 text-sm text-cyan-800">
+                {post.suggestedVisual}
+              </p>
+            </div>
+          )}
+
+          {/* Hashtags */}
+          {post.hashtags && post.hashtags.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Hashtags</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {post.hashtags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-200"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </article>
+  );
 }
 
 function DetailSkeleton() {
@@ -586,30 +765,9 @@ export default function ContentCampaignDetailPage() {
             </p>
           </article>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {posts.map((post) => (
-              <article
-                key={post._id || `${post.platform}-${post.index}`}
-                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-                      {post.index}
-                    </span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${getPlatformClass(post.platform)}`}>
-                      {post.platform}
-                    </span>
-                    <span className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-xs font-medium text-cyan-700">
-                      {post.type}
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium text-slate-400">{scheduleText(post.schedule)}</p>
-                </div>
-                <div className="px-5 py-4">
-                  <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{post.caption}</p>
-                </div>
-              </article>
+              <PostCard key={post._id || `${post.platform}-${post.index}`} post={post} mode={campaign.mode} />
             ))}
           </div>
         )}
