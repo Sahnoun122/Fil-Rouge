@@ -275,6 +275,15 @@ function normalizeStatusLabel(status?: string): string {
   return SCHEDULED_STATUS_LABELS[status.toLowerCase()] ?? status;
 }
 
+function normalizePostTypeLabel(value?: string | null): string {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return "post";
+  }
+
+  return normalized.toLowerCase();
+}
+
 export default function CalendarPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -444,6 +453,9 @@ export default function CalendarPage() {
         return {
           ...post,
           index,
+          postType: normalizePostTypeLabel(
+            post.type || matchingScheduledPost?.postType || "post",
+          ),
           scheduledPostId: matchingScheduledPost?._id ?? null,
           detailHref: campaignIdFilter
             ? `/calendar/planning/campaign/${campaignIdFilter}/${post._id || index}`
@@ -493,6 +505,7 @@ export default function CalendarPage() {
         extendedProps: {
           detailHref: post.detailHref,
           platform: post.platform,
+          postType: post.postType,
           timezone: post.timezone,
         },
       }));
@@ -510,14 +523,21 @@ export default function CalendarPage() {
   );
 
   const renderPlanningEvent = useCallback((arg: EventContentArg) => {
-    const platform = (arg.event.extendedProps as { platform?: string })
-      .platform;
+    const { platform, postType } = arg.event.extendedProps as {
+      platform?: string;
+      postType?: string;
+    };
 
     return (
       <div className="w-full rounded-xl border border-stone-200 bg-white/95 px-2.5 py-2 text-left shadow-sm">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500">
-          {arg.timeText} {platform ? `- ${platform}` : ""}
-        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+            {arg.timeText} {platform ? `- ${platform}` : ""}
+          </p>
+          <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-700">
+            {normalizePostTypeLabel(postType)}
+          </span>
+        </div>
         <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-4 text-stone-800">
           {arg.event.title}
         </p>
@@ -806,7 +826,7 @@ export default function CalendarPage() {
                           {post.platform}
                         </span>
                         <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
-                          {post.type || "post"}
+                          {post.postType}
                         </span>
                         <span className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
                           {normalizeStatusLabel(post.status)}
