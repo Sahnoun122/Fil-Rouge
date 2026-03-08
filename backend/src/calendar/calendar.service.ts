@@ -18,6 +18,7 @@ import {
   UpdateScheduledPostDto,
 } from './dto';
 import { MoveScheduledPostDto } from './dto/move-scheduled-post.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   CalendarPlatform,
   ScheduledPost,
@@ -38,6 +39,7 @@ export class CalendarService {
     private readonly strategyModel: Model<StrategyDocument>,
     @InjectModel('ContentCampaign')
     private readonly contentCampaignModel: Model<ContentCampaignDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createScheduledPost(
@@ -69,7 +71,9 @@ export class CalendarService {
       notes: this.normalizeOptionalString(dto.notes),
     });
 
-    return scheduledPost.save();
+    const createdPost = await scheduledPost.save();
+    await this.safeUpsertRemindersForPost(createdPost);
+    return createdPost;
   }
 
   async listScheduledPosts(
@@ -267,7 +271,9 @@ export class CalendarService {
       );
     }
 
-    return scheduledPost.save();
+    const updatedPost = await scheduledPost.save();
+    await this.safeUpsertRemindersForPost(updatedPost);
+    return updatedPost;
   }
 
   async moveScheduledPost(
@@ -289,7 +295,9 @@ export class CalendarService {
       scheduledPost.scheduledAt,
     );
 
-    return scheduledPost.save();
+    const movedPost = await scheduledPost.save();
+    await this.safeUpsertRemindersForPost(movedPost);
+    return movedPost;
   }
 
   async deleteScheduledPost(userId: string, postId: string): Promise<void> {
@@ -298,6 +306,7 @@ export class CalendarService {
       postId,
     );
     await this.scheduledPostModel.deleteOne({ _id: scheduledPost._id }).exec();
+    await this.safeDeleteRemindersForPost(scheduledPost._id);
   }
 
   async syncCampaignAutoSchedule(
@@ -311,8 +320,8 @@ export class CalendarService {
     }
 
     const userObjectId = this.toObjectId(userId, 'userId');
-    await this.scheduledPostModel
-      .deleteMany({
+    const removablePosts = await this.scheduledPostModel
+      .find({
         userId: userObjectId,
         campaignId: campaign._id,
         notes: { $regex: `^${this.autoScheduleNotePrefix}` },
@@ -320,7 +329,18 @@ export class CalendarService {
           $in: [ScheduledPostStatus.PLANNED, ScheduledPostStatus.LATE],
         },
       })
+      .select('_id')
       .exec();
+
+    if (removablePosts.length) {
+      const removableIds = removablePosts.map((post) => post._id);
+      await this.scheduledPostModel
+        .deleteMany({
+          _id: { $in: removableIds },
+        })
+        .exec();
+      await this.safeDeleteRemindersForPosts(removableIds);
+    }
 
     const documentsToInsert = campaign.generatedPosts.flatMap((post, index) =>
       this.buildAutoScheduledDocuments(campaign, post, index),
@@ -330,13 +350,78 @@ export class CalendarService {
       return;
     }
 
-    await this.scheduledPostModel.insertMany(documentsToInsert, {
-      ordered: true,
-    });
+    const insertedPosts = (await this.scheduledPostModel.insertMany(
+      documentsToInsert,
+      {
+        ordered: true,
+      },
+    )) as ScheduledPostDocument[];
+
+    await this.safeUpsertRemindersForPosts(insertedPosts);
 
     this.logger.log(
       `Synced ${documentsToInsert.length} scheduled posts for campaign ${campaign._id.toString()}`,
     );
+  }
+
+  private async safeUpsertRemindersForPost(
+    post: ScheduledPostDocument,
+  ): Promise<void> {
+    try {
+      await this.notificationsService.upsertRemindersForScheduledPost(post);
+    } catch (error) {
+      this.logger.error(
+        `Failed to upsert reminders for scheduled post ${post._id.toString()}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  private async safeUpsertRemindersForPosts(
+    posts: ScheduledPostDocument[],
+  ): Promise<void> {
+    if (!posts.length) {
+      return;
+    }
+
+    try {
+      await this.notificationsService.upsertRemindersForScheduledPosts(posts);
+    } catch (error) {
+      this.logger.error(
+        'Failed to upsert reminders for auto-scheduled campaign posts',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  private async safeDeleteRemindersForPost(
+    postId: Types.ObjectId,
+  ): Promise<void> {
+    try {
+      await this.notificationsService.deleteRemindersForPost(postId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete reminders for scheduled post ${postId.toString()}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  private async safeDeleteRemindersForPosts(
+    postIds: Types.ObjectId[],
+  ): Promise<void> {
+    if (!postIds.length) {
+      return;
+    }
+
+    try {
+      await this.notificationsService.deleteRemindersForPosts(postIds);
+    } catch (error) {
+      this.logger.error(
+        'Failed to delete reminders for auto-scheduled campaign posts',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   private async getOwnedScheduledPostOrThrow(

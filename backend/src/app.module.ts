@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -15,6 +16,7 @@ import { StrategiesModule } from './strategies/strategies.module';
 import { SwotModule } from './swot/swot.module';
 import { ContentModule } from './content/content.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 // Guards globaux
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -45,6 +47,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       }),
     }),
 
+    ScheduleModule.forRoot(),
+
     // Modules de l'application
     AuthModule,
     UsersModule,
@@ -53,6 +57,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     SwotModule,
     ContentModule,
     CalendarModule,
+    NotificationsModule,
   ],
 
   controllers: [AppController, HealthController],

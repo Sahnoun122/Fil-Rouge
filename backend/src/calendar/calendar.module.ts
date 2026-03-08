@@ -14,9 +14,11 @@ import {
   ScheduledPost,
   ScheduledPostSchema,
 } from './schemas/scheduled-post.schema';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: ScheduledPost.name, schema: ScheduledPostSchema },
       { name: Strategy.name, schema: StrategySchema },
