@@ -84,6 +84,8 @@ const defaultTimezone =
     ? Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Casablanca"
     : "Africa/Casablanca";
 
+const minScheduledAtLocal = formatDateTimeLocal();
+
 interface PostModalProps {
   open: boolean;
   mode: "create" | "edit";
@@ -427,6 +429,7 @@ export function PostModal({
                     <input
                       type="datetime-local"
                       {...register("scheduledAt")}
+                      min={minScheduledAtLocal}
                       className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-sm text-stone-900 outline-none transition focus:border-stone-400 focus:ring-4 focus:ring-stone-200/70"
                     />
                     {errors.scheduledAt ? (

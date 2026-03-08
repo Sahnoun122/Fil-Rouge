@@ -51,7 +51,10 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     const userId = this.getAuthenticatedUserId(req);
-    const updatedUser = await this.usersService.updateProfile(userId, updateUserDto);
+    const updatedUser = await this.usersService.updateProfile(
+      userId,
+      updateUserDto,
+    );
 
     return {
       success: true,
@@ -67,7 +70,10 @@ export class UsersController {
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     const userId = this.getAuthenticatedUserId(req);
-    const result = await this.usersService.changePassword(userId, changePasswordDto);
+    const result = await this.usersService.changePassword(
+      userId,
+      changePasswordDto,
+    );
 
     return {
       success: true,
@@ -91,10 +97,14 @@ export class UsersController {
   @Roles('admin')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async getAllUsers(@Query() query: AdminUsersQueryDto) {
-    const result = await this.usersService.getAllUsers(query.page ?? 1, query.limit ?? 10, {
-      search: query.search,
-      role: query.role,
-    });
+    const result = await this.usersService.getAllUsers(
+      query.page ?? 1,
+      query.limit ?? 10,
+      {
+        search: query.search,
+        role: query.role,
+      },
+    );
 
     return {
       success: true,
@@ -126,7 +136,11 @@ export class UsersController {
     @Body() updateUserRoleDto: UpdateUserRoleDto,
   ) {
     const adminId = this.getAuthenticatedUserId(req);
-    const updatedUser = await this.usersService.updateUserRole(userId, updateUserRoleDto.role, adminId);
+    const updatedUser = await this.usersService.updateUserRole(
+      userId,
+      updateUserRoleDto.role,
+      adminId,
+    );
 
     return {
       success: true,
@@ -155,7 +169,9 @@ export class UsersController {
 
     return {
       success: true,
-      message: shouldBan ? 'Utilisateur banni avec succes' : 'Utilisateur debanni avec succes',
+      message: shouldBan
+        ? 'Utilisateur banni avec succes'
+        : 'Utilisateur debanni avec succes',
       data: updatedUser,
     };
   }
@@ -192,7 +208,11 @@ export class UsersController {
     @Body() updateUserDto: AdminUpdateUserDto,
   ) {
     const adminId = this.getAuthenticatedUserId(req);
-    const updatedUser = await this.usersService.updateUserByAdmin(userId, updateUserDto, adminId);
+    const updatedUser = await this.usersService.updateUserByAdmin(
+      userId,
+      updateUserDto,
+      adminId,
+    );
 
     return {
       success: true,
@@ -204,7 +224,10 @@ export class UsersController {
   @Delete('admin/:userId')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async deleteUserByAdmin(@Request() req: any, @Param('userId') userId: string) {
+  async deleteUserByAdmin(
+    @Request() req: any,
+    @Param('userId') userId: string,
+  ) {
     const adminId = this.getAuthenticatedUserId(req);
     await this.usersService.deleteUserByAdmin(userId, adminId);
 
@@ -228,7 +251,8 @@ export class UsersController {
   }
 
   private getAuthenticatedUserId(req: any): string {
-    const rawId = req?.user?.sub ?? req?.user?.id ?? req?.user?._id?.toString?.();
+    const rawId =
+      req?.user?.sub ?? req?.user?.id ?? req?.user?._id?.toString?.();
 
     if (!rawId || typeof rawId !== 'string') {
       throw new BadRequestException('Utilisateur authentifie invalide');

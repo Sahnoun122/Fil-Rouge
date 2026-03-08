@@ -52,7 +52,9 @@ describe('LocalAuthGuard', () => {
     jest.clearAllMocks();
   });
 
-  const createMockContext = (requestData: Partial<Request> = {}): ExecutionContext => ({
+  const createMockContext = (
+    requestData: Partial<Request> = {},
+  ): ExecutionContext => ({
     switchToHttp: () => ({
       getRequest: () => ({
         body: {},
@@ -93,25 +95,33 @@ describe('LocalAuthGuard', () => {
       authService.validateUser.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(guard.validate(email, password)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.validate(email, password)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(authService.validateUser).toHaveBeenCalledWith(email, password);
     });
 
     it('should handle missing email', async () => {
       // Act & Assert
-      await expect(guard.validate('', 'password123')).rejects.toThrow(UnauthorizedException);
+      await expect(guard.validate('', 'password123')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle missing password', async () => {
       // Act & Assert
-      await expect(guard.validate('john@example.com', '')).rejects.toThrow(UnauthorizedException);
+      await expect(guard.validate('john@example.com', '')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle service errors', async () => {
       // Arrange
       const email = 'john@example.com';
       const password = 'password123';
-      authService.validateUser.mockRejectedValue(new Error('Database connection failed'));
+      authService.validateUser.mockRejectedValue(
+        new Error('Database connection failed'),
+      );
 
       // Act & Assert
       await expect(guard.validate(email, password)).rejects.toThrow();
@@ -127,7 +137,10 @@ describe('LocalAuthGuard', () => {
       authService.validateUser.mockResolvedValue(mockUser);
 
       // Mock the parent canActivate method
-      const parentCanActivate = jest.spyOn(Object.getPrototypeOf(LocalAuthGuard.prototype), 'canActivate');
+      const parentCanActivate = jest.spyOn(
+        Object.getPrototypeOf(LocalAuthGuard.prototype),
+        'canActivate',
+      );
       parentCanActivate.mockResolvedValue(true);
 
       // Act
@@ -145,11 +158,16 @@ describe('LocalAuthGuard', () => {
       });
 
       // Mock the parent canActivate method to throw
-      const parentCanActivate = jest.spyOn(Object.getPrototypeOf(LocalAuthGuard.prototype), 'canActivate');
+      const parentCanActivate = jest.spyOn(
+        Object.getPrototypeOf(LocalAuthGuard.prototype),
+        'canActivate',
+      );
       parentCanActivate.mockRejectedValue(new UnauthorizedException());
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle malformed request context', async () => {
@@ -162,7 +180,10 @@ describe('LocalAuthGuard', () => {
         }),
       } as ExecutionContext;
 
-      const parentCanActivate = jest.spyOn(Object.getPrototypeOf(LocalAuthGuard.prototype), 'canActivate');
+      const parentCanActivate = jest.spyOn(
+        Object.getPrototypeOf(LocalAuthGuard.prototype),
+        'canActivate',
+      );
       parentCanActivate.mockRejectedValue(new Error('Invalid request'));
 
       // Act & Assert
@@ -228,17 +249,19 @@ describe('LocalAuthGuard', () => {
   describe('Performance Tests', () => {
     it('should handle multiple concurrent validations', async () => {
       // Arrange
-      const promises = Array(10).fill(null).map((_, index) => {
-        authService.validateUser.mockResolvedValueOnce(mockUser);
-        return guard.validate(`user${index}@example.com`, 'password123');
-      });
+      const promises = Array(10)
+        .fill(null)
+        .map((_, index) => {
+          authService.validateUser.mockResolvedValueOnce(mockUser);
+          return guard.validate(`user${index}@example.com`, 'password123');
+        });
 
       // Act
       const results = await Promise.all(promises);
 
       // Assert
       expect(results).toHaveLength(10);
-      results.forEach(result => expect(result).toEqual(mockUser));
+      results.forEach((result) => expect(result).toEqual(mockUser));
       expect(authService.validateUser).toHaveBeenCalledTimes(10);
     });
 
@@ -246,8 +269,9 @@ describe('LocalAuthGuard', () => {
       // Arrange
       const email = 'john@example.com';
       const password = 'password123';
-      authService.validateUser.mockImplementation(() => 
-        new Promise((resolve) => setTimeout(() => resolve(mockUser), 100))
+      authService.validateUser.mockImplementation(
+        () =>
+          new Promise((resolve) => setTimeout(() => resolve(mockUser), 100)),
       );
 
       // Act

@@ -1,5 +1,10 @@
 import { Type } from 'class-transformer';
-import { IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsObject,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { SwotInputsDto } from './swot-payload.dto';
 
 export class GenerateSwotDto {

@@ -100,7 +100,9 @@ UserSchema.pre('save', async function (this: UserDocument) {
   this.password = await bcrypt.hash(this.password, saltRounds);
 });
 
-UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+UserSchema.methods.comparePassword = async function (
+  candidatePassword: string,
+): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
 

@@ -1,13 +1,13 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  HttpCode, 
-  HttpStatus, 
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
   UseGuards,
   Get,
   Request,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService, AuthResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -21,7 +21,8 @@ export class AuthController {
 
   /**
    * 🚪 Inscription d'un nouvel utilisateur
-   */  @Public()  @Post('register')
+   */ @Public()
+  @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto): Promise<{
     success: boolean;
@@ -30,11 +31,11 @@ export class AuthController {
   }> {
     try {
       const result = await this.authService.register(registerDto);
-      
+
       return {
         success: true,
         message: 'Compte créé avec succès',
-        data: result
+        data: result,
       };
     } catch (error) {
       throw error;
@@ -54,11 +55,11 @@ export class AuthController {
   }> {
     try {
       const result = await this.authService.login(loginDto);
-      
+
       return {
         success: true,
         message: 'Connexion réussie',
-        data: result
+        data: result,
       };
     } catch (error) {
       throw error;
@@ -81,11 +82,11 @@ export class AuthController {
 
     try {
       const newTokens = await this.authService.refreshTokens(refreshToken);
-      
+
       return {
         success: true,
         message: 'Token rafraîchi avec succès',
-        data: newTokens
+        data: newTokens,
       };
     } catch (error) {
       throw error;
@@ -103,13 +104,13 @@ export class AuthController {
     message: string;
   }> {
     const userId = req.user.sub || req.user.userId;
-    
+
     try {
       const result = await this.authService.logout(userId);
-      
+
       return {
         success: true,
-        message: result.message
+        message: result.message,
       };
     } catch (error) {
       throw error;
@@ -135,8 +136,8 @@ export class AuthController {
       message: 'Token valide',
       data: {
         valid: true,
-        user: req.user
-      }
+        user: req.user,
+      },
     };
   }
 }

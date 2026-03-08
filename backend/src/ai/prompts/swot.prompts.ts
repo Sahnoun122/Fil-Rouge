@@ -1,4 +1,10 @@
-type JsonValue = Record<string, unknown> | unknown[] | string | number | boolean | null;
+type JsonValue =
+  | Record<string, unknown>
+  | unknown[]
+  | string
+  | number
+  | boolean
+  | null;
 
 interface BusinessInfo {
   businessName?: string;
@@ -76,7 +82,8 @@ export function buildImproveSwotPrompt(
   instruction = '',
 ): string {
   const normalizedInstruction =
-    instruction?.trim() || 'Ameliore la precision et la valeur actionnable du SWOT.';
+    instruction?.trim() ||
+    'Ameliore la precision et la valeur actionnable du SWOT.';
 
   return `Tu es un consultant senior en strategie marketing.
 

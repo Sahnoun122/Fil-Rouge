@@ -16,7 +16,7 @@ export class AppController {
       status: 'OK',
       message: 'MarketPlan IA API est en ligne',
       timestamp: new Date().toISOString(),
-      database: 'MongoDB connecté'
+      database: 'MongoDB connecté',
     };
   }
 }

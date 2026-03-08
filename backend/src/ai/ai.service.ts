@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 interface OpenRouterResponse {
   choices: Array<{
@@ -27,7 +31,8 @@ export class AiService {
 
     this.apiUrl = apiUrl;
     this.apiKey = apiKey;
-    this.model = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-nano-30b-a3b:free';
+    this.model =
+      process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-nano-30b-a3b:free';
 
     if (process.env.NODE_ENV === 'development') {
       console.log('🔧 AI Service configured:', {
@@ -53,7 +58,7 @@ export class AiService {
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -85,12 +90,18 @@ export class AiService {
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ OpenRouter API response received, length:', content.length);
+        console.log(
+          '✅ OpenRouter API response received, length:',
+          content.length,
+        );
       }
 
       return content;
     } catch (error: any) {
-      if (error instanceof BadRequestException || error instanceof InternalServerErrorException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof InternalServerErrorException
+      ) {
         throw error;
       }
 
@@ -135,7 +146,9 @@ export class AiService {
       return firstParsed;
     }
 
-    console.warn('⚠️ First response was not valid JSON, retrying with fix prompt...');
+    console.warn(
+      '⚠️ First response was not valid JSON, retrying with fix prompt...',
+    );
 
     // Retry with JSON fix prompt
     const fixPrompt = `The following text should be valid JSON but it is not. Fix it and return ONLY the valid JSON object, no explanation, no markdown:\n\n${firstResponse}`;

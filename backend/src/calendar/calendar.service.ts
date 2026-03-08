@@ -50,6 +50,9 @@ export class CalendarService {
       dto.campaignId ?? null,
     );
 
+    const timezone = this.normalizeRequiredString(dto.timezone, 'timezone');
+    this.assertNotScheduledAfterToday(dto.scheduledAt, timezone);
+
     const scheduledPost = new this.scheduledPostModel({
       userId: this.toObjectId(userId, 'userId'),
       strategyId: this.toOptionalObjectId(dto.strategyId),
@@ -62,7 +65,7 @@ export class CalendarService {
       mediaUrls: this.normalizeStringArray(dto.mediaUrls),
       scheduledAt: dto.scheduledAt,
       status: this.resolveStatus(dto.status, dto.scheduledAt),
-      timezone: this.normalizeRequiredString(dto.timezone, 'timezone'),
+      timezone,
       notes: this.normalizeOptionalString(dto.notes),
     });
 
@@ -75,9 +78,9 @@ export class CalendarService {
   ): Promise<{
     posts: ScheduledPostDocument[];
     total: number;
-      page?: number;
-      limit?: number;
-      pages?: number;
+    page?: number;
+    limit?: number;
+    pages?: number;
   }> {
     return this.listScheduledPostsForOwner(
       this.toObjectId(userId, 'userId'),
@@ -257,6 +260,13 @@ export class CalendarService {
       );
     }
 
+    if (this.hasOwn(dto, 'scheduledAt') || this.hasOwn(dto, 'timezone')) {
+      this.assertNotScheduledAfterToday(
+        scheduledPost.scheduledAt,
+        scheduledPost.timezone,
+      );
+    }
+
     return scheduledPost.save();
   }
 
@@ -270,6 +280,10 @@ export class CalendarService {
       postId,
     );
     scheduledPost.scheduledAt = dto.scheduledAt;
+    this.assertNotScheduledAfterToday(
+      scheduledPost.scheduledAt,
+      scheduledPost.timezone,
+    );
     scheduledPost.status = this.resolveStatus(
       scheduledPost.status,
       scheduledPost.scheduledAt,
@@ -510,6 +524,7 @@ export class CalendarService {
       post.schedule.time,
       timezone,
     );
+    this.assertNotScheduledAfterToday(scheduledAt, timezone);
 
     return [
       {
@@ -662,5 +677,60 @@ export class CalendarService {
       hour: Number(values.get('hour')),
       minute: Number(values.get('minute')),
     };
+  }
+
+  private assertNotScheduledAfterToday(
+    scheduledAt: Date,
+    timezone: string,
+  ): void {
+    const scheduledDateTimeKey = this.getDateTimeKeyInTimezone(
+      scheduledAt,
+      timezone,
+    );
+    const nowDateTimeKey = this.getDateTimeKeyInTimezone(new Date(), timezone);
+
+    if (scheduledDateTimeKey <= nowDateTimeKey) {
+      throw new BadRequestException(
+        'Planification refusee: la date/heure doit etre strictement dans le futur',
+      );
+    }
+  }
+
+  private getDateTimeKeyInTimezone(date: Date, timezone: string): string {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23',
+      });
+      const parts = formatter.formatToParts(date);
+      const values = new Map<string, string>();
+
+      for (const part of parts) {
+        if (part.type !== 'literal') {
+          values.set(part.type, part.value);
+        }
+      }
+
+      const year = values.get('year');
+      const month = values.get('month');
+      const day = values.get('day');
+      const hour = values.get('hour');
+      const minute = values.get('minute');
+      const second = values.get('second');
+
+      if (!year || !month || !day || !hour || !minute || !second) {
+        throw new BadRequestException(`Timezone invalide: ${timezone}`);
+      }
+
+      return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    } catch {
+      throw new BadRequestException(`Timezone invalide: ${timezone}`);
+    }
   }
 }

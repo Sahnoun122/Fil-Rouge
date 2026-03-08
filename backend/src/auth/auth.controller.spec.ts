@@ -96,10 +96,14 @@ describe('AuthController', () => {
 
     it('should handle registration conflict', async () => {
       // Arrange
-      authService.register.mockRejectedValue(new ConflictException('Cet email est déjà utilisé'));
+      authService.register.mockRejectedValue(
+        new ConflictException('Cet email est déjà utilisé'),
+      );
 
       // Act & Assert
-      await expect(authController.register(registerDto)).rejects.toThrow(ConflictException);
+      await expect(authController.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
       expect(authService.register).toHaveBeenCalledWith(registerDto);
     });
 
@@ -142,10 +146,14 @@ describe('AuthController', () => {
 
     it('should handle login failure', async () => {
       // Arrange
-      authService.login.mockRejectedValue(new UnauthorizedException('Email ou mot de passe incorrect'));
+      authService.login.mockRejectedValue(
+        new UnauthorizedException('Email ou mot de passe incorrect'),
+      );
 
       // Act & Assert
-      await expect(authController.login(mockRequest as any, loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(
+        authController.login(mockRequest as any, loginDto),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should handle missing user in request', async () => {
@@ -153,7 +161,9 @@ describe('AuthController', () => {
       const emptyRequest = { user: null };
 
       // Act & Assert
-      await expect(authController.login(emptyRequest as any, loginDto)).rejects.toThrow();
+      await expect(
+        authController.login(emptyRequest as any, loginDto),
+      ).rejects.toThrow();
     });
   });
 
@@ -179,15 +189,21 @@ describe('AuthController', () => {
       expect(result.message).toBe('Tokens rafraîchis avec succès');
       expect(result.accessToken).toBe(newTokens.accessToken);
       expect(result.refreshToken).toBe(newTokens.refreshToken);
-      expect(authService.refreshTokens).toHaveBeenCalledWith(refreshTokenDto.refreshToken);
+      expect(authService.refreshTokens).toHaveBeenCalledWith(
+        refreshTokenDto.refreshToken,
+      );
     });
 
     it('should handle invalid refresh token', async () => {
       // Arrange
-      authService.refreshTokens.mockRejectedValue(new UnauthorizedException('Token de rafraîchissement invalide'));
+      authService.refreshTokens.mockRejectedValue(
+        new UnauthorizedException('Token de rafraîchissement invalide'),
+      );
 
       // Act & Assert
-      await expect(authController.refreshToken(refreshTokenDto)).rejects.toThrow(UnauthorizedException);
+      await expect(
+        authController.refreshToken(refreshTokenDto),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should handle missing refresh token', async () => {
@@ -219,7 +235,9 @@ describe('AuthController', () => {
       const emptyRequest = { user: null };
 
       // Act & Assert
-      await expect(authController.getProfile(emptyRequest as any)).rejects.toThrow();
+      await expect(
+        authController.getProfile(emptyRequest as any),
+      ).rejects.toThrow();
     });
   });
 
@@ -239,7 +257,10 @@ describe('AuthController', () => {
       authService.logout.mockResolvedValue();
 
       // Act
-      const result = await authController.logout(mockRequest as any, mockResponse);
+      const result = await authController.logout(
+        mockRequest as any,
+        mockResponse,
+      );
 
       // Assert
       expect(result).toBeDefined();
@@ -255,7 +276,10 @@ describe('AuthController', () => {
 
       // Act & Assert
       // Le logout devrait réussir même si le service échoue
-      const result = await authController.logout(mockRequest as any, mockResponse);
+      const result = await authController.logout(
+        mockRequest as any,
+        mockResponse,
+      );
       expect(result.success).toBe(true);
       expect(mockResponse.clearCookie).toHaveBeenCalled();
     });
@@ -282,18 +306,27 @@ describe('AuthController', () => {
       const invalidRequest = { user: null };
 
       // Act & Assert
-      await expect(authController.validateToken(invalidRequest as any)).rejects.toThrow();
+      await expect(
+        authController.validateToken(invalidRequest as any),
+      ).rejects.toThrow();
     });
   });
 
   describe('Error Handling', () => {
     it('should handle unexpected errors gracefully', async () => {
       // Arrange
-      const loginDto: LoginDto = { email: 'test@example.com', password: 'password' };
-      authService.login.mockRejectedValue(new Error('Unexpected database error'));
+      const loginDto: LoginDto = {
+        email: 'test@example.com',
+        password: 'password',
+      };
+      authService.login.mockRejectedValue(
+        new Error('Unexpected database error'),
+      );
 
       // Act & Assert
-      await expect(authController.login({ user: mockUser } as any, loginDto)).rejects.toThrow();
+      await expect(
+        authController.login({ user: mockUser } as any, loginDto),
+      ).rejects.toThrow();
     });
 
     it('should handle service unavailable errors', async () => {
@@ -303,7 +336,9 @@ describe('AuthController', () => {
         email: 'test@example.com',
         password: 'password123',
       };
-      authService.register.mockRejectedValue(new Error('Service temporarily unavailable'));
+      authService.register.mockRejectedValue(
+        new Error('Service temporarily unavailable'),
+      );
 
       // Act & Assert
       await expect(authController.register(registerDto)).rejects.toThrow();
@@ -316,8 +351,12 @@ describe('AuthController', () => {
       const malformedDto = null;
 
       // Act & Assert
-      await expect(authController.register(malformedDto as any)).rejects.toThrow();
-      await expect(authController.login({ user: mockUser } as any, malformedDto as any)).rejects.toThrow();
+      await expect(
+        authController.register(malformedDto as any),
+      ).rejects.toThrow();
+      await expect(
+        authController.login({ user: mockUser } as any, malformedDto as any),
+      ).rejects.toThrow();
     });
 
     it('should handle extremely long input values', async () => {

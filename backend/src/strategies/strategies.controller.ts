@@ -1,14 +1,14 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Patch, 
-  Delete, 
-  Body, 
-  Param, 
-  Query, 
-  Req, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Req,
+  UseGuards,
   HttpStatus,
   HttpCode,
   UsePipes,
@@ -18,11 +18,11 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { StrategiesService } from './strategies.service';
-import { 
-  GenerateStrategyDto, 
+import {
+  GenerateStrategyDto,
   UpdateStrategyDto,
-  RegenerateSectionDto, 
-  ImproveSectionDto, 
+  RegenerateSectionDto,
+  ImproveSectionDto,
   UpdateSectionDto,
   AdminStrategiesQueryDto,
 } from './dto';
@@ -49,8 +49,11 @@ export class StrategiesController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const strategy = await this.strategiesService.generateFullStrategy(userId, generateStrategyDto);
-    
+    const strategy = await this.strategiesService.generateFullStrategy(
+      userId,
+      generateStrategyDto,
+    );
+
     return {
       success: true,
       message: 'Stratégie générée avec succès',
@@ -70,13 +73,17 @@ export class StrategiesController {
     const userId = req.user.id;
     const pageNumber = parseInt(page) || 1;
     const limitNumber = parseInt(limit) || 10;
-    
+
     // Validation des paramètres de pagination
     const validatedPage = Math.max(1, pageNumber);
     const validatedLimit = Math.min(50, Math.max(1, limitNumber)); // Max 50 par page
-    
-    const result = await this.strategiesService.findAll(userId, validatedPage, validatedLimit);
-    
+
+    const result = await this.strategiesService.findAll(
+      userId,
+      validatedPage,
+      validatedLimit,
+    );
+
     return {
       success: true,
       data: {
@@ -103,7 +110,11 @@ export class StrategiesController {
     const limit = query.limit ?? 10;
     const search = query.search;
 
-    const result = await this.strategiesService.findAllForAdmin(page, limit, search);
+    const result = await this.strategiesService.findAllForAdmin(
+      page,
+      limit,
+      search,
+    );
 
     return {
       success: true,
@@ -144,7 +155,7 @@ export class StrategiesController {
   ) {
     const userId = req.user.id;
     const strategy = await this.strategiesService.findOne(userId, strategyId);
-    
+
     return {
       success: true,
       data: strategy,
@@ -160,7 +171,10 @@ export class StrategiesController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const payload = await this.strategiesService.buildPdfExportPayload(userId, strategyId);
+    const payload = await this.strategiesService.buildPdfExportPayload(
+      userId,
+      strategyId,
+    );
 
     return {
       success: true,
@@ -178,7 +192,11 @@ export class StrategiesController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const strategy = await this.strategiesService.updateStrategy(userId, strategyId, updateStrategyDto);
+    const strategy = await this.strategiesService.updateStrategy(
+      userId,
+      strategyId,
+      updateStrategyDto,
+    );
 
     return {
       success: true,
@@ -198,7 +216,7 @@ export class StrategiesController {
   ) {
     const userId = req.user.id;
     await this.strategiesService.deleteOne(userId, strategyId);
-    
+
     return {
       success: true,
       message: 'Stratégie supprimée avec succès',
@@ -216,11 +234,11 @@ export class StrategiesController {
   ) {
     const userId = req.user.id;
     const strategy = await this.strategiesService.regenerateSection(
-      userId, 
-      strategyId, 
-      regenerateSectionDto
+      userId,
+      strategyId,
+      regenerateSectionDto,
     );
-    
+
     return {
       success: true,
       message: `Section "${regenerateSectionDto.sectionKey}" régénérée avec succès`,
@@ -239,11 +257,11 @@ export class StrategiesController {
   ) {
     const userId = req.user.id;
     const strategy = await this.strategiesService.improveSection(
-      userId, 
-      strategyId, 
-      improveSectionDto
+      userId,
+      strategyId,
+      improveSectionDto,
     );
-    
+
     return {
       success: true,
       message: `Section "${improveSectionDto.sectionKey}" améliorée avec succès`,
@@ -261,13 +279,13 @@ export class StrategiesController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    
+
     const updatedStrategy = await this.strategiesService.updateSection(
       userId,
       strategyId,
-      updateSectionDto
+      updateSectionDto,
     );
-    
+
     return {
       success: true,
       message: `Section "${updateSectionDto.sectionKey}" mise à jour avec succès`,

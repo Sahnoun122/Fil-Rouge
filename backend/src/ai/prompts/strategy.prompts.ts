@@ -17,20 +17,21 @@ interface BusinessInfo {
  * structurée en Avant/Pendant/Après avec contenu concret et professionnel
  */
 export function buildFullStrategyPrompt(businessInfo: BusinessInfo): string {
-  const { 
-    companyName = "l'entreprise", 
-    industry = "le secteur d'activité", 
-    targetAudience = "la clientèle cible", 
-    products = "les produits/services",
-    objectives = "les objectifs commerciaux",
-    budget = "le budget disponible",
-    timeline = "la période de mise en œuvre"
+  const {
+    companyName = "l'entreprise",
+    industry = "le secteur d'activité",
+    targetAudience = 'la clientèle cible',
+    products = 'les produits/services',
+    objectives = 'les objectifs commerciaux',
+    budget = 'le budget disponible',
+    timeline = 'la période de mise en œuvre',
   } = businessInfo;
 
   const language = businessInfo.language || 'auto';
-  const langRule = language === 'auto'
-    ? 'Detect the language from the business context and inputs, then respond consistently in that same language throughout the entire output.'
-    : `Respond ENTIRELY in ${language}. Every field value, description, example, and text must be written in ${language}.`;
+  const langRule =
+    language === 'auto'
+      ? 'Detect the language from the business context and inputs, then respond consistently in that same language throughout the entire output.'
+      : `Respond ENTIRELY in ${language}. Every field value, description, example, and text must be written in ${language}.`;
 
   return `En tant qu'expert en stratégie marketing, créez un "One Page Marketing Plan" complet et professionnel pour ${companyName} dans ${industry}.
 
@@ -115,21 +116,22 @@ Générez maintenant ce plan marketing stratégique complet :`;
  * Génère un prompt pour régénérer une section spécifique du plan marketing
  */
 export function buildRegenerateSectionPrompt(
-  businessInfo: BusinessInfo, 
-  sectionKey: string, 
-  instruction: string, 
-  existingSection: any
+  businessInfo: BusinessInfo,
+  sectionKey: string,
+  instruction: string,
+  existingSection: any,
 ): string {
-  const { 
-    companyName = "l'entreprise", 
-    industry = "le secteur d'activité", 
-    targetAudience = "la clientèle cible" 
+  const {
+    companyName = "l'entreprise",
+    industry = "le secteur d'activité",
+    targetAudience = 'la clientèle cible',
   } = businessInfo;
 
   const language = businessInfo.language || 'auto';
-  const langRule = language === 'auto'
-    ? 'Detect the language from the business context and inputs, then respond consistently in that same language.'
-    : `Respond ENTIRELY in ${language}. Every value and text must be written in ${language}.`;
+  const langRule =
+    language === 'auto'
+      ? 'Detect the language from the business context and inputs, then respond consistently in that same language.'
+      : `Respond ENTIRELY in ${language}. Every value and text must be written in ${language}.`;
 
   const sectionExamples = {
     'avant.marcheCible': `{
@@ -179,10 +181,12 @@ export function buildRegenerateSectionPrompt(
   "parrainage": ["Système 1", "Système 2"],
   "avisClients": ["Stratégie 1", "Stratégie 2"],
   "recompenses": ["Récompense 1", "Récompense 2"]
-}`
+}`,
   };
 
-  const formatExample = sectionExamples[sectionKey as keyof typeof sectionExamples] || `{
+  const formatExample =
+    sectionExamples[sectionKey as keyof typeof sectionExamples] ||
+    `{
   // Structure adaptée à la section ${sectionKey}
 }`;
 
@@ -217,20 +221,21 @@ Générez la nouvelle section maintenant :`;
  */
 export function buildImproveSectionPrompt(
   businessInfo: BusinessInfo,
-  sectionKey: string, 
+  sectionKey: string,
   instruction: string,
-  existingSection: any
+  existingSection: any,
 ): string {
-  const { 
-    companyName = "l'entreprise", 
-    industry = "le secteur d'activité", 
-    targetAudience = "la clientèle cible" 
+  const {
+    companyName = "l'entreprise",
+    industry = "le secteur d'activité",
+    targetAudience = 'la clientèle cible',
   } = businessInfo;
 
   const language = businessInfo.language || 'auto';
-  const langRule = language === 'auto'
-    ? 'Detect the language from the business context and inputs, then respond consistently in that same language.'
-    : `Respond ENTIRELY in ${language}. Every value and text must be written in ${language}.`;
+  const langRule =
+    language === 'auto'
+      ? 'Detect the language from the business context and inputs, then respond consistently in that same language.'
+      : `Respond ENTIRELY in ${language}. Every value and text must be written in ${language}.`;
 
   const sectionExamples = {
     'avant.marcheCible': `{
@@ -280,10 +285,12 @@ export function buildImproveSectionPrompt(
   "parrainage": ["Système 1", "Système 2"],
   "avisClients": ["Stratégie 1", "Stratégie 2"],
   "recompenses": ["Récompense 1", "Récompense 2"]
-}`
+}`,
   };
 
-  const formatExample = sectionExamples[sectionKey as keyof typeof sectionExamples] || `{
+  const formatExample =
+    sectionExamples[sectionKey as keyof typeof sectionExamples] ||
+    `{
   // Structure adaptée à la section ${sectionKey}
 }`;
 

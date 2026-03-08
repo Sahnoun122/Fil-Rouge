@@ -11,7 +11,7 @@ export class HealthController {
       timestamp: new Date().toISOString(),
       service: 'MarketPlan IA Backend',
       version: '1.0.0',
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
     };
   }
 
@@ -29,14 +29,14 @@ export class HealthController {
       environment: process.env.NODE_ENV || 'development',
       uptime: {
         seconds: Math.floor(uptime),
-        formatted: this.formatUptime(uptime)
+        formatted: this.formatUptime(uptime),
       },
       memory: {
         rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB',
         heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
-        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB'
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
       },
-      nodejs: process.version
+      nodejs: process.version,
     };
   }
 

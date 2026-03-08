@@ -6,7 +6,11 @@ import { ConfigService } from '@nestjs/config';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 
-import { AuthService, JwtPayload, AuthTokens } from '../../src/auth/auth.service';
+import {
+  AuthService,
+  JwtPayload,
+  AuthTokens,
+} from '../../src/auth/auth.service';
 import { UsersService } from '../../src/users/users.service';
 import { UserRole } from '../../src/users/entities/user.entity';
 
@@ -105,10 +109,15 @@ describe('AuthService', () => {
     it('should return user data when credentials are valid', async () => {
       // Arrange
       usersService.findByEmail.mockResolvedValue(mockUser as any);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(true));
 
       // Act
-      const result = await authService.validateUser('john@example.com', 'password123');
+      const result = await authService.validateUser(
+        'john@example.com',
+        'password123',
+      );
 
       // Assert
       expect(result).toBeDefined();
@@ -122,20 +131,30 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(null);
 
       // Act
-      const result = await authService.validateUser('notfound@example.com', 'password123');
+      const result = await authService.validateUser(
+        'notfound@example.com',
+        'password123',
+      );
 
       // Assert
       expect(result).toBeNull();
-      expect(usersService.findByEmail).toHaveBeenCalledWith('notfound@example.com');
+      expect(usersService.findByEmail).toHaveBeenCalledWith(
+        'notfound@example.com',
+      );
     });
 
     it('should return null when password is invalid', async () => {
       // Arrange
       usersService.findByEmail.mockResolvedValue(mockUser as any);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(false));
 
       // Act
-      const result = await authService.validateUser('john@example.com', 'wrongpassword');
+      const result = await authService.validateUser(
+        'john@example.com',
+        'wrongpassword',
+      );
 
       // Assert
       expect(result).toBeNull();
@@ -145,10 +164,15 @@ describe('AuthService', () => {
       // Arrange
       const inactiveUser = { ...mockUser, isActive: false };
       usersService.findByEmail.mockResolvedValue(inactiveUser as any);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(true));
 
       // Act
-      const result = await authService.validateUser('john@example.com', 'password123');
+      const result = await authService.validateUser(
+        'john@example.com',
+        'password123',
+      );
 
       // Assert
       expect(result).toBeNull();
@@ -160,8 +184,12 @@ describe('AuthService', () => {
       // Arrange
       const loginDto = { email: 'john@example.com', password: 'password123' };
       usersService.findByEmail.mockResolvedValue(mockUser as any);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
-      jwtService.sign.mockReturnValueOnce('access.token').mockReturnValueOnce('refresh.token');
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(true));
+      jwtService.sign
+        .mockReturnValueOnce('access.token')
+        .mockReturnValueOnce('refresh.token');
 
       // Act
       const result = await authService.login(loginDto);
@@ -182,8 +210,12 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(authService.login(loginDto)).rejects.toThrow(UnauthorizedException);
-      await expect(authService.login(loginDto)).rejects.toThrow('Email ou mot de passe incorrect');
+      await expect(authService.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(authService.login(loginDto)).rejects.toThrow(
+        'Email ou mot de passe incorrect',
+      );
     });
   });
 
@@ -200,10 +232,18 @@ describe('AuthService', () => {
     it('should successfully register a new user', async () => {
       // Arrange
       usersService.findByEmail.mockResolvedValue(null);
-      const newUser = { ...mockUser, fullName: 'Jane Smith', email: 'jane@example.com' };
+      const newUser = {
+        ...mockUser,
+        fullName: 'Jane Smith',
+        email: 'jane@example.com',
+      };
       usersService.create.mockResolvedValue(newUser as any);
-      jest.spyOn(bcrypt, 'hash').mockImplementation(() => Promise.resolve('hashedPassword'));
-      jwtService.sign.mockReturnValueOnce('access.token').mockReturnValueOnce('refresh.token');
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockImplementation(() => Promise.resolve('hashedPassword'));
+      jwtService.sign
+        .mockReturnValueOnce('access.token')
+        .mockReturnValueOnce('refresh.token');
 
       // Act
       const result = await authService.register(registerDto);
@@ -224,8 +264,12 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(mockUser as any);
 
       // Act & Assert
-      await expect(authService.register(registerDto)).rejects.toThrow(ConflictException);
-      await expect(authService.register(registerDto)).rejects.toThrow('Cet email est déjà utilisé');
+      await expect(authService.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(authService.register(registerDto)).rejects.toThrow(
+        'Cet email est déjà utilisé',
+      );
     });
   });
 
@@ -241,7 +285,9 @@ describe('AuthService', () => {
       // Arrange
       jwtService.verify.mockReturnValue(mockPayload);
       usersService.findById.mockResolvedValue(mockUser as any);
-      jwtService.sign.mockReturnValueOnce('new.access.token').mockReturnValueOnce('new.refresh.token');
+      jwtService.sign
+        .mockReturnValueOnce('new.access.token')
+        .mockReturnValueOnce('new.refresh.token');
 
       // Act
       const result = await authService.refreshTokens(refreshToken);
@@ -262,8 +308,12 @@ describe('AuthService', () => {
       });
 
       // Act & Assert
-      await expect(authService.refreshTokens('invalid.token')).rejects.toThrow(UnauthorizedException);
-      await expect(authService.refreshTokens('invalid.token')).rejects.toThrow('Token de rafraîchissement invalide');
+      await expect(authService.refreshTokens('invalid.token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(authService.refreshTokens('invalid.token')).rejects.toThrow(
+        'Token de rafraîchissement invalide',
+      );
     });
 
     it('should throw UnauthorizedException when user not found', async () => {
@@ -272,7 +322,9 @@ describe('AuthService', () => {
       usersService.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(authService.refreshTokens(refreshToken)).rejects.toThrow(UnauthorizedException);
+      await expect(authService.refreshTokens(refreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when user is inactive', async () => {
@@ -282,7 +334,9 @@ describe('AuthService', () => {
       usersService.findById.mockResolvedValue(inactiveUser as any);
 
       // Act & Assert
-      await expect(authService.refreshTokens(refreshToken)).rejects.toThrow(UnauthorizedException);
+      await expect(authService.refreshTokens(refreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -294,7 +348,9 @@ describe('AuthService', () => {
         email: 'john@example.com',
         role: UserRole.USER,
       };
-      jwtService.sign.mockReturnValueOnce('access.token').mockReturnValueOnce('refresh.token');
+      jwtService.sign
+        .mockReturnValueOnce('access.token')
+        .mockReturnValueOnce('refresh.token');
 
       // Act
       const result = await authService.generateTokens(payload);
@@ -304,8 +360,12 @@ describe('AuthService', () => {
       expect(result.accessToken).toBe('access.token');
       expect(result.refreshToken).toBe('refresh.token');
       expect(jwtService.sign).toHaveBeenCalledTimes(2);
-      expect(jwtService.sign).toHaveBeenNthCalledWith(1, payload, { expiresIn: '1h' });
-      expect(jwtService.sign).toHaveBeenNthCalledWith(2, payload, { expiresIn: '7d' });
+      expect(jwtService.sign).toHaveBeenNthCalledWith(1, payload, {
+        expiresIn: '1h',
+      });
+      expect(jwtService.sign).toHaveBeenNthCalledWith(2, payload, {
+        expiresIn: '7d',
+      });
     });
   });
 
@@ -325,7 +385,9 @@ describe('AuthService', () => {
 
       // Assert
       expect(result).toEqual(expectedPayload);
-      expect(jwtService.verify).toHaveBeenCalledWith(token, { secret: 'test-secret' });
+      expect(jwtService.verify).toHaveBeenCalledWith(token, {
+        secret: 'test-secret',
+      });
     });
 
     it('should return null for invalid refresh token', () => {

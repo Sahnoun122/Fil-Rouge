@@ -1,5 +1,12 @@
 import { Transform, Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class AdminStrategiesQueryDto {
   @IsOptional()
@@ -17,7 +24,9 @@ export class AdminStrategiesQueryDto {
 
   @IsOptional()
   @IsString({ message: 'La recherche doit etre une chaine de caracteres' })
-  @MaxLength(100, { message: 'La recherche ne peut pas depasser 100 caracteres' })
+  @MaxLength(100, {
+    message: 'La recherche ne peut pas depasser 100 caracteres',
+  })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   search?: string;
 }

@@ -9,7 +9,11 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
 import { User, UserDocument, UserRole } from './entities/user.entity';
-import { AdminUpdateUserDto, ChangePasswordDto, UpdateUserDto } from './dto/user.dto';
+import {
+  AdminUpdateUserDto,
+  ChangePasswordDto,
+  UpdateUserDto,
+} from './dto/user.dto';
 
 export interface CreateUserData {
   fullName: string;
@@ -28,9 +32,7 @@ export interface AdminUsersFilters {
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async createUser(userData: CreateUserData): Promise<UserDocument> {
     try {
@@ -48,7 +50,9 @@ export class UsersService {
       const safeUser = await this.userModel.findById(savedUser._id).exec();
 
       if (!safeUser) {
-        throw new BadRequestException("Erreur lors de la creation de l'utilisateur");
+        throw new BadRequestException(
+          "Erreur lors de la creation de l'utilisateur",
+        );
       }
 
       return safeUser;
@@ -56,7 +60,9 @@ export class UsersService {
       if (error?.code === 11000) {
         throw new ConflictException('Cet email est deja utilise');
       }
-      throw new BadRequestException("Erreur lors de la creation de l'utilisateur");
+      throw new BadRequestException(
+        "Erreur lors de la creation de l'utilisateur",
+      );
     }
   }
 
@@ -93,14 +99,22 @@ export class UsersService {
     }
   }
 
-  async updateProfile(userId: string, updateData: UpdateUserDto): Promise<UserDocument> {
+  async updateProfile(
+    userId: string,
+    updateData: UpdateUserDto,
+  ): Promise<UserDocument> {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException('Utilisateur introuvable');
       }
 
-      const allowedFields: Array<keyof UpdateUserDto> = ['fullName', 'phone', 'companyName', 'industry'];
+      const allowedFields: Array<keyof UpdateUserDto> = [
+        'fullName',
+        'phone',
+        'companyName',
+        'industry',
+      ];
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
           user[field] = updateData[field] as never;
@@ -116,7 +130,10 @@ export class UsersService {
     }
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
     try {
       const user = await this.userModel.findById(userId).select('+password');
       if (!user) {
@@ -137,14 +154,22 @@ export class UsersService {
 
       return { message: 'Mot de passe modifie avec succes' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      throw new BadRequestException('Erreur lors du changement de mot de passe');
+      throw new BadRequestException(
+        'Erreur lors du changement de mot de passe',
+      );
     }
   }
 
-  async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
     try {
       const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
       await this.userModel.findByIdAndUpdate(userId, {
@@ -225,7 +250,9 @@ export class UsersService {
         totalPages,
       };
     } catch {
-      throw new BadRequestException('Erreur lors de la recuperation des utilisateurs');
+      throw new BadRequestException(
+        'Erreur lors de la recuperation des utilisateurs',
+      );
     }
   }
 
@@ -253,11 +280,17 @@ export class UsersService {
         recentSignups,
       };
     } catch {
-      throw new BadRequestException('Erreur lors de la recuperation des statistiques');
+      throw new BadRequestException(
+        'Erreur lors de la recuperation des statistiques',
+      );
     }
   }
 
-  async updateUserRole(userId: string, role: UserRole, currentAdminId?: string): Promise<UserDocument> {
+  async updateUserRole(
+    userId: string,
+    role: UserRole,
+    currentAdminId?: string,
+  ): Promise<UserDocument> {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
@@ -265,21 +298,30 @@ export class UsersService {
       }
 
       if (currentAdminId && user._id.toString() === currentAdminId) {
-        throw new BadRequestException('Vous ne pouvez pas modifier votre propre role');
+        throw new BadRequestException(
+          'Vous ne pouvez pas modifier votre propre role',
+        );
       }
 
       if (user.role === 'admin' && role === 'user') {
-        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
+        const otherAdmins = await this.countOtherUnbannedAdmins(
+          user._id.toString(),
+        );
 
         if (otherAdmins === 0) {
-          throw new BadRequestException('Impossible de retirer le role du dernier administrateur');
+          throw new BadRequestException(
+            'Impossible de retirer le role du dernier administrateur',
+          );
         }
       }
 
       user.role = role;
       return await user.save();
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Erreur lors de la modification du role');
@@ -299,14 +341,18 @@ export class UsersService {
 
       if (currentAdminId && user._id.toString() === currentAdminId) {
         if (updateData.role === 'user') {
-          throw new BadRequestException('Vous ne pouvez pas modifier votre propre role');
+          throw new BadRequestException(
+            'Vous ne pouvez pas modifier votre propre role',
+          );
         }
       }
 
       const nextRole = updateData.role ?? user.role;
 
       if (user.role === 'admin' && nextRole !== 'admin') {
-        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
+        const otherAdmins = await this.countOtherUnbannedAdmins(
+          user._id.toString(),
+        );
 
         if (otherAdmins === 0) {
           throw new BadRequestException(
@@ -333,7 +379,10 @@ export class UsersService {
 
       return await user.save();
     } catch (error: any) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
@@ -341,7 +390,9 @@ export class UsersService {
         throw new ConflictException('Cet email est deja utilise');
       }
 
-      throw new BadRequestException("Erreur lors de la mise a jour de l'utilisateur");
+      throw new BadRequestException(
+        "Erreur lors de la mise a jour de l'utilisateur",
+      );
     }
   }
 
@@ -355,20 +406,28 @@ export class UsersService {
       if (user.role === 'admin') {
         const otherAdmins = await this.countOtherUnbannedAdmins(userId);
         if (otherAdmins === 0) {
-          throw new BadRequestException('Impossible de supprimer le dernier administrateur');
+          throw new BadRequestException(
+            'Impossible de supprimer le dernier administrateur',
+          );
         }
       }
 
       await this.userModel.findByIdAndDelete(userId).exec();
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Erreur lors de la suppression du compte');
     }
   }
 
-  async deleteUserByAdmin(userId: string, currentAdminId?: string): Promise<void> {
+  async deleteUserByAdmin(
+    userId: string,
+    currentAdminId?: string,
+  ): Promise<void> {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
@@ -376,24 +435,35 @@ export class UsersService {
       }
 
       if (currentAdminId && user._id.toString() === currentAdminId) {
-        throw new BadRequestException('Vous ne pouvez pas supprimer votre propre compte');
+        throw new BadRequestException(
+          'Vous ne pouvez pas supprimer votre propre compte',
+        );
       }
 
       if (user.role === 'admin' && !user.isBanned) {
-        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
+        const otherAdmins = await this.countOtherUnbannedAdmins(
+          user._id.toString(),
+        );
 
         if (otherAdmins === 0) {
-          throw new BadRequestException('Impossible de supprimer le dernier administrateur');
+          throw new BadRequestException(
+            'Impossible de supprimer le dernier administrateur',
+          );
         }
       }
 
       await this.userModel.findByIdAndDelete(userId).exec();
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
-      throw new BadRequestException("Erreur lors de la suppression de l'utilisateur");
+      throw new BadRequestException(
+        "Erreur lors de la suppression de l'utilisateur",
+      );
     }
   }
 
@@ -410,15 +480,21 @@ export class UsersService {
       }
 
       if (currentAdminId && user._id.toString() === currentAdminId && ban) {
-        throw new BadRequestException('Vous ne pouvez pas bannir votre propre compte');
+        throw new BadRequestException(
+          'Vous ne pouvez pas bannir votre propre compte',
+        );
       }
 
       const isStateChanging = user.isBanned !== ban;
       if (isStateChanging && user.role === 'admin' && !user.isBanned && ban) {
-        const otherAdmins = await this.countOtherUnbannedAdmins(user._id.toString());
+        const otherAdmins = await this.countOtherUnbannedAdmins(
+          user._id.toString(),
+        );
 
         if (otherAdmins === 0) {
-          throw new BadRequestException('Impossible de bannir le dernier administrateur actif');
+          throw new BadRequestException(
+            'Impossible de bannir le dernier administrateur actif',
+          );
         }
       }
 
@@ -433,15 +509,22 @@ export class UsersService {
 
       return await user.save();
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
-      throw new BadRequestException('Erreur lors de la modification du statut de bannissement');
+      throw new BadRequestException(
+        'Erreur lors de la modification du statut de bannissement',
+      );
     }
   }
 
-  private async countOtherUnbannedAdmins(excludedUserId: string): Promise<number> {
+  private async countOtherUnbannedAdmins(
+    excludedUserId: string,
+  ): Promise<number> {
     return this.userModel.countDocuments({
       role: 'admin',
       isBanned: { $ne: true },

@@ -228,6 +228,7 @@ export class AutoSchedulerService {
       inputs.startDate,
       inputs.endDate,
       excludedDays,
+      inputs.timezone,
     );
 
     if (!eligibleDates.length) {
@@ -421,6 +422,7 @@ export class AutoSchedulerService {
     const assignments: ScheduleAssignment[] = [];
     const usedSlotsByDate = new Map<string, DateSlot[]>();
     const lastScheduledDateByPlatform = new Map<string, string>();
+    const nowDateKey = this.getDateKeyInTimezone(new Date(), timezone);
 
     for (let weekIndex = 0; weekIndex < weekBuckets.length; weekIndex += 1) {
       const bucket = weekBuckets[weekIndex];
@@ -437,6 +439,7 @@ export class AutoSchedulerService {
           usedSlotsByDate,
           lastScheduledDateByPlatform,
           hasUserOverride,
+          nowDateKey,
           seed + assignments.length,
         );
 
@@ -446,6 +449,8 @@ export class AutoSchedulerService {
           preferredTimeWindows,
           usedSlotsByDate,
           hasUserOverride,
+          timezone,
+          nowDateKey,
         );
 
         if (!pickedSlot) {
@@ -455,6 +460,7 @@ export class AutoSchedulerService {
             usedSlotsByDate,
             lastScheduledDateByPlatform,
             hasUserOverride,
+            nowDateKey,
             seed + assignments.length + weekIndex,
           );
 
@@ -464,6 +470,8 @@ export class AutoSchedulerService {
             preferredTimeWindows,
             usedSlotsByDate,
             hasUserOverride,
+            timezone,
+            nowDateKey,
           );
         }
 
@@ -500,6 +508,8 @@ export class AutoSchedulerService {
     preferredTimeWindows: Record<string, string[]>,
     usedSlotsByDate: Map<string, DateSlot[]>,
     hasUserOverride: boolean,
+    timezone: string,
+    nowDateKey: string,
   ): DateSlot | null {
     const platformKey = this.normalizePlatform(platform).toLowerCase();
     const windows =
@@ -512,13 +522,20 @@ export class AutoSchedulerService {
         date,
         windows,
         hasUserOverride,
-      );
+      ).filter((slot) => this.isSlotInFuture(slot.date, slot.time, timezone));
       if (!dateSlots.length) {
         continue;
       }
 
+      const sortedDateSlots =
+        date === nowDateKey
+          ? [...dateSlots].sort((left, right) =>
+              this.compareSlotsChronologically(left, right, timezone),
+            )
+          : dateSlots;
+
       const pickedSlot = this.pickNextAvailableSlot(
-        dateSlots,
+        sortedDateSlots,
         usedSlotsByDate.get(date) ?? [],
       );
       if (pickedSlot) {
@@ -535,6 +552,7 @@ export class AutoSchedulerService {
     usedSlotsByDate: Map<string, DateSlot[]>,
     lastScheduledDateByPlatform: Map<string, string>,
     hasUserOverride: boolean,
+    nowDateKey: string,
     seed: number,
   ): string[] {
     const platformKey = this.normalizePlatform(platform).toLowerCase();
@@ -548,6 +566,7 @@ export class AutoSchedulerService {
         usedSlotsByDate,
         lastScheduledDateByPlatform,
         hasUserOverride,
+        nowDateKey,
         seed,
       );
       const rightScore = this.scoreDate(
@@ -557,6 +576,7 @@ export class AutoSchedulerService {
         usedSlotsByDate,
         lastScheduledDateByPlatform,
         hasUserOverride,
+        nowDateKey,
         seed,
       );
 
@@ -575,6 +595,7 @@ export class AutoSchedulerService {
     usedSlotsByDate: Map<string, DateSlot[]>,
     lastScheduledDateByPlatform: Map<string, string>,
     hasUserOverride: boolean,
+    nowDateKey: string,
     seed: number,
   ): number {
     const weekday = this.getWeekday(date);
@@ -590,6 +611,8 @@ export class AutoSchedulerService {
 
     const weekendPenalty =
       profile.weekdayOnly && !hasUserOverride && this.isWeekend(date) ? 200 : 0;
+    const daysFromNow = Math.max(0, this.diffInDays(nowDateKey, date));
+    const proximityPenalty = Math.min(daysFromNow, 30) * 12;
 
     const deterministicBias = this.computeDeterministicBias(
       date,
@@ -602,7 +625,8 @@ export class AutoSchedulerService {
       spacingScore +
       deterministicBias -
       dailyLoadPenalty -
-      weekendPenalty
+      weekendPenalty -
+      proximityPenalty
     );
   }
 
@@ -891,9 +915,17 @@ export class AutoSchedulerService {
     startDate: string,
     endDate: string,
     excludedDays: Set<AutoScheduleExcludedDay>,
+    timezone: string,
   ): string[] {
-    const start = this.parseDate(startDate);
-    const end = this.parseDate(endDate);
+    const todayDateKey = this.getDateKeyInTimezone(new Date(), timezone);
+    const clampedStartDate =
+      startDate.localeCompare(todayDateKey) < 0 ? todayDateKey : startDate;
+
+    const start = this.parseDate(clampedStartDate);
+    const end =
+      endDate.localeCompare(clampedStartDate) < 0
+        ? start
+        : this.parseDate(endDate);
     const startTimestamp = Date.UTC(start.year, start.month - 1, start.day);
     const endTimestamp = Date.UTC(end.year, end.month - 1, end.day);
 
@@ -1124,6 +1156,125 @@ export class AutoSchedulerService {
 
   private toDateTimeKey(date: string, time: string): string {
     return `${date} ${time}`;
+  }
+
+  private compareSlotsChronologically(
+    left: DateSlot,
+    right: DateSlot,
+    timezone: string,
+  ): number {
+    const leftDate = this.zonedDateTimeToUtc(left.date, left.time, timezone);
+    const rightDate = this.zonedDateTimeToUtc(right.date, right.time, timezone);
+    return leftDate.getTime() - rightDate.getTime();
+  }
+
+  private getDateKeyInTimezone(date: Date, timezone: string): string {
+    const parts = this.getDatePartsInTimezone(date, timezone);
+    return `${String(parts.year).padStart(4, '0')}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
+  }
+
+  private isSlotInFuture(
+    date: string,
+    time: string,
+    timezone: string,
+  ): boolean {
+    const slotDate = this.zonedDateTimeToUtc(date, time, timezone);
+    return slotDate.getTime() > Date.now();
+  }
+
+  private zonedDateTimeToUtc(
+    date: string,
+    time: string,
+    timezone: string,
+  ): Date {
+    const parsedDate = this.parseDate(date);
+    const minuteMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time.trim());
+    if (!minuteMatch) {
+      throw new BadRequestException(
+        `Heure invalide: ${time}. Format attendu HH:mm`,
+      );
+    }
+
+    const target = {
+      year: parsedDate.year,
+      month: parsedDate.month,
+      day: parsedDate.day,
+      hour: Number(minuteMatch[1]),
+      minute: Number(minuteMatch[2]),
+    };
+
+    let utcMillis = Date.UTC(
+      target.year,
+      target.month - 1,
+      target.day,
+      target.hour,
+      target.minute,
+    );
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const zonedParts = this.getDatePartsInTimezone(
+        new Date(utcMillis),
+        timezone,
+      );
+      const zonedAsUtc = Date.UTC(
+        zonedParts.year,
+        zonedParts.month - 1,
+        zonedParts.day,
+        zonedParts.hour,
+        zonedParts.minute,
+      );
+      const targetAsUtc = Date.UTC(
+        target.year,
+        target.month - 1,
+        target.day,
+        target.hour,
+        target.minute,
+      );
+      const diff = zonedAsUtc - targetAsUtc;
+      if (diff === 0) {
+        break;
+      }
+      utcMillis -= diff;
+    }
+
+    return new Date(utcMillis);
+  }
+
+  private getDatePartsInTimezone(
+    date: Date,
+    timezone: string,
+  ): {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+  } {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    const parts = formatter.formatToParts(date);
+    const values = new Map<string, string>();
+
+    for (const part of parts) {
+      if (part.type !== 'literal') {
+        values.set(part.type, part.value);
+      }
+    }
+
+    return {
+      year: Number(values.get('year')),
+      month: Number(values.get('month')),
+      day: Number(values.get('day')),
+      hour: Number(values.get('hour')),
+      minute: Number(values.get('minute')),
+    };
   }
 
   private getPlatformProfile(platform: string): PlatformProfile {

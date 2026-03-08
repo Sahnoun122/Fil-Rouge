@@ -16,7 +16,7 @@ import { UsersModule } from '../users/users.module';
   imports: [
     // Configuration Passport
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    
+
     // Configuration JWT avec variables d'environnement
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -36,7 +36,7 @@ import { UsersModule } from '../users/users.module';
   ],
 
   controllers: [AuthController],
-  
+
   providers: [
     AuthService,
     JwtStrategy,
@@ -45,12 +45,6 @@ import { UsersModule } from '../users/users.module';
     RolesGuard,
   ],
 
-  exports: [
-    AuthService,
-    JwtAuthGuard,
-    RolesGuard,
-    PassportModule,
-    JwtModule,
-  ],
+  exports: [AuthService, JwtAuthGuard, RolesGuard, PassportModule, JwtModule],
 })
 export class AuthModule {}

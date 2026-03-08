@@ -11,7 +11,10 @@ import {
   buildImproveSwotPrompt,
   buildSwotFromStrategyPrompt,
 } from '../ai/prompts/swot.prompts';
-import { Strategy, StrategyDocument } from '../strategies/schemas/strategy.schema';
+import {
+  Strategy,
+  StrategyDocument,
+} from '../strategies/schemas/strategy.schema';
 import { User, UserDocument } from '../users/entities/user.entity';
 import {
   CreateSwotDto,
@@ -78,12 +81,16 @@ export class SwotService {
 
   constructor(
     @InjectModel(Swot.name) private readonly swotModel: Model<SwotDocument>,
-    @InjectModel(Strategy.name) private readonly strategyModel: Model<StrategyDocument>,
+    @InjectModel(Strategy.name)
+    private readonly strategyModel: Model<StrategyDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly aiService: AiService,
   ) {}
 
-  async createManual(userId: string, dto: CreateSwotDto): Promise<SwotDocument> {
+  async createManual(
+    userId: string,
+    dto: CreateSwotDto,
+  ): Promise<SwotDocument> {
     const strategy = await this.getOwnedStrategyOrThrow(userId, dto.strategyId);
 
     const swotPayload = this.validateSwotPayload(
@@ -103,11 +110,20 @@ export class SwotService {
     return swotDocument.save();
   }
 
-  async generateFromStrategy(userId: string, dto: GenerateSwotDto): Promise<SwotDocument> {
+  async generateFromStrategy(
+    userId: string,
+    dto: GenerateSwotDto,
+  ): Promise<SwotDocument> {
     const strategy = await this.getOwnedStrategyOrThrow(userId, dto.strategyId);
 
-    const strategyJson = strategy.generatedStrategy as unknown as Record<string, unknown>;
-    const businessInfo = strategy.businessInfo as unknown as Record<string, unknown>;
+    const strategyJson = strategy.generatedStrategy as unknown as Record<
+      string,
+      unknown
+    >;
+    const businessInfo = strategy.businessInfo as unknown as Record<
+      string,
+      unknown
+    >;
     const inputs = this.normalizeInputs(dto.inputs);
 
     const prompt = buildSwotFromStrategyPrompt(
@@ -130,9 +146,16 @@ export class SwotService {
     return swotDocument.save();
   }
 
-  async improveSwot(userId: string, swotId: string, dto: ImproveSwotDto): Promise<SwotDocument> {
+  async improveSwot(
+    userId: string,
+    swotId: string,
+    dto: ImproveSwotDto,
+  ): Promise<SwotDocument> {
     const swotDocument = await this.getOwnedSwotOrThrow(userId, swotId);
-    const strategy = await this.getOwnedStrategyByIdOrThrow(userId, swotDocument.strategyId.toString());
+    const strategy = await this.getOwnedStrategyByIdOrThrow(
+      userId,
+      swotDocument.strategyId.toString(),
+    );
 
     const prompt = buildImproveSwotPrompt(
       strategy.generatedStrategy as unknown as Record<string, unknown>,
@@ -178,7 +201,10 @@ export class SwotService {
     return this.getOwnedSwotOrThrow(userId, swotId);
   }
 
-  async buildPdfExportPayload(userId: string, swotId: string): Promise<SwotPdfExportPayload> {
+  async buildPdfExportPayload(
+    userId: string,
+    swotId: string,
+  ): Promise<SwotPdfExportPayload> {
     const swotDocument = await this.getOwnedSwotOrThrow(userId, swotId);
     return this.buildPdfExportPayloadInternal(swotDocument);
   }
@@ -196,9 +222,14 @@ export class SwotService {
     const [swots, total] = await Promise.all([
       this.swotModel
         .find(filters)
-        .select('userId strategyId title swot isAiGenerated createdAt updatedAt')
+        .select(
+          'userId strategyId title swot isAiGenerated createdAt updatedAt',
+        )
         .populate('userId', 'fullName email companyName role')
-        .populate('strategyId', 'businessInfo.businessName businessInfo.industry')
+        .populate(
+          'strategyId',
+          'businessInfo.businessName businessInfo.industry',
+        )
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(sanitizedLimit)
@@ -224,7 +255,9 @@ export class SwotService {
     return swot;
   }
 
-  async buildPdfExportPayloadForAdmin(swotId: string): Promise<SwotPdfExportPayload> {
+  async buildPdfExportPayloadForAdmin(
+    swotId: string,
+  ): Promise<SwotPdfExportPayload> {
     const swotObjectId = this.toObjectId(swotId, 'swotId');
     const swotDocument = await this.swotModel.findById(swotObjectId).exec();
 
@@ -240,7 +273,11 @@ export class SwotService {
     await this.swotModel.deleteOne({ _id: swotDocument._id }).exec();
   }
 
-  async updateOne(userId: string, swotId: string, dto: UpdateSwotDto): Promise<SwotDocument> {
+  async updateOne(
+    userId: string,
+    swotId: string,
+    dto: UpdateSwotDto,
+  ): Promise<SwotDocument> {
     const swotDocument = await this.getOwnedSwotOrThrow(userId, swotId);
 
     if (dto.title !== undefined) {
@@ -264,7 +301,10 @@ export class SwotService {
     return swotDocument.save();
   }
 
-  private async getOwnedStrategyOrThrow(userId: string, strategyId: string): Promise<StrategyDocument> {
+  private async getOwnedStrategyOrThrow(
+    userId: string,
+    strategyId: string,
+  ): Promise<StrategyDocument> {
     return this.getOwnedStrategyByIdOrThrow(userId, strategyId);
   }
 
@@ -280,13 +320,18 @@ export class SwotService {
     }
 
     if (strategy.userId.toString() !== userId) {
-      throw new ForbiddenException('Acces refuse: cette strategie ne vous appartient pas');
+      throw new ForbiddenException(
+        'Acces refuse: cette strategie ne vous appartient pas',
+      );
     }
 
     return strategy;
   }
 
-  private async getOwnedSwotOrThrow(userId: string, swotId: string): Promise<SwotDocument> {
+  private async getOwnedSwotOrThrow(
+    userId: string,
+    swotId: string,
+  ): Promise<SwotDocument> {
     const swotObjectId = this.toObjectId(swotId, 'swotId');
     const swot = await this.swotModel.findById(swotObjectId).exec();
 
@@ -295,13 +340,18 @@ export class SwotService {
     }
 
     if (swot.userId.toString() !== userId) {
-      throw new ForbiddenException('Acces refuse: ce SWOT ne vous appartient pas');
+      throw new ForbiddenException(
+        'Acces refuse: ce SWOT ne vous appartient pas',
+      );
     }
 
     return swot;
   }
 
-  private resolveTitle(title: string | undefined, strategy: StrategyDocument): string {
+  private resolveTitle(
+    title: string | undefined,
+    strategy: StrategyDocument,
+  ): string {
     const normalizedTitle = title?.trim();
     if (normalizedTitle) {
       return normalizedTitle;
@@ -311,7 +361,9 @@ export class SwotService {
     return businessName ? `SWOT - ${businessName}` : 'SWOT';
   }
 
-  private async buildPdfExportPayloadInternal(swotDocument: SwotDocument): Promise<SwotPdfExportPayload> {
+  private async buildPdfExportPayloadInternal(
+    swotDocument: SwotDocument,
+  ): Promise<SwotPdfExportPayload> {
     const nowIso = new Date().toISOString();
     const createdAt = swotDocument.createdAt
       ? new Date(swotDocument.createdAt).toISOString()
@@ -333,19 +385,31 @@ export class SwotService {
         .exec(),
     ]);
 
-    const userRecord = userSource as
-      | { _id: Types.ObjectId; fullName?: string; email?: string; companyName?: string }
-      | null;
-    const strategyRecord = strategySource as
-      | { _id: Types.ObjectId; businessInfo?: { businessName?: string; industry?: string } }
-      | null;
+    const userRecord = userSource as {
+      _id: Types.ObjectId;
+      fullName?: string;
+      email?: string;
+      companyName?: string;
+    } | null;
+    const strategyRecord = strategySource as {
+      _id: Types.ObjectId;
+      businessInfo?: { businessName?: string; industry?: string };
+    } | null;
     const inputs = (swotDocument.inputs ?? {}) as SwotInputsPayload;
 
     const matrix: SwotMatrix = {
-      strengths: Array.isArray(swotDocument.swot?.strengths) ? swotDocument.swot.strengths : [],
-      weaknesses: Array.isArray(swotDocument.swot?.weaknesses) ? swotDocument.swot.weaknesses : [],
-      opportunities: Array.isArray(swotDocument.swot?.opportunities) ? swotDocument.swot.opportunities : [],
-      threats: Array.isArray(swotDocument.swot?.threats) ? swotDocument.swot.threats : [],
+      strengths: Array.isArray(swotDocument.swot?.strengths)
+        ? swotDocument.swot.strengths
+        : [],
+      weaknesses: Array.isArray(swotDocument.swot?.weaknesses)
+        ? swotDocument.swot.weaknesses
+        : [],
+      opportunities: Array.isArray(swotDocument.swot?.opportunities)
+        ? swotDocument.swot.opportunities
+        : [],
+      threats: Array.isArray(swotDocument.swot?.threats)
+        ? swotDocument.swot.threats
+        : [],
     };
 
     return {
@@ -363,7 +427,8 @@ export class SwotService {
         companyName: userRecord?.companyName,
       },
       strategy: {
-        id: strategyRecord?._id?.toString() ?? swotDocument.strategyId.toString(),
+        id:
+          strategyRecord?._id?.toString() ?? swotDocument.strategyId.toString(),
         businessName: strategyRecord?.businessInfo?.businessName ?? 'Strategie',
         industry: strategyRecord?.businessInfo?.industry ?? '-',
       },
@@ -402,7 +467,9 @@ export class SwotService {
     if (strict) {
       for (const key of this.swotKeys) {
         if (!(key in swotPayload)) {
-          throw new BadRequestException(`JSON SWOT invalide: champ "${key}" manquant`);
+          throw new BadRequestException(
+            `JSON SWOT invalide: champ "${key}" manquant`,
+          );
         }
       }
     }
@@ -428,7 +495,9 @@ export class SwotService {
     }
 
     if (!Array.isArray(value)) {
-      throw new BadRequestException(`Champ "${fieldName}" invalide: tableau attendu`);
+      throw new BadRequestException(
+        `Champ "${fieldName}" invalide: tableau attendu`,
+      );
     }
 
     if (value.length > maxItems) {
@@ -477,7 +546,9 @@ export class SwotService {
     };
   }
 
-  private async buildAdminSearchFilter(search?: string): Promise<Record<string, unknown>> {
+  private async buildAdminSearchFilter(
+    search?: string,
+  ): Promise<Record<string, unknown>> {
     const normalizedSearch = search?.trim();
     if (!normalizedSearch) {
       return {};
@@ -512,7 +583,9 @@ export class SwotService {
     ]);
 
     const matchedUserIds = matchedUsers.map((user) => user._id);
-    const matchedStrategyIds = matchedStrategies.map((strategy) => strategy._id);
+    const matchedStrategyIds = matchedStrategies.map(
+      (strategy) => strategy._id,
+    );
 
     const orFilters: Record<string, unknown>[] = [{ title: { $regex: regex } }];
 

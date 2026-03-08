@@ -5,10 +5,10 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Configuration du préfixe API
   app.setGlobalPrefix('api');
-  
+
   // Configuration CORS
   app.enableCors({
     origin: [

@@ -61,7 +61,10 @@ export class SwotController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const swot = await this.swotService.generateFromStrategy(userId, generateSwotDto);
+    const swot = await this.swotService.generateFromStrategy(
+      userId,
+      generateSwotDto,
+    );
 
     return {
       success: true,
@@ -77,7 +80,11 @@ export class SwotController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const swot = await this.swotService.improveSwot(userId, swotId, improveSwotDto);
+    const swot = await this.swotService.improveSwot(
+      userId,
+      swotId,
+      improveSwotDto,
+    );
 
     return {
       success: true,
@@ -98,7 +105,11 @@ export class SwotController {
     const validatedPage = Math.max(1, pageNumber);
     const validatedLimit = Math.min(50, Math.max(1, limitNumber));
 
-    const result = await this.swotService.findAll(userId, validatedPage, validatedLimit);
+    const result = await this.swotService.findAll(
+      userId,
+      validatedPage,
+      validatedLimit,
+    );
 
     return {
       success: true,
@@ -143,7 +154,8 @@ export class SwotController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   async exportPdfForAdmin(@Param('id') swotId: string) {
-    const payload = await this.swotService.buildPdfExportPayloadForAdmin(swotId);
+    const payload =
+      await this.swotService.buildPdfExportPayloadForAdmin(swotId);
 
     return {
       success: true,
@@ -169,7 +181,10 @@ export class SwotController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const payload = await this.swotService.buildPdfExportPayload(userId, swotId);
+    const payload = await this.swotService.buildPdfExportPayload(
+      userId,
+      swotId,
+    );
 
     return {
       success: true,
@@ -178,10 +193,7 @@ export class SwotController {
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id') swotId: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async findOne(@Param('id') swotId: string, @Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     const swot = await this.swotService.findOne(userId, swotId);
 
@@ -198,7 +210,11 @@ export class SwotController {
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const swot = await this.swotService.updateOne(userId, swotId, updateSwotDto);
+    const swot = await this.swotService.updateOne(
+      userId,
+      swotId,
+      updateSwotDto,
+    );
 
     return {
       success: true,

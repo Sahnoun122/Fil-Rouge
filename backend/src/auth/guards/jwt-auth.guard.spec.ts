@@ -78,7 +78,9 @@ describe('JwtAuthGuard', () => {
     jest.clearAllMocks();
   });
 
-  const createMockContext = (requestData: Partial<Request> = {}): ExecutionContext => ({
+  const createMockContext = (
+    requestData: Partial<Request> = {},
+  ): ExecutionContext => ({
     switchToHttp: () => ({
       getRequest: () => ({
         headers: {},
@@ -108,7 +110,10 @@ describe('JwtAuthGuard', () => {
 
       // Assert
       expect(result).toBe(true);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
     });
 
     it('should allow access with valid JWT token', async () => {
@@ -139,7 +144,9 @@ describe('JwtAuthGuard', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should deny access with invalid Authorization format', async () => {
@@ -150,7 +157,9 @@ describe('JwtAuthGuard', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should deny access with missing Bearer prefix', async () => {
@@ -161,7 +170,9 @@ describe('JwtAuthGuard', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should deny access with invalid JWT token', async () => {
@@ -176,13 +187,18 @@ describe('JwtAuthGuard', () => {
       });
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should deny access with expired JWT token', async () => {
       // Arrange
       const token = 'expired.jwt.token';
-      const expiredPayload = { ...mockPayload, exp: Math.floor(Date.now() / 1000) - 3600 };
+      const expiredPayload = {
+        ...mockPayload,
+        exp: Math.floor(Date.now() / 1000) - 3600,
+      };
       const context = createMockContext({
         headers: { authorization: `Bearer ${token}` },
       });
@@ -192,7 +208,9 @@ describe('JwtAuthGuard', () => {
       });
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should deny access when user not found', async () => {
@@ -206,7 +224,9 @@ describe('JwtAuthGuard', () => {
       usersService.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should deny access when user is inactive', async () => {
@@ -221,7 +241,9 @@ describe('JwtAuthGuard', () => {
       usersService.findById.mockResolvedValue(inactiveUser);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -286,7 +308,9 @@ describe('JwtAuthGuard', () => {
         reflector.getAllAndOverride.mockReturnValue(false);
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          UnauthorizedException,
+        );
       }
     });
   });
@@ -304,7 +328,9 @@ describe('JwtAuthGuard', () => {
       });
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle users service errors', async () => {
@@ -315,10 +341,14 @@ describe('JwtAuthGuard', () => {
       });
       reflector.getAllAndOverride.mockReturnValue(false);
       jwtService.verify.mockReturnValue(mockPayload);
-      usersService.findById.mockRejectedValue(new Error('Database connection failed'));
+      usersService.findById.mockRejectedValue(
+        new Error('Database connection failed'),
+      );
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle reflector errors', async () => {
@@ -391,23 +421,25 @@ describe('JwtAuthGuard', () => {
     it('should handle multiple concurrent authentications', async () => {
       // Arrange
       const token = 'valid.jwt.token';
-      const promises = Array(10).fill(null).map(() => {
-        const context = createMockContext({
-          headers: { authorization: `Bearer ${token}` },
+      const promises = Array(10)
+        .fill(null)
+        .map(() => {
+          const context = createMockContext({
+            headers: { authorization: `Bearer ${token}` },
+          });
+          reflector.getAllAndOverride.mockReturnValue(false);
+          jwtService.verify.mockReturnValue(mockPayload);
+          usersService.findById.mockResolvedValue(mockUser);
+
+          return guard.canActivate(context);
         });
-        reflector.getAllAndOverride.mockReturnValue(false);
-        jwtService.verify.mockReturnValue(mockPayload);
-        usersService.findById.mockResolvedValue(mockUser);
-        
-        return guard.canActivate(context);
-      });
 
       // Act
       const results = await Promise.all(promises);
 
       // Assert
       expect(results).toHaveLength(10);
-      results.forEach(result => expect(result).toBe(true));
+      results.forEach((result) => expect(result).toBe(true));
     });
 
     it('should cache user data efficiently', async () => {

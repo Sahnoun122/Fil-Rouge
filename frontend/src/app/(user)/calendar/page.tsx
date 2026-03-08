@@ -8,7 +8,11 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import frLocale from "@fullcalendar/core/locales/fr";
-import type { EventClickArg, EventContentArg, EventInput } from "@fullcalendar/core";
+import type {
+  EventClickArg,
+  EventContentArg,
+  EventInput,
+} from "@fullcalendar/core";
 import { Toaster, toast } from "react-hot-toast";
 import {
   ArrowUpRight,
@@ -115,24 +119,20 @@ function getCurrentMonthRange(): CalendarRange {
 }
 
 function buildCampaignRange(campaign: ContentCampaign): CalendarRange {
+  const today = getTodayDateKey();
   const scheduledDates = campaign.generatedPosts
     .map((post) => normalizeDateKey(post.schedule?.date))
     .filter((value): value is string => Boolean(value))
     .sort((left, right) => left.localeCompare(right));
 
-  const today = getTodayDateKey();
-  const resolvedStart =
-    normalizeDateKey(campaign.inputs?.startDate) || scheduledDates[0] || today;
-  const resolvedEnd =
+  const preferredEndDate =
     normalizeDateKey(campaign.inputs?.endDate) ||
     scheduledDates[scheduledDates.length - 1] ||
-    resolvedStart;
-
-  const startDate = resolvedStart <= resolvedEnd ? resolvedStart : resolvedEnd;
-  const endDate = resolvedStart <= resolvedEnd ? resolvedEnd : resolvedStart;
+    today;
+  const endDate = preferredEndDate < today ? today : preferredEndDate;
 
   return {
-    rangeStart: toIsoRange(startDate),
+    rangeStart: toIsoRange(today),
     rangeEnd: toIsoRange(endDate, true),
   };
 }
@@ -183,7 +183,24 @@ function getDatePartsInTimezone(date: Date, timezone: string) {
   };
 }
 
-function zonedDateTimeToUtc(date: string, time: string, timezone: string): Date | null {
+function isScheduleInFutureInTimezone(
+  date: string,
+  time: string,
+  timezone: string,
+): boolean {
+  const scheduleDate = zonedDateTimeToUtc(date, time, timezone);
+  if (!scheduleDate) {
+    return false;
+  }
+
+  return scheduleDate.getTime() > Date.now();
+}
+
+function zonedDateTimeToUtc(
+  date: string,
+  time: string,
+  timezone: string,
+): Date | null {
   const target = parseScheduleParts(date, time);
   if (!target) {
     return null;
@@ -271,14 +288,8 @@ export default function CalendarPage() {
   );
   const [isMetaLoading, setIsMetaLoading] = useState(true);
 
-  const {
-    posts,
-    total,
-    isLoading,
-    isMutating,
-    error,
-    setVisibleRange,
-  } = useCalendar(filters);
+  const { posts, total, isLoading, isMutating, error, setVisibleRange } =
+    useCalendar(filters);
 
   useEffect(() => {
     const loadMeta = async () => {
@@ -316,7 +327,8 @@ export default function CalendarPage() {
       setCampaignDetail(null);
 
       try {
-        const loadedCampaign = await contentService.getCampaign(campaignIdFilter);
+        const loadedCampaign =
+          await contentService.getCampaign(campaignIdFilter);
         setCampaignDetail(loadedCampaign);
       } catch (requestError) {
         toast.error(
@@ -388,7 +400,8 @@ export default function CalendarPage() {
         const scheduleSignature = `AUTO_SCHEDULE:${campaignIdFilter}:${index}`;
         const matchingScheduledPost =
           scopedPosts.find(
-            (scheduledPost) => scheduledPost.notes?.trim() === scheduleSignature,
+            (scheduledPost) =>
+              scheduledPost.notes?.trim() === scheduleSignature,
           ) ??
           scopedPosts.find(
             (scheduledPost) =>
@@ -402,19 +415,29 @@ export default function CalendarPage() {
           matchingScheduledPost?.timezone ||
           campaignTimeline[0]?.timezone ||
           "UTC";
+        const isScheduleFuture =
+          Boolean(post.schedule?.date) &&
+          Boolean(post.schedule?.time) &&
+          isScheduleInFutureInTimezone(
+            post.schedule?.date || "",
+            post.schedule?.time || "",
+            timezone,
+          );
 
         const rawScheduleDateTime =
-          post.schedule?.date && post.schedule?.time
-            ? zonedDateTimeToUtc(
-                post.schedule.date,
-                post.schedule.time,
+          isScheduleFuture && post.schedule?.time
+            ? (zonedDateTimeToUtc(
+                post.schedule?.date || "",
+                post.schedule?.time || "",
                 timezone,
-              ) ?? new Date(`${post.schedule.date}T${post.schedule.time}:00`)
+              ) ??
+              new Date(
+                `${post.schedule?.date || ""}T${post.schedule?.time || ""}:00`,
+              ))
             : null;
 
         const scheduleDateTime =
-          rawScheduleDateTime &&
-          !Number.isNaN(rawScheduleDateTime.getTime())
+          rawScheduleDateTime && !Number.isNaN(rawScheduleDateTime.getTime())
             ? rawScheduleDateTime
             : null;
 
@@ -425,13 +448,13 @@ export default function CalendarPage() {
           detailHref: campaignIdFilter
             ? `/calendar/planning/campaign/${campaignIdFilter}/${post._id || index}`
             : null,
-          scheduleLabel: formatScheduleLabel(
-            post.schedule?.date,
-            post.schedule?.time,
-          ),
+          scheduleLabel:
+            isScheduleFuture && post.schedule?.time
+              ? formatScheduleLabel(post.schedule?.date, post.schedule?.time)
+              : "Non planifie (slot deja passe)",
           scheduleDateTime,
-          scheduleDate: post.schedule?.date ?? null,
-          scheduleTime: post.schedule?.time ?? null,
+          scheduleDate: isScheduleFuture ? (post.schedule?.date ?? null) : null,
+          scheduleTime: isScheduleFuture ? (post.schedule?.time ?? null) : null,
           status: matchingScheduledPost?.status ?? "planned",
           timezone,
         };
@@ -457,9 +480,13 @@ export default function CalendarPage() {
 
   const planningEvents = useMemo<EventInput[]>(() => {
     return planningCards
-      .filter((post) => Boolean(post.scheduleDateTime) && Boolean(post.detailHref))
+      .filter(
+        (post) => Boolean(post.scheduleDateTime) && Boolean(post.detailHref),
+      )
       .map((post) => ({
-        id: post.scheduledPostId || `${campaignIdFilter}-${post._id || post.index}`,
+        id:
+          post.scheduledPostId ||
+          `${campaignIdFilter}-${post._id || post.index}`,
         title: post.title?.trim() || post.caption.trim() || "Publication",
         start: post.scheduleDateTime?.toISOString(),
         allDay: false,
@@ -483,7 +510,8 @@ export default function CalendarPage() {
   );
 
   const renderPlanningEvent = useCallback((arg: EventContentArg) => {
-    const platform = (arg.event.extendedProps as { platform?: string }).platform;
+    const platform = (arg.event.extendedProps as { platform?: string })
+      .platform;
 
     return (
       <div className="w-full rounded-xl border border-stone-200 bg-white/95 px-2.5 py-2 text-left shadow-sm">
@@ -533,9 +561,8 @@ export default function CalendarPage() {
               Planning de contenu
             </h1>
             <p className="mt-3 text-sm leading-6 text-stone-600">
-              Consulte les plannings de campagne sous forme de cards
-              editoriales avec les contenus generes par l IA et leurs slots de
-              publication.
+              Consulte les plannings de campagne sous forme de cards editoriales
+              avec les contenus generes par l IA et leurs slots de publication.
             </p>
             {campaignIdFilter ? (
               <div className="mt-4 rounded-[22px] border border-cyan-200 bg-cyan-50/80 p-4">
@@ -639,7 +666,10 @@ export default function CalendarPage() {
                   key={option.value}
                   type="button"
                   onClick={() =>
-                    setFilters((current) => ({ ...current, view: option.value }))
+                    setFilters((current) => ({
+                      ...current,
+                      view: option.value,
+                    }))
                   }
                   className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
                     filters.view === option.value

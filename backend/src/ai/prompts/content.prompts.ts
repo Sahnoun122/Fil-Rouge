@@ -161,9 +161,10 @@ export function buildGenerateContentCampaignPrompt(
   const frequencyPerWeek = resolveFrequencyPerWeek(inputs ?? {});
   const durationWeeks = resolveDurationWeeks(inputs ?? {});
   const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
-  const langRule = contentLang === 'auto'
-    ? 'Detect the language from the business context and user inputs, then write ALL content in that same language consistently.'
-    : `${contentLang}. Write EVERY text field (title, caption, description, hook, cta, suggestedVisual, adCopyVariants, contentPillars) entirely in ${contentLang}.`;
+  const langRule =
+    contentLang === 'auto'
+      ? 'Detect the language from the business context and user inputs, then write ALL content in that same language consistently.'
+      : `${contentLang}. Write EVERY text field (title, caption, description, hook, cta, suggestedVisual, adCopyVariants, contentPillars) entirely in ${contentLang}.`;
 
   return `Tu es un expert senior en social media et content marketing.
 
@@ -240,9 +241,10 @@ export function buildRegeneratePlatformPrompt(
 ): string {
   const normalizedMode = normalizeMode(mode);
   const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
-  const langRule = contentLang === 'auto'
-    ? 'Detect the language from the business context and inputs, then write ALL content in that same language.'
-    : `${contentLang}. Write EVERY text field entirely in ${contentLang}.`;
+  const langRule =
+    contentLang === 'auto'
+      ? 'Detect the language from the business context and inputs, then write ALL content in that same language.'
+      : `${contentLang}. Write EVERY text field entirely in ${contentLang}.`;
 
   return `Tu es un expert senior en social media et content marketing.
 
@@ -332,9 +334,10 @@ export function buildRegenerateSinglePostPrompt(
 ): string {
   const normalizedMode = normalizeMode(mode);
   const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
-  const langRule = contentLang === 'auto'
-    ? 'Detect the language from the business context and inputs, then write ALL content in that same language.'
-    : `${contentLang}. Write EVERY text field entirely in ${contentLang}.`;
+  const langRule =
+    contentLang === 'auto'
+      ? 'Detect the language from the business context and inputs, then write ALL content in that same language.'
+      : `${contentLang}. Write EVERY text field entirely in ${contentLang}.`;
 
   return `Tu es un expert senior en social media et content marketing.
 
@@ -427,9 +430,10 @@ export function buildAutoScheduleAdvicePrompt(
     ),
   );
   const contentLang = (businessInfo?.language as string)?.trim() || 'auto';
-  const langRule = contentLang === 'auto'
-    ? 'Detect the language from the business context and respond in that same language.'
-    : `Respond entirely in ${contentLang}. All notes and labels must be in ${contentLang}.`;
+  const langRule =
+    contentLang === 'auto'
+      ? 'Detect the language from the business context and respond in that same language.'
+      : `Respond entirely in ${contentLang}. All notes and labels must be in ${contentLang}.`;
 
   return `Tu es un expert senior en social media planning.
 

@@ -1,10 +1,30 @@
-import { Injectable, ForbiddenException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Strategy, StrategyDocument, MainObjective, Tone } from './schemas/strategy.schema';
+import {
+  Strategy,
+  StrategyDocument,
+  MainObjective,
+  Tone,
+} from './schemas/strategy.schema';
 import { AiService } from '../ai/ai.service';
-import { GenerateStrategyDto, UpdateStrategyDto, RegenerateSectionDto, ImproveSectionDto, UpdateSectionDto } from './dto';
-import { buildFullStrategyPrompt, buildRegenerateSectionPrompt, buildImproveSectionPrompt } from '../ai/prompts/strategy.prompts';
+import {
+  GenerateStrategyDto,
+  UpdateStrategyDto,
+  RegenerateSectionDto,
+  ImproveSectionDto,
+  UpdateSectionDto,
+} from './dto';
+import {
+  buildFullStrategyPrompt,
+  buildRegenerateSectionPrompt,
+  buildImproveSectionPrompt,
+} from '../ai/prompts/strategy.prompts';
 import { User, UserDocument } from '../users/entities/user.entity';
 
 type StrategyPhaseKey = 'avant' | 'pendant' | 'apres';
@@ -53,7 +73,10 @@ export class StrategiesService {
   /**
    * Génère une stratégie marketing complète en utilisant l'IA
    */
-  async generateFullStrategy(userId: string, dto: GenerateStrategyDto): Promise<StrategyDocument> {
+  async generateFullStrategy(
+    userId: string,
+    dto: GenerateStrategyDto,
+  ): Promise<StrategyDocument> {
     try {
       // Vérification du plan FREE : maximum 3 stratégies
       await this.checkFreePlanLimit(userId);
@@ -86,24 +109,34 @@ export class StrategiesService {
       const prompt = buildFullStrategyPrompt(businessInfoForPrompt);
 
       // Appel à l'IA avec parsing JSON automatique
-      const generatedStrategy = await this.aiService.callNemotronAndParseJson(prompt);
-      
+      const generatedStrategy =
+        await this.aiService.callNemotronAndParseJson(prompt);
+
       // Debug: Log de la réponse IA pour diagnostic
-      console.log('🤖 AI Response Structure:', JSON.stringify(generatedStrategy, null, 2));
+      console.log(
+        '🤖 AI Response Structure:',
+        JSON.stringify(generatedStrategy, null, 2),
+      );
 
       // Validation de la structure de réponse
-      if (!generatedStrategy || !generatedStrategy.avant || !generatedStrategy.pendant || !generatedStrategy.apres) {
-        console.error('❌ Structure IA invalide:', { 
+      if (
+        !generatedStrategy ||
+        !generatedStrategy.avant ||
+        !generatedStrategy.pendant ||
+        !generatedStrategy.apres
+      ) {
+        console.error('❌ Structure IA invalide:', {
           hasAvant: !!generatedStrategy?.avant,
           hasPendant: !!generatedStrategy?.pendant,
           hasApres: !!generatedStrategy?.apres,
-          actualStructure: Object.keys(generatedStrategy || {})
+          actualStructure: Object.keys(generatedStrategy || {}),
         });
         throw new InternalServerErrorException('Format de réponse IA invalide');
       }
 
       // Transformation de la réponse IA vers le format MongoDB
-      const strategyForMongo = this.transformAiResponseToMongoFormat(generatedStrategy);
+      const strategyForMongo =
+        this.transformAiResponseToMongoFormat(generatedStrategy);
 
       // Sauvegarde en base de données
       const strategyDocument = new this.strategyModel({
@@ -114,14 +147,13 @@ export class StrategiesService {
 
       const savedStrategy = await strategyDocument.save();
       return savedStrategy;
-
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException(
-        `Erreur lors de la génération de la stratégie: ${error.message}`
+        `Erreur lors de la génération de la stratégie: ${error.message}`,
       );
     }
   }
@@ -129,7 +161,11 @@ export class StrategiesService {
   /**
    * Récupère toutes les stratégies d'un utilisateur avec pagination
    */
-  async findAll(userId: string, page: number = 1, limit: number = 10): Promise<{ strategies: StrategyDocument[], total: number }> {
+  async findAll(
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ strategies: StrategyDocument[]; total: number }> {
     try {
       const skip = (page - 1) * limit;
 
@@ -140,13 +176,15 @@ export class StrategiesService {
           .skip(skip)
           .limit(limit)
           .exec(),
-        this.strategyModel.countDocuments({ userId: new Types.ObjectId(userId) }),
+        this.strategyModel.countDocuments({
+          userId: new Types.ObjectId(userId),
+        }),
       ]);
 
       return { strategies, total };
     } catch (error) {
       throw new InternalServerErrorException(
-        `Erreur lors de la récupération des stratégies: ${error.message}`
+        `Erreur lors de la récupération des stratégies: ${error.message}`,
       );
     }
   }
@@ -232,9 +270,9 @@ export class StrategiesService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException(
-        `Erreur lors de la récupération de la stratégie: ${error.message}`
+        `Erreur lors de la récupération de la stratégie: ${error.message}`,
       );
     }
   }
@@ -242,11 +280,18 @@ export class StrategiesService {
   /**
    * Construit la charge utile pour export PDF d'une stratégie
    */
-  async buildPdfExportPayload(userId: string, strategyId: string): Promise<StrategyPdfExportPayload> {
+  async buildPdfExportPayload(
+    userId: string,
+    strategyId: string,
+  ): Promise<StrategyPdfExportPayload> {
     const strategy = await this.findOne(userId, strategyId);
     const nowIso = new Date().toISOString();
-    const createdAt = strategy.createdAt ? new Date(strategy.createdAt).toISOString() : nowIso;
-    const updatedAt = strategy.updatedAt ? new Date(strategy.updatedAt).toISOString() : createdAt;
+    const createdAt = strategy.createdAt
+      ? new Date(strategy.createdAt).toISOString()
+      : nowIso;
+    const updatedAt = strategy.updatedAt
+      ? new Date(strategy.updatedAt).toISOString()
+      : createdAt;
 
     const phases: StrategyPdfExportPhase[] = [
       {
@@ -254,9 +299,23 @@ export class StrategiesService {
         title: 'Avant',
         subtitle: 'Attirer et positionner la marque',
         sections: [
-          { key: 'marcheCible', title: 'Marche cible', content: strategy.generatedStrategy?.avant?.marcheCible ?? null },
-          { key: 'messageMarketing', title: 'Message marketing', content: strategy.generatedStrategy?.avant?.messageMarketing ?? null },
-          { key: 'canauxCommunication', title: 'Canaux de communication', content: strategy.generatedStrategy?.avant?.canauxCommunication ?? null },
+          {
+            key: 'marcheCible',
+            title: 'Marche cible',
+            content: strategy.generatedStrategy?.avant?.marcheCible ?? null,
+          },
+          {
+            key: 'messageMarketing',
+            title: 'Message marketing',
+            content:
+              strategy.generatedStrategy?.avant?.messageMarketing ?? null,
+          },
+          {
+            key: 'canauxCommunication',
+            title: 'Canaux de communication',
+            content:
+              strategy.generatedStrategy?.avant?.canauxCommunication ?? null,
+          },
         ],
       },
       {
@@ -264,9 +323,22 @@ export class StrategiesService {
         title: 'Pendant',
         subtitle: 'Convertir et faire progresser les prospects',
         sections: [
-          { key: 'captureProspects', title: 'Capture de prospects', content: strategy.generatedStrategy?.pendant?.captureProspects ?? null },
-          { key: 'nurturing', title: 'Nurturing', content: strategy.generatedStrategy?.pendant?.nurturing ?? null },
-          { key: 'conversion', title: 'Conversion', content: strategy.generatedStrategy?.pendant?.conversion ?? null },
+          {
+            key: 'captureProspects',
+            title: 'Capture de prospects',
+            content:
+              strategy.generatedStrategy?.pendant?.captureProspects ?? null,
+          },
+          {
+            key: 'nurturing',
+            title: 'Nurturing',
+            content: strategy.generatedStrategy?.pendant?.nurturing ?? null,
+          },
+          {
+            key: 'conversion',
+            title: 'Conversion',
+            content: strategy.generatedStrategy?.pendant?.conversion ?? null,
+          },
         ],
       },
       {
@@ -274,9 +346,24 @@ export class StrategiesService {
         title: 'Apres',
         subtitle: 'Fideliser et activer la recommandation',
         sections: [
-          { key: 'experienceClient', title: 'Experience client', content: strategy.generatedStrategy?.apres?.experienceClient ?? null },
-          { key: 'augmentationValeurClient', title: 'Augmentation de la valeur client', content: strategy.generatedStrategy?.apres?.augmentationValeurClient ?? null },
-          { key: 'recommandation', title: 'Recommandation', content: strategy.generatedStrategy?.apres?.recommandation ?? null },
+          {
+            key: 'experienceClient',
+            title: 'Experience client',
+            content:
+              strategy.generatedStrategy?.apres?.experienceClient ?? null,
+          },
+          {
+            key: 'augmentationValeurClient',
+            title: 'Augmentation de la valeur client',
+            content:
+              strategy.generatedStrategy?.apres?.augmentationValeurClient ??
+              null,
+          },
+          {
+            key: 'recommandation',
+            title: 'Recommandation',
+            content: strategy.generatedStrategy?.apres?.recommandation ?? null,
+          },
         ],
       },
     ];
@@ -305,7 +392,11 @@ export class StrategiesService {
   /**
    * Supprime une stratégie spécifique
    */
-  async updateStrategy(userId: string, strategyId: string, dto: UpdateStrategyDto): Promise<StrategyDocument> {
+  async updateStrategy(
+    userId: string,
+    strategyId: string,
+    dto: UpdateStrategyDto,
+  ): Promise<StrategyDocument> {
     try {
       const updated = await this.strategyModel
         .findOneAndUpdate(
@@ -361,9 +452,9 @@ export class StrategiesService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException(
-        `Erreur lors de la suppression de la stratégie: ${error.message}`
+        `Erreur lors de la suppression de la stratégie: ${error.message}`,
       );
     }
   }
@@ -378,7 +469,7 @@ export class StrategiesService {
 
     if (strategiesCount >= 3) {
       throw new ForbiddenException(
-        'Limite du plan gratuit atteinte (3 stratégies maximum). Veuillez passer à un plan premium.'
+        'Limite du plan gratuit atteinte (3 stratégies maximum). Veuillez passer à un plan premium.',
       );
     }
   }
@@ -389,9 +480,9 @@ export class StrategiesService {
   private getObjectiveDescription(objective: MainObjective): string {
     const descriptions = {
       [MainObjective.LEADS]: 'Génération de prospects qualifiés',
-      [MainObjective.SALES]: 'Augmentation des ventes directes', 
+      [MainObjective.SALES]: 'Augmentation des ventes directes',
       [MainObjective.AWARENESS]: 'Accroissement de la notoriété de marque',
-      [MainObjective.ENGAGEMENT]: 'Amélioration de l\'engagement client',
+      [MainObjective.ENGAGEMENT]: "Amélioration de l'engagement client",
     };
 
     return descriptions[objective] || objective;
@@ -407,38 +498,67 @@ export class StrategiesService {
     return {
       avant: {
         marcheCible: this.ensureValidMarcheCible(aiResponse.avant?.marcheCible),
-        messageMarketing: this.ensureValidMessageMarketing(aiResponse.avant?.messageMarketing),
-        canauxCommunication: this.ensureValidCanauxCommunication(aiResponse.avant?.canauxCommunication),
+        messageMarketing: this.ensureValidMessageMarketing(
+          aiResponse.avant?.messageMarketing,
+        ),
+        canauxCommunication: this.ensureValidCanauxCommunication(
+          aiResponse.avant?.canauxCommunication,
+        ),
       },
       pendant: {
-        captureProspects: this.ensureValidCaptureProspects(aiResponse.pendant?.captureProspects),
+        captureProspects: this.ensureValidCaptureProspects(
+          aiResponse.pendant?.captureProspects,
+        ),
         nurturing: this.ensureValidNurturing(aiResponse.pendant?.nurturing),
         conversion: this.ensureValidConversion(aiResponse.pendant?.conversion),
       },
       apres: {
-        experienceClient: this.ensureValidExperienceClient(aiResponse.apres?.experienceClient),
-        augmentationValeurClient: this.ensureValidAugmentationValeurClient(aiResponse.apres?.augmentationValeurClient),
-        recommandation: this.ensureValidRecommandation(aiResponse.apres?.recommandation),
+        experienceClient: this.ensureValidExperienceClient(
+          aiResponse.apres?.experienceClient,
+        ),
+        augmentationValeurClient: this.ensureValidAugmentationValeurClient(
+          aiResponse.apres?.augmentationValeurClient,
+        ),
+        recommandation: this.ensureValidRecommandation(
+          aiResponse.apres?.recommandation,
+        ),
       },
     };
   }
 
   // Méthodes de validation/transformation pour chaque section
   private ensureValidMarcheCible(data: any) {
-    if (!data || !data.persona || !data.besoins || !data.problemes || !data.comportementDigital) {
-      throw new InternalServerErrorException('Données marché cible incomplètes dans la réponse IA');
+    if (
+      !data ||
+      !data.persona ||
+      !data.besoins ||
+      !data.problemes ||
+      !data.comportementDigital
+    ) {
+      throw new InternalServerErrorException(
+        'Données marché cible incomplètes dans la réponse IA',
+      );
     }
     return {
       persona: data.persona,
       besoins: Array.isArray(data.besoins) ? data.besoins : [],
       problemes: Array.isArray(data.problemes) ? data.problemes : [],
-      comportementDigital: Array.isArray(data.comportementDigital) ? data.comportementDigital : [],
+      comportementDigital: Array.isArray(data.comportementDigital)
+        ? data.comportementDigital
+        : [],
     };
   }
 
   private ensureValidMessageMarketing(data: any) {
-    if (!data || !data.propositionValeur || !data.messagePrincipal || !data.tonCommunication) {
-      throw new InternalServerErrorException('Données message marketing incomplètes dans la réponse IA');
+    if (
+      !data ||
+      !data.propositionValeur ||
+      !data.messagePrincipal ||
+      !data.tonCommunication
+    ) {
+      throw new InternalServerErrorException(
+        'Données message marketing incomplètes dans la réponse IA',
+      );
     }
     return {
       propositionValeur: data.propositionValeur,
@@ -449,64 +569,104 @@ export class StrategiesService {
 
   private ensureValidCanauxCommunication(data: any) {
     if (!data || !data.plateformes || !data.typesContenu) {
-      throw new InternalServerErrorException('Données canaux communication incomplètes dans la réponse IA');
+      throw new InternalServerErrorException(
+        'Données canaux communication incomplètes dans la réponse IA',
+      );
     }
     return {
       plateformes: Array.isArray(data.plateformes) ? data.plateformes : [],
       typesContenu: {
-        instagram: Array.isArray(data.typesContenu?.instagram) ? data.typesContenu.instagram : [],
-        tiktok: Array.isArray(data.typesContenu?.tiktok) ? data.typesContenu.tiktok : [],
-        linkedin: Array.isArray(data.typesContenu?.linkedin) ? data.typesContenu.linkedin : [],
-        facebook: Array.isArray(data.typesContenu?.facebook) ? data.typesContenu.facebook : [],
+        instagram: Array.isArray(data.typesContenu?.instagram)
+          ? data.typesContenu.instagram
+          : [],
+        tiktok: Array.isArray(data.typesContenu?.tiktok)
+          ? data.typesContenu.tiktok
+          : [],
+        linkedin: Array.isArray(data.typesContenu?.linkedin)
+          ? data.typesContenu.linkedin
+          : [],
+        facebook: Array.isArray(data.typesContenu?.facebook)
+          ? data.typesContenu.facebook
+          : [],
       },
     };
   }
 
   private ensureValidCaptureProspects(data: any) {
-    if (!data || !data.landingPage || !data.formulaire || !data.offreIncitative) {
-      throw new InternalServerErrorException('Données capture prospects incomplètes dans la réponse IA');
+    if (
+      !data ||
+      !data.landingPage ||
+      !data.formulaire ||
+      !data.offreIncitative
+    ) {
+      throw new InternalServerErrorException(
+        'Données capture prospects incomplètes dans la réponse IA',
+      );
     }
     return {
       landingPage: data.landingPage,
       formulaire: data.formulaire,
-      offreIncitative: Array.isArray(data.offreIncitative) ? data.offreIncitative : [],
+      offreIncitative: Array.isArray(data.offreIncitative)
+        ? data.offreIncitative
+        : [],
     };
   }
 
   private ensureValidNurturing(data: any) {
-    if (!data || !data.sequenceEmails || !data.contenusEducatifs || !data.relances) {
-      throw new InternalServerErrorException('Données nurturing incomplètes dans la réponse IA');
+    if (
+      !data ||
+      !data.sequenceEmails ||
+      !data.contenusEducatifs ||
+      !data.relances
+    ) {
+      throw new InternalServerErrorException(
+        'Données nurturing incomplètes dans la réponse IA',
+      );
     }
     return {
-      sequenceEmails: Array.isArray(data.sequenceEmails) ? data.sequenceEmails : [],
-      contenusEducatifs: Array.isArray(data.contenusEducatifs) ? data.contenusEducatifs : [],
+      sequenceEmails: Array.isArray(data.sequenceEmails)
+        ? data.sequenceEmails
+        : [],
+      contenusEducatifs: Array.isArray(data.contenusEducatifs)
+        ? data.contenusEducatifs
+        : [],
       relances: Array.isArray(data.relances) ? data.relances : [],
     };
   }
 
   private ensureValidConversion(data: any) {
     if (!data || !data.cta || !data.offres || !data.argumentaireVente) {
-      throw new InternalServerErrorException('Données conversion incomplètes dans la réponse IA');
+      throw new InternalServerErrorException(
+        'Données conversion incomplètes dans la réponse IA',
+      );
     }
     return {
       cta: Array.isArray(data.cta) ? data.cta : [],
       offres: Array.isArray(data.offres) ? data.offres : [],
-      argumentaireVente: Array.isArray(data.argumentaireVente) ? data.argumentaireVente : [],
+      argumentaireVente: Array.isArray(data.argumentaireVente)
+        ? data.argumentaireVente
+        : [],
     };
   }
 
   private ensureValidExperienceClient(data: any) {
     if (!data || !data.recommendations) {
-      throw new InternalServerErrorException('Données expérience client incomplètes dans la réponse IA');
+      throw new InternalServerErrorException(
+        'Données expérience client incomplètes dans la réponse IA',
+      );
     }
     return {
-      recommendations: Array.isArray(data.recommendations) ? data.recommendations : [],
+      recommendations: Array.isArray(data.recommendations)
+        ? data.recommendations
+        : [],
     };
   }
 
   private ensureValidAugmentationValeurClient(data: any) {
     if (!data || !data.upsell || !data.crossSell || !data.fidelite) {
-      throw new InternalServerErrorException('Données augmentation valeur client incomplètes dans la réponse IA');
+      throw new InternalServerErrorException(
+        'Données augmentation valeur client incomplètes dans la réponse IA',
+      );
     }
     return {
       upsell: Array.isArray(data.upsell) ? data.upsell : [],
@@ -517,7 +677,9 @@ export class StrategiesService {
 
   private ensureValidRecommandation(data: any) {
     if (!data || !data.parrainage || !data.avisClients || !data.recompenses) {
-      throw new InternalServerErrorException('Données recommandation incomplètes dans la réponse IA');
+      throw new InternalServerErrorException(
+        'Données recommandation incomplètes dans la réponse IA',
+      );
     }
     return {
       parrainage: Array.isArray(data.parrainage) ? data.parrainage : [],
@@ -529,13 +691,20 @@ export class StrategiesService {
   /**
    * Régénère une section spécifique de la stratégie
    */
-  async regenerateSection(userId: string, strategyId: string, dto: RegenerateSectionDto): Promise<StrategyDocument> {
+  async regenerateSection(
+    userId: string,
+    strategyId: string,
+    dto: RegenerateSectionDto,
+  ): Promise<StrategyDocument> {
     try {
       // Vérifier que la stratégie appartient à l'utilisateur
       const strategy = await this.findOne(userId, strategyId);
 
       // Récupérer la section existante
-      const existingSection = this.getNestedValue(strategy.generatedStrategy, dto.sectionKey);
+      const existingSection = this.getNestedValue(
+        strategy.generatedStrategy,
+        dto.sectionKey,
+      );
       if (!existingSection) {
         throw new NotFoundException(`Section "${dto.sectionKey}" non trouvée`);
       }
@@ -546,8 +715,12 @@ export class StrategiesService {
         industry: strategy.businessInfo.industry,
         targetAudience: strategy.businessInfo.targetAudience,
         products: strategy.businessInfo.productOrService,
-        objectives: this.getObjectiveDescription(strategy.businessInfo.mainObjective),
-        budget: strategy.businessInfo.budget ? `${strategy.businessInfo.budget}€` : 'Budget non spécifié',
+        objectives: this.getObjectiveDescription(
+          strategy.businessInfo.mainObjective,
+        ),
+        budget: strategy.businessInfo.budget
+          ? `${strategy.businessInfo.budget}€`
+          : 'Budget non spécifié',
         language: strategy.businessInfo.language,
       };
 
@@ -555,16 +728,22 @@ export class StrategiesService {
       const prompt = buildRegenerateSectionPrompt(
         businessInfoForPrompt,
         dto.sectionKey,
-        dto.instruction || 'Régénérez cette section avec un contenu frais et innovant',
-        existingSection
+        dto.instruction ||
+          'Régénérez cette section avec un contenu frais et innovant',
+        existingSection,
       );
 
       // Appel à l'IA avec parsing JSON automatique
-      const newSectionData = await this.aiService.callNemotronAndParseJson(prompt);
+      const newSectionData =
+        await this.aiService.callNemotronAndParseJson(prompt);
 
       // Mettre à jour la section dans la stratégie
       const updatedStrategy = strategy.toObject();
-      this.setNestedValue(updatedStrategy.generatedStrategy, dto.sectionKey, newSectionData);
+      this.setNestedValue(
+        updatedStrategy.generatedStrategy,
+        dto.sectionKey,
+        newSectionData,
+      );
 
       // Sauvegarder les modifications
       const result = await this.strategyModel
@@ -574,12 +753,14 @@ export class StrategiesService {
             userId: new Types.ObjectId(userId),
           },
           { generatedStrategy: updatedStrategy.generatedStrategy },
-          { new: true }
+          { new: true },
         )
         .exec();
 
       if (!result) {
-        throw new NotFoundException('Stratégie non trouvée lors de la mise à jour');
+        throw new NotFoundException(
+          'Stratégie non trouvée lors de la mise à jour',
+        );
       }
 
       return result;
@@ -589,7 +770,7 @@ export class StrategiesService {
       }
 
       throw new InternalServerErrorException(
-        `Erreur lors de la régénération de la section: ${error.message}`
+        `Erreur lors de la régénération de la section: ${error.message}`,
       );
     }
   }
@@ -597,13 +778,20 @@ export class StrategiesService {
   /**
    * Améliore une section spécifique de la stratégie
    */
-  async improveSection(userId: string, strategyId: string, dto: ImproveSectionDto): Promise<StrategyDocument> {
+  async improveSection(
+    userId: string,
+    strategyId: string,
+    dto: ImproveSectionDto,
+  ): Promise<StrategyDocument> {
     try {
       // Vérifier que la stratégie appartient à l'utilisateur
       const strategy = await this.findOne(userId, strategyId);
 
       // Récupérer la section existante
-      const existingSection = this.getNestedValue(strategy.generatedStrategy, dto.sectionKey);
+      const existingSection = this.getNestedValue(
+        strategy.generatedStrategy,
+        dto.sectionKey,
+      );
       if (!existingSection) {
         throw new NotFoundException(`Section "${dto.sectionKey}" non trouvée`);
       }
@@ -614,8 +802,12 @@ export class StrategiesService {
         industry: strategy.businessInfo.industry,
         targetAudience: strategy.businessInfo.targetAudience,
         products: strategy.businessInfo.productOrService,
-        objectives: this.getObjectiveDescription(strategy.businessInfo.mainObjective),
-        budget: strategy.businessInfo.budget ? `${strategy.businessInfo.budget}€` : 'Budget non spécifié',
+        objectives: this.getObjectiveDescription(
+          strategy.businessInfo.mainObjective,
+        ),
+        budget: strategy.businessInfo.budget
+          ? `${strategy.businessInfo.budget}€`
+          : 'Budget non spécifié',
         language: strategy.businessInfo.language,
       };
 
@@ -623,16 +815,22 @@ export class StrategiesService {
       const prompt = buildImproveSectionPrompt(
         businessInfoForPrompt,
         dto.sectionKey,
-        dto.instruction || 'Améliorez cette section en la rendant plus précise et actionnable',
-        existingSection
+        dto.instruction ||
+          'Améliorez cette section en la rendant plus précise et actionnable',
+        existingSection,
       );
 
       // Appel à l'IA avec parsing JSON automatique
-      const improvedSectionData = await this.aiService.callNemotronAndParseJson(prompt);
+      const improvedSectionData =
+        await this.aiService.callNemotronAndParseJson(prompt);
 
       // Mettre à jour la section dans la stratégie
       const updatedStrategy = strategy.toObject();
-      this.setNestedValue(updatedStrategy.generatedStrategy, dto.sectionKey, improvedSectionData);
+      this.setNestedValue(
+        updatedStrategy.generatedStrategy,
+        dto.sectionKey,
+        improvedSectionData,
+      );
 
       // Sauvegarder les modifications
       const result = await this.strategyModel
@@ -642,12 +840,14 @@ export class StrategiesService {
             userId: new Types.ObjectId(userId),
           },
           { generatedStrategy: updatedStrategy.generatedStrategy },
-          { new: true }
+          { new: true },
         )
         .exec();
 
       if (!result) {
-        throw new NotFoundException('Stratégie non trouvée lors de la mise à jour');
+        throw new NotFoundException(
+          'Stratégie non trouvée lors de la mise à jour',
+        );
       }
 
       return result;
@@ -657,7 +857,7 @@ export class StrategiesService {
       }
 
       throw new InternalServerErrorException(
-        `Erreur lors de l'amélioration de la section: ${error.message}`
+        `Erreur lors de l'amélioration de la section: ${error.message}`,
       );
     }
   }
@@ -665,20 +865,31 @@ export class StrategiesService {
   /**
    * Met à jour directement une section sans passer par l'IA
    */
-  async updateSection(userId: string, strategyId: string, dto: UpdateSectionDto): Promise<StrategyDocument> {
+  async updateSection(
+    userId: string,
+    strategyId: string,
+    dto: UpdateSectionDto,
+  ): Promise<StrategyDocument> {
     try {
       // Vérifier que la stratégie appartient à l'utilisateur
       const strategy = await this.findOne(userId, strategyId);
 
       // Vérifier que la section existe
-      const existingSection = this.getNestedValue(strategy.generatedStrategy, dto.sectionKey);
+      const existingSection = this.getNestedValue(
+        strategy.generatedStrategy,
+        dto.sectionKey,
+      );
       if (existingSection === null) {
         throw new NotFoundException(`Section "${dto.sectionKey}" non trouvée`);
       }
 
       // Mettre à jour la section dans la stratégie
       const updatedStrategy = strategy.toObject();
-      this.setNestedValue(updatedStrategy.generatedStrategy, dto.sectionKey, dto.data);
+      this.setNestedValue(
+        updatedStrategy.generatedStrategy,
+        dto.sectionKey,
+        dto.data,
+      );
 
       // Sauvegarder les modifications
       const result = await this.strategyModel
@@ -688,12 +899,14 @@ export class StrategiesService {
             userId: new Types.ObjectId(userId),
           },
           { generatedStrategy: updatedStrategy.generatedStrategy },
-          { new: true }
+          { new: true },
         )
         .exec();
 
       if (!result) {
-        throw new NotFoundException('Stratégie non trouvée lors de la mise à jour');
+        throw new NotFoundException(
+          'Stratégie non trouvée lors de la mise à jour',
+        );
       }
 
       return result;
@@ -703,7 +916,7 @@ export class StrategiesService {
       }
 
       throw new InternalServerErrorException(
-        `Erreur lors de la mise à jour manuelle de la section: ${error.message}`
+        `Erreur lors de la mise à jour manuelle de la section: ${error.message}`,
       );
     }
   }
@@ -723,7 +936,7 @@ export class StrategiesService {
   private setNestedValue(obj: any, sectionKey: string, value: any): void {
     const keys = sectionKey.split('.');
     const lastKey = keys.pop();
-    
+
     if (!lastKey) {
       throw new Error('Section key invalide');
     }
@@ -738,7 +951,9 @@ export class StrategiesService {
     target[lastKey] = value;
   }
 
-  private async buildAdminSearchFilter(search?: string): Promise<Record<string, unknown>> {
+  private async buildAdminSearchFilter(
+    search?: string,
+  ): Promise<Record<string, unknown>> {
     const normalizedSearch = search?.trim();
     if (!normalizedSearch) {
       return {};

@@ -520,6 +520,14 @@ export class ContentService {
       );
     }
 
+    const schedulingWindow = this.assertAutoScheduleRangeNotAfterToday(
+      dto.startDate,
+      dto.endDate,
+      dto.timezone,
+      campaign.generatedPosts.length,
+      dto.frequencyPerWeek,
+    );
+
     const platforms = this.mergeUniquePlatforms(campaign.platforms ?? [], [
       ...campaign.generatedPosts.map((post) => post.platform),
     ]);
@@ -531,15 +539,15 @@ export class ContentService {
         [],
       platforms,
       dto.frequencyPerWeek,
-      dto.startDate,
-      dto.endDate,
+      schedulingWindow.startDate,
+      schedulingWindow.endDate,
     );
 
     const assignments = this.autoSchedulerService.createSchedule(
       {
         platforms,
-        startDate: dto.startDate,
-        endDate: dto.endDate,
+        startDate: schedulingWindow.startDate,
+        endDate: schedulingWindow.endDate,
         frequencyPerWeek: dto.frequencyPerWeek,
         timezone: dto.timezone,
         preferredTimeWindows: dto.preferredTimeWindows,
@@ -1237,6 +1245,7 @@ export class ContentService {
     campaign.generatedPosts.forEach((post, index) => {
       const schedule = assignmentByIndex.get(index);
       if (schedule) {
+        this.assertScheduleNotAfterToday(schedule);
         post.schedule = schedule;
       }
     });
@@ -1256,9 +1265,12 @@ export class ContentService {
         index: update.index,
       });
 
-      campaign.generatedPosts[targetIndex].schedule = this.normalizeSchedule(
-        update.schedule,
-      );
+      const normalizedSchedule = this.normalizeSchedule(update.schedule);
+      if (normalizedSchedule) {
+        this.assertScheduleNotAfterToday(normalizedSchedule);
+      }
+
+      campaign.generatedPosts[targetIndex].schedule = normalizedSchedule;
     }
   }
 
@@ -1526,5 +1538,183 @@ export class ContentService {
     }
 
     return new InternalServerErrorException(message);
+  }
+
+  private assertAutoScheduleRangeNotAfterToday(
+    startDate: string,
+    endDate: string,
+    timezone: string,
+    postsCount: number,
+    frequencyPerWeek: number,
+  ): { startDate: string; endDate: string } {
+    const normalizedTimezone = this.normalizeTimezoneOrThrow(
+      timezone,
+      'timezone',
+    );
+    const normalizedStartDate = this.normalizeDateKey(startDate, 'startDate');
+    const normalizedEndDate = this.normalizeDateKey(endDate, 'endDate');
+
+    if (normalizedEndDate < normalizedStartDate) {
+      throw new BadRequestException(
+        'endDate doit etre posterieure ou egale a startDate',
+      );
+    }
+
+    const todayDateKey = this.getDateKeyInTimezone(
+      new Date(),
+      normalizedTimezone,
+    );
+    const effectiveStartDate = todayDateKey;
+    let effectiveEndDate =
+      normalizedEndDate < effectiveStartDate
+        ? effectiveStartDate
+        : normalizedEndDate;
+
+    const requiredWeeks = Math.max(
+      1,
+      Math.ceil(postsCount / Math.max(1, frequencyPerWeek)),
+    );
+    const requiredHorizonDays = Math.max(0, requiredWeeks * 7 - 1);
+    const minimumEndDate = this.addDaysToDateKey(
+      effectiveStartDate,
+      requiredHorizonDays,
+    );
+    if (effectiveEndDate < minimumEndDate) {
+      effectiveEndDate = minimumEndDate;
+    }
+
+    return {
+      startDate: effectiveStartDate,
+      endDate: effectiveEndDate,
+    };
+  }
+
+  private assertScheduleNotAfterToday(schedule: SchedulePayload): void {
+    const normalizedTimezone = this.normalizeTimezoneOrThrow(
+      schedule.timezone,
+      'schedule.timezone',
+    );
+    const normalizedDate = this.normalizeDateKey(
+      schedule.date,
+      'schedule.date',
+    );
+    const normalizedTime = this.normalizeTimeKey(
+      schedule.time,
+      'schedule.time',
+    );
+    const nowDateTimeKey = this.getDateTimeKeyInTimezone(
+      new Date(),
+      normalizedTimezone,
+    );
+    const scheduledDateTimeKey = `${normalizedDate}T${normalizedTime}:00`;
+
+    if (scheduledDateTimeKey <= nowDateTimeKey) {
+      throw new BadRequestException(
+        'Planification refusee: la date/heure doit etre strictement dans le futur',
+      );
+    }
+  }
+
+  private normalizeDateKey(value: string, fieldName: string): string {
+    const normalized = value.trim();
+    if (!normalized) {
+      throw new BadRequestException(`${fieldName} est obligatoire`);
+    }
+
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+    if (dateOnlyMatch) {
+      return normalized;
+    }
+
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`${fieldName} invalide: date attendue`);
+    }
+
+    const year = parsed.getUTCFullYear();
+    const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private normalizeTimezoneOrThrow(
+    timezone: string,
+    fieldName: string,
+  ): string {
+    const normalized = timezone.trim();
+    if (!normalized) {
+      throw new BadRequestException(`${fieldName} est obligatoire`);
+    }
+
+    try {
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: normalized,
+        year: 'numeric',
+      }).format(new Date());
+    } catch {
+      throw new BadRequestException(`${fieldName} invalide: timezone attendue`);
+    }
+
+    return normalized;
+  }
+
+  private getDateKeyInTimezone(date: Date, timezone: string): string {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(date);
+    const values = new Map<string, string>();
+
+    for (const part of parts) {
+      if (part.type !== 'literal') {
+        values.set(part.type, part.value);
+      }
+    }
+
+    return `${values.get('year')}-${values.get('month')}-${values.get('day')}`;
+  }
+
+  private getDateTimeKeyInTimezone(date: Date, timezone: string): string {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    });
+    const parts = formatter.formatToParts(date);
+    const values = new Map<string, string>();
+
+    for (const part of parts) {
+      if (part.type !== 'literal') {
+        values.set(part.type, part.value);
+      }
+    }
+
+    return `${values.get('year')}-${values.get('month')}-${values.get('day')}T${values.get('hour')}:${values.get('minute')}:${values.get('second')}`;
+  }
+
+  private normalizeTimeKey(value: string, fieldName: string): string {
+    const normalized = value.trim();
+    const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(normalized);
+    if (!match) {
+      throw new BadRequestException(
+        `${fieldName} invalide: format HH:mm attendu`,
+      );
+    }
+
+    return `${match[1]}:${match[2]}`;
+  }
+
+  private addDaysToDateKey(dateKey: string, days: number): string {
+    const [year, month, day] = dateKey.split('-').map((part) => Number(part));
+    const target = new Date(Date.UTC(year, month - 1, day + days));
+    return `${target.getUTCFullYear()}-${String(target.getUTCMonth() + 1).padStart(2, '0')}-${String(target.getUTCDate()).padStart(2, '0')}`;
   }
 }

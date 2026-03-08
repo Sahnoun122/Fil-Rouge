@@ -50,7 +50,9 @@ export class AuthService {
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
     try {
-      const existingUser = await this.usersService.findByEmail(registerDto.email);
+      const existingUser = await this.usersService.findByEmail(
+        registerDto.email,
+      );
       if (existingUser) {
         throw new ConflictException('Cet email est deja utilise');
       }
@@ -66,7 +68,10 @@ export class AuthService {
 
       const tokens = await this.generateTokens(user);
 
-      await this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+      await this.usersService.updateRefreshToken(
+        user._id.toString(),
+        tokens.refreshToken,
+      );
       await this.usersService.updateLastLogin(user._id.toString());
 
       return {
@@ -89,15 +94,21 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     try {
-      const user = await this.usersService.findByEmailWithPassword(loginDto.email);
+      const user = await this.usersService.findByEmailWithPassword(
+        loginDto.email,
+      );
 
       if (!user) {
-        this.logger.warn(`Login reject: user not found for email=${loginDto.email}`);
+        this.logger.warn(
+          `Login reject: user not found for email=${loginDto.email}`,
+        );
         throw new UnauthorizedException('Email ou mot de passe incorrect');
       }
 
       if (user.isBanned) {
-        this.logger.warn(`Login reject: banned account email=${loginDto.email}`);
+        this.logger.warn(
+          `Login reject: banned account email=${loginDto.email}`,
+        );
         throw new UnauthorizedException('Votre compte a ete banni');
       }
 
@@ -110,7 +121,6 @@ export class AuthService {
 
       let isPasswordValid = false;
       for (const candidate of candidates) {
-        // eslint-disable-next-line no-await-in-loop
         if (await bcrypt.compare(candidate, user.password)) {
           isPasswordValid = true;
           break;
@@ -118,14 +128,19 @@ export class AuthService {
       }
 
       if (!isPasswordValid) {
-        this.logger.warn(`Login reject: invalid password for email=${loginDto.email}`);
+        this.logger.warn(
+          `Login reject: invalid password for email=${loginDto.email}`,
+        );
         throw new UnauthorizedException('Email ou mot de passe incorrect');
       }
 
       const tokens = await this.generateTokens(user);
 
       await Promise.all([
-        this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken),
+        this.usersService.updateRefreshToken(
+          user._id.toString(),
+          tokens.refreshToken,
+        ),
         this.usersService.updateLastLogin(user._id.toString()),
       ]);
 
@@ -162,13 +177,19 @@ export class AuthService {
         throw new UnauthorizedException('Votre compte a ete banni');
       }
 
-      const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshToken,
+        user.refreshToken,
+      );
       if (!isRefreshTokenValid) {
         throw new UnauthorizedException('Token de rafraichissement invalide');
       }
 
       const newTokens = await this.generateTokens(user);
-      await this.usersService.updateRefreshToken(user._id.toString(), newTokens.refreshToken);
+      await this.usersService.updateRefreshToken(
+        user._id.toString(),
+        newTokens.refreshToken,
+      );
 
       return newTokens;
     } catch {
@@ -211,11 +232,14 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET') || 'default-secret',
+        secret:
+          this.configService.get<string>('JWT_SECRET') || 'default-secret',
         expiresIn: '1h',
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'default-refresh-secret',
+        secret:
+          this.configService.get<string>('JWT_REFRESH_SECRET') ||
+          'default-refresh-secret',
         expiresIn: '7d',
       }),
     ]);

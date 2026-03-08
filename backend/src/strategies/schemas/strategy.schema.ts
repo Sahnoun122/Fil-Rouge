@@ -6,7 +6,7 @@ export type StrategyDocument = Strategy & Document;
 // Enum pour les objectifs principaux
 export enum MainObjective {
   LEADS = 'leads',
-  SALES = 'sales', 
+  SALES = 'sales',
   AWARENESS = 'awareness',
   ENGAGEMENT = 'engagement',
 }
@@ -230,9 +230,9 @@ export class GeneratedStrategy {
 }
 
 // Schéma principal pour la stratégie
-@Schema({ 
+@Schema({
   timestamps: true,
-  collection: 'strategies'
+  collection: 'strategies',
 })
 export class Strategy {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
