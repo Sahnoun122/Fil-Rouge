@@ -24,6 +24,17 @@ interface DraftFilters {
 }
 
 const ACTION_SUGGESTIONS_LIMIT = 8;
+const DEFAULT_ACTION_EXAMPLES = [
+  "generate_full_strategy",
+  "regenerate_section",
+  "improve_section",
+  "generate_swot_from_strategy",
+  "improve_swot",
+  "generate_campaign_content",
+  "regenerate_platform_content",
+  "regenerate_single_post",
+  "generate_auto_schedule_advice",
+];
 
 const normalizeDateInput = (value: string): string | undefined => {
   const normalized = value.trim();
@@ -117,13 +128,25 @@ export default function UserAiMonitoringFilters({
           return;
         }
 
-        setActionSuggestions(suggestions);
+        const normalizedQuery = draft.actionType.trim().toLowerCase();
+        const fallbackSuggestions = DEFAULT_ACTION_EXAMPLES.filter((item) =>
+          normalizedQuery ? item.toLowerCase().includes(normalizedQuery) : true,
+        ).slice(0, ACTION_SUGGESTIONS_LIMIT);
+
+        setActionSuggestions(
+          suggestions.length > 0 ? suggestions : fallbackSuggestions,
+        );
       } catch {
         if (requestId !== actionSuggestionsRequestIdRef.current) {
           return;
         }
 
-        setActionSuggestions([]);
+        const normalizedQuery = draft.actionType.trim().toLowerCase();
+        const fallbackSuggestions = DEFAULT_ACTION_EXAMPLES.filter((item) =>
+          normalizedQuery ? item.toLowerCase().includes(normalizedQuery) : true,
+        ).slice(0, ACTION_SUGGESTIONS_LIMIT);
+
+        setActionSuggestions(fallbackSuggestions);
       } finally {
         if (requestId === actionSuggestionsRequestIdRef.current) {
           setIsActionSuggestionsLoading(false);
