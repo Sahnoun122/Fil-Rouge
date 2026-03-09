@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import AdminService from "@/src/services/adminService";
+import type { AdminUser } from "@/src/types/admin.types";
 import type {
   AdminAiMonitoringFilters,
   AiFeatureType,
@@ -22,6 +24,9 @@ interface DraftFilters {
   userSearch: string;
 }
 
+const USER_SEARCH_MIN_LENGTH = 2;
+const USER_SUGGESTIONS_LIMIT = 8;
+
 const buildDraft = (filters: AdminAiMonitoringFilters): DraftFilters => ({
   dateFrom: filters.dateFrom ?? "",
   dateTo: filters.dateTo ?? "",
@@ -37,13 +42,97 @@ export default function AiMonitoringFilters({
   onReset,
 }: AiMonitoringFiltersProps) {
   const [draft, setDraft] = useState<DraftFilters>(() => buildDraft(filters));
+  const [userSuggestions, setUserSuggestions] = useState<AdminUser[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+
+  const suggestionsRequestIdRef = useRef(0);
+  const userSearchContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setDraft(buildDraft(filters));
   }, [filters]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!userSearchContainerRef.current) {
+        return;
+      }
+
+      const target = event.target as Node | null;
+      if (target && !userSearchContainerRef.current.contains(target)) {
+        setIsSuggestionsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const query = draft.userSearch.trim();
+    const requestId = ++suggestionsRequestIdRef.current;
+
+    if (query.length < USER_SEARCH_MIN_LENGTH) {
+      setUserSuggestions([]);
+      setIsSuggestionsLoading(false);
+      return;
+    }
+
+    setIsSuggestionsLoading(true);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const result = await AdminService.getUsers({
+          page: 1,
+          limit: USER_SUGGESTIONS_LIMIT,
+          search: query,
+        });
+
+        if (requestId !== suggestionsRequestIdRef.current) {
+          return;
+        }
+
+        setUserSuggestions(result.users);
+        setIsSuggestionsOpen(true);
+      } catch {
+        if (requestId !== suggestionsRequestIdRef.current) {
+          return;
+        }
+
+        setUserSuggestions([]);
+      } finally {
+        if (requestId === suggestionsRequestIdRef.current) {
+          setIsSuggestionsLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [draft.userSearch]);
+
   const updateDraft = <K extends keyof DraftFilters>(key: K, value: DraftFilters[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleUserSearchChange = (value: string) => {
+    updateDraft("userSearch", value);
+
+    if (value.trim().length >= USER_SEARCH_MIN_LENGTH) {
+      setIsSuggestionsOpen(true);
+    } else {
+      setIsSuggestionsOpen(false);
+    }
+  };
+
+  const handleSelectUserSuggestion = (user: AdminUser) => {
+    const nextValue = (user.email || user.fullName || "").trim();
+    updateDraft("userSearch", nextValue);
+    setIsSuggestionsOpen(false);
   };
 
   const handleApply = () => {
@@ -123,13 +212,47 @@ export default function AiMonitoringFilters({
 
         <label className="flex flex-1 flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">User search</span>
-          <input
-            type="text"
-            value={draft.userSearch}
-            onChange={(event) => updateDraft("userSearch", event.target.value)}
-            placeholder="Name, surname or email"
-            className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
-          />
+          <div ref={userSearchContainerRef} className="relative">
+            <input
+              type="text"
+              value={draft.userSearch}
+              onChange={(event) => handleUserSearchChange(event.target.value)}
+              onFocus={() => {
+                if (draft.userSearch.trim().length >= USER_SEARCH_MIN_LENGTH) {
+                  setIsSuggestionsOpen(true);
+                }
+              }}
+              placeholder="Name, surname or email"
+              className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+            />
+
+            {isSuggestionsOpen && draft.userSearch.trim().length >= USER_SEARCH_MIN_LENGTH ? (
+              <div className="absolute left-0 top-[calc(100%+6px)] z-20 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                {isSuggestionsLoading ? (
+                  <p className="px-3 py-2 text-sm text-slate-500">Searching users...</p>
+                ) : userSuggestions.length === 0 ? (
+                  <p className="px-3 py-2 text-sm text-slate-500">No user found</p>
+                ) : (
+                  <ul className="max-h-64 overflow-y-auto py-1">
+                    {userSuggestions.map((user) => (
+                      <li key={user.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectUserSuggestion(user)}
+                          className="flex w-full items-start justify-between gap-2 px-3 py-2 text-left hover:bg-slate-50"
+                        >
+                          <span className="truncate text-sm font-medium text-slate-800">
+                            {user.fullName || "Utilisateur"}
+                          </span>
+                          <span className="truncate text-xs text-slate-500">{user.email || "-"}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
+          </div>
         </label>
       </div>
 
