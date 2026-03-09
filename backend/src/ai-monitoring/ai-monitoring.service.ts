@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import type { PipelineStage } from 'mongoose';
 import { User, UserDocument } from '../users/entities/user.entity';
 import { FilterAiLogsDto } from './dto/filter-ai-logs.dto';
 import {
@@ -65,6 +66,8 @@ export interface AiUsageByUserItem {
   averageResponseTimeMs: number;
   lastUsedAt: Date | null;
 }
+
+type CsvCellValue = string | number | boolean | null | undefined;
 
 @Injectable()
 export class AiMonitoringService {
@@ -285,67 +288,193 @@ export class AiMonitoringService {
     const match = await this.buildMatchFilters(filters);
     const safeLimit = Math.min(200, Math.max(1, Number(limit) || 50));
 
-    const usage = await this.aiLogModel
-      .aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: '$userId',
-            totalRequests: { $sum: 1 },
-            successfulRequests: {
-              $sum: {
-                $cond: [{ $eq: ['$status', 'success'] }, 1, 0],
-              },
-            },
-            failedRequests: {
-              $sum: {
-                $cond: [{ $eq: ['$status', 'failed'] }, 1, 0],
-              },
-            },
-            averageResponseTimeMs: { $avg: '$responseTimeMs' },
-            lastUsedAt: { $max: '$createdAt' },
-          },
-        },
-        {
-          $sort: {
-            totalRequests: -1,
-            _id: 1,
-          },
-        },
-        { $limit: safeLimit },
-        {
-          $lookup: {
-            from: 'users',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'user',
-          },
-        },
-        {
-          $unwind: {
-            path: '$user',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            userId: '$_id',
-            totalRequests: 1,
-            successfulRequests: 1,
-            failedRequests: 1,
-            averageResponseTimeMs: 1,
-            lastUsedAt: 1,
-            user: {
-              fullName: '$user.fullName',
-              email: '$user.email',
-              companyName: '$user.companyName',
-              role: '$user.role',
-            },
-          },
-        },
-      ])
+    return this.aggregateUsageByUser(match, safeLimit);
+  }
+
+  async exportLogsCsv(filters: Partial<FilterAiLogsDto> = {}): Promise<string> {
+    const match = await this.buildMatchFilters(filters);
+
+    const logs = await this.aiLogModel
+      .find(match)
+      .populate('userId', 'fullName email companyName role')
+      .sort({ createdAt: -1 })
+      .lean()
       .exec();
+
+    const headers = [
+      'logId',
+      'userId',
+      'userFullName',
+      'userEmail',
+      'featureType',
+      'actionType',
+      'status',
+      'responseTimeMs',
+      'modelName',
+      'relatedEntityId',
+      'inputSummary',
+      'responseSummary',
+      'errorMessage',
+      'createdAt',
+      'updatedAt',
+    ];
+
+    const rows = logs.map((log) => {
+      const populatedUser = this.extractPopulatedUser(log.userId);
+      let rawUserId: unknown = log.userId;
+
+      if (typeof log.userId === 'object' && log.userId !== null) {
+        const maybeUser = log.userId as { _id?: unknown };
+        if ('_id' in maybeUser && maybeUser._id) {
+          rawUserId = maybeUser._id;
+        }
+      }
+
+      return [
+        this.objectIdToString(log._id),
+        this.objectIdToString(rawUserId),
+        populatedUser?.fullName ?? '',
+        populatedUser?.email ?? '',
+        log.featureType ?? '',
+        log.actionType ?? '',
+        log.status ?? '',
+        log.responseTimeMs ?? '',
+        log.modelName ?? '',
+        log.relatedEntityId ?? '',
+        log.inputSummary ?? '',
+        log.responseSummary ?? '',
+        log.errorMessage ?? '',
+        log.createdAt ? new Date(log.createdAt).toISOString() : '',
+        log.updatedAt ? new Date(log.updatedAt).toISOString() : '',
+      ];
+    });
+
+    return this.buildCsv(headers, rows);
+  }
+
+  async exportUsageByUserCsv(
+    filters: Partial<FilterAiLogsDto> = {},
+  ): Promise<string> {
+    const match = await this.buildMatchFilters(filters);
+    const usage = await this.aggregateUsageByUser(match);
+
+    const headers = [
+      'userId',
+      'fullName',
+      'email',
+      'companyName',
+      'role',
+      'totalRequests',
+      'successfulRequests',
+      'failedRequests',
+      'successRate',
+      'averageResponseTimeMs',
+      'lastUsedAt',
+    ];
+
+    const rows = usage.map((item) => [
+      item.userId,
+      item.user.fullName ?? '',
+      item.user.email ?? '',
+      item.user.companyName ?? '',
+      item.user.role ?? '',
+      item.totalRequests,
+      item.successfulRequests,
+      item.failedRequests,
+      item.successRate,
+      item.averageResponseTimeMs,
+      item.lastUsedAt ? new Date(item.lastUsedAt).toISOString() : '',
+    ]);
+
+    return this.buildCsv(headers, rows);
+  }
+
+  async exportUserLogsCsv(
+    userId: string,
+    filters: Partial<FilterAiLogsDto> = {},
+  ): Promise<string> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('userId invalide pour export');
+    }
+
+    return this.exportLogsCsv({
+      ...filters,
+      userId,
+      userSearch: undefined,
+    });
+  }
+
+  private async aggregateUsageByUser(
+    match: Record<string, unknown>,
+    limit?: number,
+  ): Promise<AiUsageByUserItem[]> {
+    const pipeline: PipelineStage[] = [
+      { $match: match },
+      {
+        $group: {
+          _id: '$userId',
+          totalRequests: { $sum: 1 },
+          successfulRequests: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'success'] }, 1, 0],
+            },
+          },
+          failedRequests: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'failed'] }, 1, 0],
+            },
+          },
+          averageResponseTimeMs: { $avg: '$responseTimeMs' },
+          lastUsedAt: { $max: '$createdAt' },
+        },
+      },
+      {
+        $sort: {
+          totalRequests: -1,
+          _id: 1,
+        },
+      },
+    ];
+
+    if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
+      pipeline.push({ $limit: Math.trunc(limit) } as PipelineStage);
+    }
+
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id',
+          totalRequests: 1,
+          successfulRequests: 1,
+          failedRequests: 1,
+          averageResponseTimeMs: 1,
+          lastUsedAt: 1,
+          user: {
+            fullName: '$user.fullName',
+            email: '$user.email',
+            companyName: '$user.companyName',
+            role: '$user.role',
+          },
+        },
+      },
+    );
+
+    const usage = await this.aiLogModel.aggregate(pipeline).exec();
 
     return usage.map((item) => {
       const totalRequests = Number(item.totalRequests ?? 0);
@@ -384,6 +513,63 @@ export class AiMonitoringService {
         lastUsedAt: (item.lastUsedAt as Date | null) ?? null,
       };
     });
+  }
+
+  private extractPopulatedUser(
+    value: unknown,
+  ): { fullName?: string; email?: string; companyName?: string; role?: string } | null {
+    if (typeof value !== 'object' || value === null) {
+      return null;
+    }
+
+    const source = value as Record<string, unknown>;
+
+    return {
+      fullName: typeof source.fullName === 'string' ? source.fullName : undefined,
+      email: typeof source.email === 'string' ? source.email : undefined,
+      companyName:
+        typeof source.companyName === 'string' ? source.companyName : undefined,
+      role: typeof source.role === 'string' ? source.role : undefined,
+    };
+  }
+
+  private objectIdToString(value: unknown): string {
+    if (!value) {
+      return '';
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof (value as { toString?: () => string }).toString === 'function') {
+      return (value as { toString: () => string }).toString();
+    }
+
+    return '';
+  }
+
+  private buildCsv(headers: string[], rows: CsvCellValue[][]): string {
+    const lines = [headers.map((header) => this.formatCsvCell(header)).join(',')];
+
+    for (const row of rows) {
+      lines.push(row.map((cell) => this.formatCsvCell(cell)).join(','));
+    }
+
+    return lines.join('\n');
+  }
+
+  private formatCsvCell(value: CsvCellValue): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    const normalized = String(value);
+    if (!/[",\r\n]/.test(normalized)) {
+      return normalized;
+    }
+
+    return `"${normalized.replace(/"/g, '""')}"`;
   }
 
   private async buildMatchFilters(

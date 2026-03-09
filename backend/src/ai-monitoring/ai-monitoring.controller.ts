@@ -3,10 +3,12 @@ import {
   Get,
   Param,
   Query,
+  Res,
   UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { FilterAiLogsDto } from './dto/filter-ai-logs.dto';
@@ -81,5 +83,52 @@ export class AiMonitoringController {
       success: true,
       data: usage,
     };
+  }
+
+  @Get('exports/logs.csv')
+  async exportLogsCsv(
+    @Query() filters: FilterAiLogsDto,
+    @Res() res: Response,
+  ) {
+    const csv = await this.aiMonitoringService.exportLogsCsv(filters);
+    const fileName = `ai-monitoring-logs-${this.buildDateSuffix()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    return res.status(200).send(csv);
+  }
+
+  @Get('exports/usage-by-user.csv')
+  async exportUsageByUserCsv(
+    @Query() filters: FilterAiLogsDto,
+    @Res() res: Response,
+  ) {
+    const csv = await this.aiMonitoringService.exportUsageByUserCsv(filters);
+    const fileName = `ai-monitoring-usage-by-user-${this.buildDateSuffix()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    return res.status(200).send(csv);
+  }
+
+  @Get('exports/users/:userId/logs.csv')
+  async exportLogsCsvByUser(
+    @Param('userId') userId: string,
+    @Query() filters: FilterAiLogsDto,
+    @Res() res: Response,
+  ) {
+    const csv = await this.aiMonitoringService.exportUserLogsCsv(
+      userId,
+      filters,
+    );
+    const fileName = `ai-monitoring-user-${userId}-logs-${this.buildDateSuffix()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    return res.status(200).send(csv);
+  }
+
+  private buildDateSuffix(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }

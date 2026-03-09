@@ -1,4 +1,4 @@
-import { api } from "@/src/utils/fetcher";
+import { api, TokenManager } from "@/src/utils/fetcher";
 import type {
   AdminAiLog,
   AdminAiLogsResult,
@@ -23,6 +23,7 @@ type RawLogsData = {
 
 const FEATURE_TYPES: AiFeatureType[] = ["strategy", "swot", "content", "planning"];
 const LOG_STATUSES: AiLogStatus[] = ["success", "failed"];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 const asRecord = (value: unknown): Record<string, unknown> => {
   if (typeof value === "object" && value !== null) {
@@ -242,6 +243,51 @@ const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
 };
 
 export class AdminAiMonitoringService {
+  private static async downloadCsv(endpoint: string, fallbackFileName: string): Promise<void> {
+    const token = TokenManager.getAccessToken();
+    if (!token) {
+      throw new Error("Token d'acces requis");
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}`;
+
+      try {
+        const payload = (await response.json()) as { message?: string };
+        if (payload?.message) {
+          errorMessage = payload.message;
+        }
+      } catch {
+        // ignore non-json response
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const contentDisposition = response.headers.get("content-disposition") ?? "";
+    const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+    const fileName = fileNameMatch?.[1] || fallbackFileName;
+
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const anchor = document.createElement("a");
+    anchor.href = blobUrl;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.URL.revokeObjectURL(blobUrl);
+  }
+
   static async getOverview(
     filters: AdminAiMonitoringFilters = {},
   ): Promise<AdminAiOverview> {
@@ -352,6 +398,54 @@ export class AdminAiMonitoringService {
     }
 
     return response.data.map((item) => normalizeUsageByUserItem(item));
+  }
+
+  static async exportLogsCsv(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<void> {
+    const query = buildQuery({
+      ...filters,
+      page: undefined,
+      limit: undefined,
+    });
+
+    await this.downloadCsv(
+      `/admin/ai-monitoring/exports/logs.csv${query}`,
+      "ai-monitoring-logs.csv",
+    );
+  }
+
+  static async exportUsageByUserCsv(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<void> {
+    const query = buildQuery({
+      ...filters,
+      page: undefined,
+      limit: undefined,
+    });
+
+    await this.downloadCsv(
+      `/admin/ai-monitoring/exports/usage-by-user.csv${query}`,
+      "ai-monitoring-usage-by-user.csv",
+    );
+  }
+
+  static async exportUserLogsCsv(
+    userId: string,
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<void> {
+    const query = buildQuery({
+      ...filters,
+      page: undefined,
+      limit: undefined,
+      userId: undefined,
+      userSearch: undefined,
+    });
+
+    await this.downloadCsv(
+      `/admin/ai-monitoring/exports/users/${userId}/logs.csv${query}`,
+      `ai-monitoring-user-${userId}.csv`,
+    );
   }
 }
 
