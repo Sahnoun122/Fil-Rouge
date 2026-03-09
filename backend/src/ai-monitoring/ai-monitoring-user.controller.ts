@@ -12,6 +12,7 @@ import {
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FilterAiLogsDto } from './dto/filter-ai-logs.dto';
+import { FilterMyAiActionTypesDto } from './dto/filter-my-ai-action-types.dto';
 import { FilterMyAiLogsDto } from './dto/filter-my-ai-logs.dto';
 import { AiMonitoringService } from './ai-monitoring.service';
 
@@ -91,6 +92,32 @@ export class AiMonitoringUserController {
     return {
       success: true,
       data: usage,
+    };
+  }
+
+  @Get('action-types')
+  async getMyActionTypeSuggestions(
+    @Req() req: Request,
+    @Query() query: FilterMyAiActionTypesDto,
+  ) {
+    const userId = this.getAuthenticatedUserId(req);
+    const scopedFilters: Partial<FilterAiLogsDto> = {
+      userId,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      featureType: query.featureType,
+      status: query.status,
+    };
+
+    const suggestions = await this.aiMonitoringService.getActionTypeSuggestions(
+      scopedFilters,
+      query.q,
+      query.limit ?? 8,
+    );
+
+    return {
+      success: true,
+      data: suggestions,
     };
   }
 

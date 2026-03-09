@@ -357,6 +357,53 @@ export class UserAiMonitoringService {
 
     return response.data.map((item) => normalizeUsageOverTimeItem(item));
   }
+
+  static async getActionTypeSuggestions(
+    filters: UserAiMonitoringFilters = {},
+    query = "",
+    limit = 8,
+  ): Promise<string[]> {
+    const params = new URLSearchParams();
+
+    const rawDateFrom = normalizeDateForQuery(filters.dateFrom);
+    const rawDateTo = normalizeDateForQuery(filters.dateTo);
+    let safeDateFrom = rawDateFrom;
+    let safeDateTo = rawDateTo;
+
+    if (rawDateFrom && rawDateTo && rawDateFrom > rawDateTo) {
+      safeDateFrom = rawDateTo;
+      safeDateTo = rawDateFrom;
+    }
+
+    if (safeDateFrom) params.set("dateFrom", safeDateFrom);
+    if (safeDateTo) params.set("dateTo", safeDateTo);
+    if (filters.featureType) params.set("featureType", filters.featureType);
+    if (filters.status) params.set("status", filters.status);
+
+    const normalizedQuery = query.trim();
+    if (normalizedQuery) {
+      params.set("q", normalizedQuery);
+    }
+
+    const safeLimit = Math.min(20, Math.max(1, Math.trunc(limit || 8)));
+    params.set("limit", String(safeLimit));
+
+    const queryString = params.toString();
+    const response = (await api.get(
+      `/ai-monitoring/action-types${queryString ? `?${queryString}` : ""}`,
+      true,
+    )) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !Array.isArray(response.data)) {
+      throw new Error(
+        response?.message || "Impossible de recuperer les suggestions d'actions IA",
+      );
+    }
+
+    return response.data
+      .map((item) => asString(item).trim())
+      .filter((item) => item.length > 0);
+  }
 }
 
 export default UserAiMonitoringService;

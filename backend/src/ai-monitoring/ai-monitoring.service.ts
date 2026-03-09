@@ -370,6 +370,58 @@ export class AiMonitoringService {
     }));
   }
 
+  async getActionTypeSuggestions(
+    filters: Partial<FilterAiLogsDto> = {},
+    search?: string,
+    limit = 8,
+  ): Promise<string[]> {
+    const safeLimit = Math.min(20, Math.max(1, Number(limit) || 8));
+    const match = await this.buildMatchFilters({
+      ...filters,
+      actionType: undefined,
+    });
+
+    const normalizedSearch = this.sanitizeText(search, 120);
+    if (normalizedSearch) {
+      match.actionType = {
+        $regex: new RegExp(this.escapeRegex(normalizedSearch), 'i'),
+      };
+    }
+
+    const suggestions = await this.aiLogModel
+      .aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: '$actionType',
+            totalRequests: { $sum: 1 },
+            lastUsedAt: { $max: '$createdAt' },
+          },
+        },
+        {
+          $sort: {
+            totalRequests: -1,
+            lastUsedAt: -1,
+            _id: 1,
+          },
+        },
+        { $limit: safeLimit },
+        {
+          $project: {
+            _id: 0,
+            actionType: '$_id',
+          },
+        },
+      ])
+      .exec();
+
+    return suggestions
+      .map((item) =>
+        typeof item.actionType === 'string' ? item.actionType.trim() : '',
+      )
+      .filter((item) => item.length > 0);
+  }
+
   async exportLogsCsv(filters: Partial<FilterAiLogsDto> = {}): Promise<string> {
     const match = await this.buildMatchFilters(filters);
 
