@@ -1,4 +1,8 @@
 import { api, TokenManager } from "@/src/utils/fetcher";
+import {
+  generateAiMonitoringLogsPdf,
+  generateAiMonitoringUsageByUserPdf,
+} from "@/src/lib/aiMonitoringPdf";
 import type {
   AdminAiLog,
   AdminAiLogsResult,
@@ -24,6 +28,8 @@ type RawLogsData = {
 const FEATURE_TYPES: AiFeatureType[] = ["strategy", "swot", "content", "planning"];
 const LOG_STATUSES: AiLogStatus[] = ["success", "failed"];
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const EXPORT_PAGE_SIZE = 100;
+const MAX_EXPORT_PAGES = 200;
 
 const asRecord = (value: unknown): Record<string, unknown> => {
   if (typeof value === "object" && value !== null) {
@@ -243,6 +249,48 @@ const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
 };
 
 export class AdminAiMonitoringService {
+  private static buildDateSuffix(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private static withoutPagination(
+    filters: AdminAiMonitoringFilters = {},
+  ): AdminAiMonitoringFilters {
+    return {
+      ...filters,
+      page: undefined,
+      limit: undefined,
+    };
+  }
+
+  private static async collectLogsForExport(
+    filters: AdminAiMonitoringFilters,
+  ): Promise<AdminAiLog[]> {
+    const logs: AdminAiLog[] = [];
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages) {
+      if (page > MAX_EXPORT_PAGES) {
+        throw new Error(
+          `Export limite a ${MAX_EXPORT_PAGES * EXPORT_PAGE_SIZE} logs. Affinez vos filtres.`,
+        );
+      }
+
+      const batch = await this.getLogs({
+        ...filters,
+        page,
+        limit: EXPORT_PAGE_SIZE,
+      });
+
+      logs.push(...batch.logs);
+      totalPages = Math.max(1, batch.totalPages);
+      page += 1;
+    }
+
+    return logs;
+  }
+
   private static async downloadCsv(endpoint: string, fallbackFileName: string): Promise<void> {
     const token = TokenManager.getAccessToken();
     if (!token) {
@@ -403,11 +451,7 @@ export class AdminAiMonitoringService {
   static async exportLogsCsv(
     filters: AdminAiMonitoringFilters = {},
   ): Promise<void> {
-    const query = buildQuery({
-      ...filters,
-      page: undefined,
-      limit: undefined,
-    });
+    const query = buildQuery(this.withoutPagination(filters));
 
     await this.downloadCsv(
       `/admin/ai-monitoring/exports/logs.csv${query}`,
@@ -418,11 +462,7 @@ export class AdminAiMonitoringService {
   static async exportUsageByUserCsv(
     filters: AdminAiMonitoringFilters = {},
   ): Promise<void> {
-    const query = buildQuery({
-      ...filters,
-      page: undefined,
-      limit: undefined,
-    });
+    const query = buildQuery(this.withoutPagination(filters));
 
     await this.downloadCsv(
       `/admin/ai-monitoring/exports/usage-by-user.csv${query}`,
@@ -435,9 +475,7 @@ export class AdminAiMonitoringService {
     filters: AdminAiMonitoringFilters = {},
   ): Promise<void> {
     const query = buildQuery({
-      ...filters,
-      page: undefined,
-      limit: undefined,
+      ...this.withoutPagination(filters),
       userId: undefined,
       userSearch: undefined,
     });
@@ -446,6 +484,61 @@ export class AdminAiMonitoringService {
       `/admin/ai-monitoring/exports/users/${userId}/logs.csv${query}`,
       `ai-monitoring-user-${userId}.csv`,
     );
+  }
+
+  static async exportLogsPdf(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<void> {
+    const preparedFilters = this.withoutPagination(filters);
+    const logs = await this.collectLogsForExport(preparedFilters);
+
+    generateAiMonitoringLogsPdf({
+      title: "AI Monitoring - Logs Report",
+      subtitle: "Export base sur les filtres admin",
+      fileName: `ai-monitoring-logs-${this.buildDateSuffix()}.pdf`,
+      filters: preparedFilters,
+      logs,
+    });
+  }
+
+  static async exportUsageByUserPdf(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<void> {
+    const preparedFilters = this.withoutPagination(filters);
+    const items = await this.getUsageByUser({
+      ...preparedFilters,
+      limit: 200,
+    });
+
+    generateAiMonitoringUsageByUserPdf({
+      title: "AI Monitoring - Usage by User",
+      subtitle: "Export base sur les filtres admin",
+      fileName: `ai-monitoring-usage-by-user-${this.buildDateSuffix()}.pdf`,
+      filters: preparedFilters,
+      items,
+    });
+  }
+
+  static async exportUserLogsPdf(
+    userId: string,
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<void> {
+    const preparedFilters: AdminAiMonitoringFilters = {
+      ...this.withoutPagination(filters),
+      userId,
+      userSearch: undefined,
+    };
+    const logs = await this.collectLogsForExport(preparedFilters);
+    const displayUser =
+      logs[0]?.user?.fullName || logs[0]?.user?.email || userId;
+
+    generateAiMonitoringLogsPdf({
+      title: "AI Monitoring - User Logs",
+      subtitle: `User: ${displayUser}`,
+      fileName: `ai-monitoring-user-${userId}-${this.buildDateSuffix()}.pdf`,
+      filters: preparedFilters,
+      logs,
+    });
   }
 }
 

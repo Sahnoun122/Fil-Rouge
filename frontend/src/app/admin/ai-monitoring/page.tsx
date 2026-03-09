@@ -238,13 +238,17 @@ function UsageOverTimeChart({ points, isLoading }: { points: UsageOverTimePoint[
 function UserUsageChart({
   items,
   isLoading,
-  onExportUser,
-  exportingUserId,
+  onExportUserCsv,
+  onExportUserPdf,
+  exportingUserCsvId,
+  exportingUserPdfId,
 }: {
   items: AdminAiUsageByUserItem[];
   isLoading: boolean;
-  onExportUser: (item: AdminAiUsageByUserItem) => void;
-  exportingUserId: string | null;
+  onExportUserCsv: (item: AdminAiUsageByUserItem) => void;
+  onExportUserPdf: (item: AdminAiUsageByUserItem) => void;
+  exportingUserCsvId: string | null;
+  exportingUserPdfId: string | null;
 }) {
   if (isLoading) {
     return <div className="h-56 animate-pulse rounded-2xl bg-slate-100" />;
@@ -274,15 +278,23 @@ function UserUsageChart({
                 <p className="truncate font-semibold text-slate-800">{fullName}</p>
                 <p className="truncate text-xs text-slate-500">{email}</p>
               </div>
-              <div className="ml-2 flex items-center gap-2">
+              <div className="ml-2 flex items-center gap-1.5">
                 <p className="text-xs font-bold text-slate-900">{formatNumber(item.totalRequests)}</p>
                 <button
                   type="button"
-                  onClick={() => onExportUser(item)}
-                  disabled={exportingUserId === item.userId}
+                  onClick={() => onExportUserCsv(item)}
+                  disabled={exportingUserCsvId === item.userId}
                   className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {exportingUserId === item.userId ? '...' : 'Export'}
+                  {exportingUserCsvId === item.userId ? '...' : 'CSV'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onExportUserPdf(item)}
+                  disabled={exportingUserPdfId === item.userId}
+                  className="rounded-md border border-cyan-300 px-2 py-1 text-[10px] font-semibold text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {exportingUserPdfId === item.userId ? '...' : 'PDF'}
                 </button>
               </div>
             </div>
@@ -310,8 +322,11 @@ export default function AdminAiMonitoringPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isExportingLogs, setIsExportingLogs] = useState(false);
+  const [isExportingLogsPdf, setIsExportingLogsPdf] = useState(false);
   const [isExportingUsageByUser, setIsExportingUsageByUser] = useState(false);
-  const [exportingUserId, setExportingUserId] = useState<string | null>(null);
+  const [isExportingUsageByUserPdf, setIsExportingUsageByUserPdf] = useState(false);
+  const [exportingUserCsvId, setExportingUserCsvId] = useState<string | null>(null);
+  const [exportingUserPdfId, setExportingUserPdfId] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<AdminAiLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -469,13 +484,39 @@ export default function AdminAiMonitoringPage() {
     }
   };
 
-  const handleExportSingleUser = async (item: AdminAiUsageByUserItem) => {
+  const handleExportLogsPdf = async () => {
+    setIsExportingLogsPdf(true);
+
+    try {
+      await AdminAiMonitoringService.exportLogsPdf(filters);
+      toast.success('Logs PDF exported');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to export logs PDF');
+    } finally {
+      setIsExportingLogsPdf(false);
+    }
+  };
+
+  const handleExportUsageByUserPdf = async () => {
+    setIsExportingUsageByUserPdf(true);
+
+    try {
+      await AdminAiMonitoringService.exportUsageByUserPdf(filters);
+      toast.success('Usage by user PDF exported');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to export usage by user PDF');
+    } finally {
+      setIsExportingUsageByUserPdf(false);
+    }
+  };
+
+  const handleExportSingleUserCsv = async (item: AdminAiUsageByUserItem) => {
     if (!item.userId) {
       toast.error('Utilisateur invalide pour export');
       return;
     }
 
-    setExportingUserId(item.userId);
+    setExportingUserCsvId(item.userId);
 
     try {
       await AdminAiMonitoringService.exportUserLogsCsv(item.userId, filters);
@@ -483,7 +524,25 @@ export default function AdminAiMonitoringPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to export user CSV');
     } finally {
-      setExportingUserId(null);
+      setExportingUserCsvId(null);
+    }
+  };
+
+  const handleExportSingleUserPdf = async (item: AdminAiUsageByUserItem) => {
+    if (!item.userId) {
+      toast.error('Utilisateur invalide pour export');
+      return;
+    }
+
+    setExportingUserPdfId(item.userId);
+
+    try {
+      await AdminAiMonitoringService.exportUserLogsPdf(item.userId, filters);
+      toast.success(`User PDF exported: ${item.user?.fullName || item.user?.email || item.userId}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to export user PDF');
+    } finally {
+      setExportingUserPdfId(null);
     }
   };
 
@@ -555,11 +614,27 @@ export default function AdminAiMonitoringPage() {
         </button>
         <button
           type="button"
+          onClick={handleExportLogsPdf}
+          disabled={isExportingLogsPdf}
+          className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExportingLogsPdf ? 'Exporting logs...' : 'Export Logs PDF'}
+        </button>
+        <button
+          type="button"
           onClick={handleExportUsageByUser}
           disabled={isExportingUsageByUser}
           className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isExportingUsageByUser ? 'Exporting users...' : 'Export Users CSV'}
+        </button>
+        <button
+          type="button"
+          onClick={handleExportUsageByUserPdf}
+          disabled={isExportingUsageByUserPdf}
+          className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExportingUsageByUserPdf ? 'Exporting users...' : 'Export Users PDF'}
         </button>
       </section>
 
@@ -587,8 +662,10 @@ export default function AdminAiMonitoringPage() {
             <UserUsageChart
               items={usageByUser}
               isLoading={isLoading}
-              onExportUser={handleExportSingleUser}
-              exportingUserId={exportingUserId}
+              onExportUserCsv={handleExportSingleUserCsv}
+              onExportUserPdf={handleExportSingleUserPdf}
+              exportingUserCsvId={exportingUserCsvId}
+              exportingUserPdfId={exportingUserPdfId}
             />
           </div>
         </article>
