@@ -29,6 +29,63 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
 
 const formatNumber = (value: number): string => new Intl.NumberFormat('en-US').format(value);
 
+const normalizeDateInput = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (isoPattern.test(normalized)) {
+    return normalized;
+  }
+
+  const localPattern = /^(\d{2})[/-](\d{2})[/-](\d{4})$/;
+  const localMatch = normalized.match(localPattern);
+  if (localMatch) {
+    const [, day, month, year] = localMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+
+  return parsed.toISOString().slice(0, 10);
+};
+
+const sanitizeFilters = (value: AdminAiMonitoringFilters): AdminAiMonitoringFilters => {
+  let dateFrom = normalizeDateInput(value.dateFrom);
+  let dateTo = normalizeDateInput(value.dateTo);
+
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    const previousFrom = dateFrom;
+    dateFrom = dateTo;
+    dateTo = previousFrom;
+  }
+
+  return {
+    ...value,
+    page: value.page && value.page > 0 ? value.page : 1,
+    limit: value.limit && value.limit > 0 ? Math.min(100, value.limit) : 10,
+    dateFrom,
+    dateTo,
+    userSearch: value.userSearch?.trim() || undefined,
+  };
+};
+
+const areFiltersEqual = (
+  left: AdminAiMonitoringFilters,
+  right: AdminAiMonitoringFilters,
+): boolean => {
+  return JSON.stringify(left) === JSON.stringify(right);
+};
+
 const buildTimelinePoints = (
   logs: AdminAiLog[],
   dateFrom?: string,
@@ -321,13 +378,21 @@ export default function AdminAiMonitoringPage() {
   }, []);
 
   useEffect(() => {
-    void loadMonitoringData(filters);
+    const safeFilters = sanitizeFilters(filters);
+
+    if (!areFiltersEqual(safeFilters, filters)) {
+      setFilters(safeFilters);
+      return;
+    }
+
+    void loadMonitoringData(safeFilters);
   }, [filters, loadMonitoringData]);
 
   const handleApplyFilters = (nextFilters: AdminAiMonitoringFilters) => {
+    const safeNextFilters = sanitizeFilters(nextFilters);
     setFilters((previous) => ({
       ...previous,
-      ...nextFilters,
+      ...safeNextFilters,
       page: 1,
     }));
   };

@@ -174,6 +174,36 @@ const normalizeUsageByUserItem = (value: unknown): AdminAiUsageByUserItem => {
   };
 };
 
+const normalizeDateForQuery = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (isoPattern.test(normalized)) {
+    return normalized;
+  }
+
+  const localPattern = /^(\d{2})[/-](\d{2})[/-](\d{4})$/;
+  const localMatch = normalized.match(localPattern);
+  if (localMatch) {
+    const [, day, month, year] = localMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+
+  return parsed.toISOString().slice(0, 10);
+};
+
 const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
   const params = new URLSearchParams();
 
@@ -186,8 +216,21 @@ const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
   if (safeLimit) {
     params.set("limit", String(safeLimit));
   }
-  if (filters.dateFrom?.trim()) params.set("dateFrom", filters.dateFrom.trim());
-  if (filters.dateTo?.trim()) params.set("dateTo", filters.dateTo.trim());
+  const rawDateFrom = normalizeDateForQuery(filters.dateFrom);
+  const rawDateTo = normalizeDateForQuery(filters.dateTo);
+
+  let safeDateFrom = rawDateFrom;
+  let safeDateTo = rawDateTo;
+
+  if (rawDateFrom && rawDateTo) {
+    if (rawDateFrom > rawDateTo) {
+      safeDateFrom = rawDateTo;
+      safeDateTo = rawDateFrom;
+    }
+  }
+
+  if (safeDateFrom) params.set("dateFrom", safeDateFrom);
+  if (safeDateTo) params.set("dateTo", safeDateTo);
   if (filters.userId?.trim()) params.set("userId", filters.userId.trim());
   if (filters.userSearch?.trim()) params.set("userSearch", filters.userSearch.trim());
   if (filters.featureType) params.set("featureType", filters.featureType);

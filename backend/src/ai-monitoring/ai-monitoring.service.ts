@@ -465,20 +465,28 @@ export class AiMonitoringService {
       return undefined;
     }
 
-    const range: Record<string, Date> = {};
+    let parsedFrom: Date | undefined;
+    let parsedTo: Date | undefined;
 
     if (dateFrom) {
-      range.$gte = this.parseDate(dateFrom, false);
+      parsedFrom = this.parseDate(dateFrom, false);
     }
 
     if (dateTo) {
-      range.$lte = this.parseDate(dateTo, true);
+      parsedTo = this.parseDate(dateTo, true);
     }
 
-    if (range.$gte && range.$lte && range.$gte > range.$lte) {
-      throw new BadRequestException(
-        'dateFrom doit etre inferieure ou egale a dateTo',
-      );
+    if (parsedFrom && parsedTo && parsedFrom > parsedTo) {
+      parsedFrom = this.parseDate(dateTo as string, false);
+      parsedTo = this.parseDate(dateFrom as string, true);
+    }
+
+    const range: Record<string, Date> = {};
+    if (parsedFrom) {
+      range.$gte = parsedFrom;
+    }
+    if (parsedTo) {
+      range.$lte = parsedTo;
     }
 
     return range;

@@ -27,6 +27,32 @@ interface DraftFilters {
 const USER_SEARCH_MIN_LENGTH = 2;
 const USER_SUGGESTIONS_LIMIT = 8;
 
+const normalizeDateInput = (value: string): string | undefined => {
+  const normalized = value.trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (isoPattern.test(normalized)) {
+    return normalized;
+  }
+
+  const localPattern = /^(\d{2})[/-](\d{2})[/-](\d{4})$/;
+  const localMatch = normalized.match(localPattern);
+  if (localMatch) {
+    const [, day, month, year] = localMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+
+  return parsed.toISOString().slice(0, 10);
+};
+
 const buildDraft = (filters: AdminAiMonitoringFilters): DraftFilters => ({
   dateFrom: filters.dateFrom ?? "",
   dateTo: filters.dateTo ?? "",
@@ -136,11 +162,21 @@ export default function AiMonitoringFilters({
   };
 
   const handleApply = () => {
+    let dateFrom = normalizeDateInput(draft.dateFrom);
+    let dateTo = normalizeDateInput(draft.dateTo);
+
+    if (dateFrom && dateTo && Date.parse(dateFrom) > Date.parse(dateTo)) {
+      const previousFrom = dateFrom;
+      dateFrom = dateTo;
+      dateTo = previousFrom;
+      setDraft((prev) => ({ ...prev, dateFrom, dateTo }));
+    }
+
     onApply({
       ...filters,
       page: 1,
-      dateFrom: draft.dateFrom || undefined,
-      dateTo: draft.dateTo || undefined,
+      dateFrom,
+      dateTo,
       featureType: draft.featureType || undefined,
       status: draft.status || undefined,
       userSearch: draft.userSearch.trim() || undefined,

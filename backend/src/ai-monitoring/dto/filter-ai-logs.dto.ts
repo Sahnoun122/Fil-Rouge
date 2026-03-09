@@ -16,6 +16,31 @@ import {
 } from '../schemas/ai-log.schema';
 import type { AiFeatureType, AiLogStatus } from '../schemas/ai-log.schema';
 
+const normalizeDateString = (value: unknown): unknown => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return normalized;
+  }
+
+  const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (isoPattern.test(normalized)) {
+    return normalized;
+  }
+
+  const localPattern = /^(\d{2})[/-](\d{2})[/-](\d{4})$/;
+  const match = normalized.match(localPattern);
+  if (match) {
+    const [, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+  }
+
+  return normalized;
+};
+
 export class FilterAiLogsDto {
   @IsOptional()
   @Transform(({ value }) => {
@@ -53,7 +78,7 @@ export class FilterAiLogsDto {
   limit?: number = 20;
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }) => normalizeDateString(value))
   @IsDateString(
     {},
     { message: 'dateFrom doit etre une date ISO valide (YYYY-MM-DD)' },
@@ -61,7 +86,7 @@ export class FilterAiLogsDto {
   dateFrom?: string;
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }) => normalizeDateString(value))
   @IsDateString(
     {},
     { message: 'dateTo doit etre une date ISO valide (YYYY-MM-DD)' },
