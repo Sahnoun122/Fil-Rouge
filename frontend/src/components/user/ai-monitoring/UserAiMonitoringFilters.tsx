@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import UserAiMonitoringService from "@/src/services/userAiMonitoringService";
 import type {
   AiFeatureType,
@@ -79,32 +79,12 @@ export default function UserAiMonitoringFilters({
   const [draft, setDraft] = useState<DraftFilters>(() => buildDraft(filters));
   const [actionSuggestions, setActionSuggestions] = useState<string[]>([]);
   const [isActionSuggestionsLoading, setIsActionSuggestionsLoading] = useState(false);
-  const [isActionSuggestionsOpen, setIsActionSuggestionsOpen] = useState(false);
 
   const actionSuggestionsRequestIdRef = useRef(0);
-  const actionSearchContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setDraft(buildDraft(filters));
   }, [filters]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!actionSearchContainerRef.current) {
-        return;
-      }
-
-      const target = event.target as Node | null;
-      if (target && !actionSearchContainerRef.current.contains(target)) {
-        setIsActionSuggestionsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     const requestId = ++actionSuggestionsRequestIdRef.current;
@@ -163,15 +143,16 @@ export default function UserAiMonitoringFilters({
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleActionTypeChange = (value: string) => {
-    updateDraft("actionType", value);
-    setIsActionSuggestionsOpen(true);
-  };
+  const suggestionOptions = useMemo(() => {
+    if (actionSuggestions.length > 0) {
+      return actionSuggestions;
+    }
 
-  const handleSelectActionSuggestion = (value: string) => {
-    updateDraft("actionType", value);
-    setIsActionSuggestionsOpen(false);
-  };
+    const normalizedQuery = draft.actionType.trim().toLowerCase();
+    return DEFAULT_ACTION_EXAMPLES.filter((item) =>
+      normalizedQuery ? item.toLowerCase().includes(normalizedQuery) : true,
+    ).slice(0, ACTION_SUGGESTIONS_LIMIT);
+  }, [actionSuggestions, draft.actionType]);
 
   const handleApply = () => {
     let dateFrom = normalizeDateInput(draft.dateFrom);
@@ -181,7 +162,7 @@ export default function UserAiMonitoringFilters({
       const previousFrom = dateFrom;
       dateFrom = dateTo;
       dateTo = previousFrom;
-      setDraft((prev) => ({ ...prev, dateFrom, dateTo }));
+      setDraft((prev) => ({ ...prev, dateFrom: dateFrom ?? "", dateTo: dateTo ?? "" }));
     }
 
     onApply({
@@ -259,40 +240,36 @@ export default function UserAiMonitoringFilters({
 
         <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Action type</span>
-          <div ref={actionSearchContainerRef} className="relative">
-            <input
-              type="text"
-              value={draft.actionType}
-              onChange={(event) => handleActionTypeChange(event.target.value)}
-              onFocus={() => setIsActionSuggestionsOpen(true)}
-              placeholder="e.g. generate_swot"
-              className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
-            />
-
-            {isActionSuggestionsOpen ? (
-              <div className="absolute left-0 top-[calc(100%+6px)] z-20 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                {isActionSuggestionsLoading ? (
-                  <p className="px-3 py-2 text-sm text-slate-500">Loading actions...</p>
-                ) : actionSuggestions.length === 0 ? (
-                  <p className="px-3 py-2 text-sm text-slate-500">No action suggestions</p>
-                ) : (
-                  <ul className="max-h-64 overflow-y-auto py-1">
-                    {actionSuggestions.map((suggestion) => (
-                      <li key={suggestion}>
-                        <button
-                          type="button"
-                          onClick={() => handleSelectActionSuggestion(suggestion)}
-                          className="w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
-                        >
-                          {suggestion}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ) : null}
-          </div>
+          <input
+            type="text"
+            value={draft.actionType}
+            onChange={(event) => updateDraft("actionType", event.target.value)}
+            placeholder="e.g. generate_swot_from_strategy"
+            className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+          />
+          <p className="text-[11px] text-slate-500">
+            {isActionSuggestionsLoading
+              ? "Loading action suggestions..."
+              : `${suggestionOptions.length} suggestions available`}
+          </p>
+          {suggestionOptions.length > 0 ? (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {suggestionOptions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => updateDraft("actionType", suggestion)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                    draft.actionType === suggestion
+                      ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                      : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </label>
       </div>
 

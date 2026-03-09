@@ -111,22 +111,22 @@ export default function AdminStrategyDetailPage() {
 
     return [
       {
-      { title: 'Target Market',
+        title: 'Target Market',
         sectionKey: 'avant.marcheCible',
         content: strategy.generatedStrategy.avant?.marcheCible,
       },
       {
-      { title: 'Marketing Message',
+        title: 'Marketing Message',
         sectionKey: 'avant.messageMarketing',
         content: strategy.generatedStrategy.avant?.messageMarketing,
       },
       {
-      { title: 'Communication Channels',
+        title: 'Communication Channels',
         sectionKey: 'avant.canauxCommunication',
         content: strategy.generatedStrategy.avant?.canauxCommunication,
       },
       {
-      { title: 'Lead Capture',
+        title: 'Lead Capture',
         sectionKey: 'pendant.captureProspects',
         content: strategy.generatedStrategy.pendant?.captureProspects,
       },
@@ -141,17 +141,17 @@ export default function AdminStrategyDetailPage() {
         content: strategy.generatedStrategy.pendant?.conversion,
       },
       {
-      { title: 'Customer Experience',
+        title: 'Customer Experience',
         sectionKey: 'apres.experienceClient',
         content: strategy.generatedStrategy.apres?.experienceClient,
       },
       {
-      { title: 'Customer Value Growth',
+        title: 'Customer Value Growth',
         sectionKey: 'apres.augmentationValeurClient',
         content: strategy.generatedStrategy.apres?.augmentationValeurClient,
       },
       {
-      { title: 'Referral',
+        title: 'Referral',
         sectionKey: 'apres.recommandation',
         content: strategy.generatedStrategy.apres?.recommandation,
       },

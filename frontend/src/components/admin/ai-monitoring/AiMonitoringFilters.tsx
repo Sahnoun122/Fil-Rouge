@@ -169,7 +169,7 @@ export default function AiMonitoringFilters({
       const previousFrom = dateFrom;
       dateFrom = dateTo;
       dateTo = previousFrom;
-      setDraft((prev) => ({ ...prev, dateFrom, dateTo }));
+      setDraft((prev) => ({ ...prev, dateFrom: dateFrom ?? "", dateTo: dateTo ?? "" }));
     }
 
     onApply({

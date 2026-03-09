@@ -29,11 +29,16 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=mongodb://admin:password123@mongodb:27017/marketplan?authSource=admin
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-      - JWT_EXPIRES_IN=1h
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/marketplan?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production-min-32-chars
+      - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_EXPIRES_IN=7d
       - CORS_ORIGIN=http://localhost:3001
+      - PORT=3000
+      - OPENROUTER_API_URL=https://openrouter.ai/api/v1/chat/completions
+      - OPENROUTER_API_KEY=your-openrouter-api-key-here
+      - OPENROUTER_MODEL=nvidia/nemotron-3-nano-30b-a3b:free
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -54,7 +59,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
       - NEXT_TELEMETRY_DISABLED=1
     volumes:
       - ./frontend:/app
