@@ -227,7 +227,6 @@ export default function AdminAiMonitoringPage() {
   const [overview, setOverview] = useState<AdminAiOverview | null>(null);
   const [usageByFeature, setUsageByFeature] = useState<AdminAiUsageByFeatureItem[]>([]);
   const [usageByUser, setUsageByUser] = useState<AdminAiUsageByUserItem[]>([]);
-  const [allUsers, setAllUsers] = useState<AdminAiUsageByUserItem[]>([]);
   const [logsResult, setLogsResult] = useState<AdminAiLogsResult | null>(null);
   const [timelineLogs, setTimelineLogs] = useState<AdminAiLog[]>([]);
 
@@ -243,24 +242,13 @@ export default function AdminAiMonitoringPage() {
     [timelineLogs, filters.dateFrom, filters.dateTo],
   );
 
-  const loadAllUsers = useCallback(async () => {
-    try {
-      const users = await AdminAiMonitoringService.getUsageByUser({
-        limit: 100,
-      });
-      setAllUsers(users);
-    } catch {
-      // Non-bloquant pour la page
-    }
-  }, []);
-
   const loadMonitoringData = useCallback(async (nextFilters: AdminAiMonitoringFilters) => {
     const currentRequestId = ++requestIdRef.current;
     setIsLoading(true);
 
     try {
       const [overviewResult, featureResult, userResult, logsResultData, timelineResult] =
-        await Promise.all([
+        await Promise.allSettled([
           AdminAiMonitoringService.getOverview(nextFilters),
           AdminAiMonitoringService.getUsageByFeature(nextFilters),
           AdminAiMonitoringService.getUsageByUser({
@@ -279,27 +267,58 @@ export default function AdminAiMonitoringPage() {
         return;
       }
 
-      setOverview(overviewResult);
-      setUsageByFeature(featureResult);
-      setUsageByUser(userResult);
-      setLogsResult(logsResultData);
-      setTimelineLogs(timelineResult.logs);
+      const failedSections: string[] = [];
+
+      if (overviewResult.status === 'fulfilled') {
+        setOverview(overviewResult.value);
+      } else {
+        setOverview(null);
+        failedSections.push('overview');
+      }
+
+      if (featureResult.status === 'fulfilled') {
+        setUsageByFeature(featureResult.value);
+      } else {
+        setUsageByFeature([]);
+        failedSections.push('usage by feature');
+      }
+
+      if (userResult.status === 'fulfilled') {
+        setUsageByUser(userResult.value);
+      } else {
+        setUsageByUser([]);
+        failedSections.push('usage by user');
+      }
+
+      if (logsResultData.status === 'fulfilled') {
+        setLogsResult(logsResultData.value);
+      } else {
+        setLogsResult(null);
+        failedSections.push('logs');
+      }
+
+      if (timelineResult.status === 'fulfilled') {
+        setTimelineLogs(timelineResult.value.logs);
+      } else {
+        setTimelineLogs([]);
+        failedSections.push('usage over time');
+      }
+
+      if (failedSections.length > 0) {
+        toast.error(`Failed to load: ${failedSections.join(', ')}`);
+      }
     } catch (error) {
       if (currentRequestId !== requestIdRef.current) {
         return;
       }
 
-      toast.error(error instanceof Error ? error.message : "Failed to load AI monitoring data");
+      toast.error(error instanceof Error ? error.message : 'Failed to load AI monitoring data');
     } finally {
       if (currentRequestId === requestIdRef.current) {
         setIsLoading(false);
       }
     }
   }, []);
-
-  useEffect(() => {
-    void loadAllUsers();
-  }, [loadAllUsers]);
 
   useEffect(() => {
     void loadMonitoringData(filters);
@@ -356,14 +375,6 @@ export default function AdminAiMonitoringPage() {
     setSelectedLog(null);
   };
 
-  const userOptions = useMemo(() => {
-    if (allUsers.length > 0) {
-      return allUsers;
-    }
-
-    return usageByUser;
-  }, [allUsers, usageByUser]);
-
   return (
     <section className="space-y-6">
       <Toaster position="top-right" />
@@ -396,7 +407,6 @@ export default function AdminAiMonitoringPage() {
 
       <AiMonitoringFilters
         filters={filters}
-        users={userOptions}
         isLoading={isLoading}
         onApply={handleApplyFilters}
         onReset={handleResetFilters}

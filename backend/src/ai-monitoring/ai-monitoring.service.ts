@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { User, UserDocument } from '../users/entities/user.entity';
 import { FilterAiLogsDto } from './dto/filter-ai-logs.dto';
 import {
   AiFeatureType,
@@ -72,6 +73,8 @@ export class AiMonitoringService {
   constructor(
     @InjectModel(AiLog.name)
     private readonly aiLogModel: Model<AiLogDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   async createLog(payload: CreateAiLogInput): Promise<AiLogDocument | null> {
@@ -107,7 +110,7 @@ export class AiMonitoringService {
   async getOverview(
     filters: Partial<FilterAiLogsDto> = {},
   ): Promise<Record<string, unknown>> {
-    const match = this.buildMatchFilters(filters);
+    const match = await this.buildMatchFilters(filters);
 
     const [summaryList, usageByFeature, topUsers, uniqueUsers] =
       await Promise.all([
@@ -180,7 +183,7 @@ export class AiMonitoringService {
     const page = this.normalizePage(pagination.page ?? filters.page);
     const limit = this.normalizeLimit(pagination.limit ?? filters.limit);
     const skip = (page - 1) * limit;
-    const match = this.buildMatchFilters(filters);
+    const match = await this.buildMatchFilters(filters);
 
     const [logs, total] = await Promise.all([
       this.aiLogModel
@@ -221,7 +224,7 @@ export class AiMonitoringService {
   async getUsageByFeature(
     filters: Partial<FilterAiLogsDto> = {},
   ): Promise<AiUsageByFeatureItem[]> {
-    const match = this.buildMatchFilters(filters);
+    const match = await this.buildMatchFilters(filters);
 
     const usage = await this.aiLogModel
       .aggregate([
@@ -279,7 +282,7 @@ export class AiMonitoringService {
     filters: Partial<FilterAiLogsDto> = {},
     limit = 50,
   ): Promise<AiUsageByUserItem[]> {
-    const match = this.buildMatchFilters(filters);
+    const match = await this.buildMatchFilters(filters);
     const safeLimit = Math.min(200, Math.max(1, Number(limit) || 50));
 
     const usage = await this.aiLogModel
@@ -383,16 +386,52 @@ export class AiMonitoringService {
     });
   }
 
-  private buildMatchFilters(
+  private async buildMatchFilters(
     filters: Partial<FilterAiLogsDto>,
-  ): Record<string, unknown> {
+  ): Promise<Record<string, unknown>> {
     const match: Record<string, unknown> = {};
+    let resolvedUserId: Types.ObjectId | undefined;
 
     if (filters.userId) {
       if (!Types.ObjectId.isValid(filters.userId)) {
         throw new BadRequestException('userId filtre invalide');
       }
-      match.userId = new Types.ObjectId(filters.userId);
+      resolvedUserId = new Types.ObjectId(filters.userId);
+    }
+
+    const userSearch = this.sanitizeText(filters.userSearch, 120);
+    if (userSearch) {
+      const escapedSearch = this.escapeRegex(userSearch);
+      const regex = new RegExp(escapedSearch, 'i');
+
+      const matchingUsers = await this.userModel
+        .find(
+          {
+            $or: [{ fullName: regex }, { email: regex }],
+          },
+          { _id: 1 },
+        )
+        .limit(500)
+        .lean()
+        .exec();
+
+      const matchingIds = matchingUsers
+        .map((user) => {
+          const rawId = user?._id;
+          return rawId ? new Types.ObjectId(String(rawId)) : null;
+        })
+        .filter((item): item is Types.ObjectId => item !== null);
+
+      if (resolvedUserId) {
+        const hasMatchedExplicitUser = matchingIds.some(
+          (item) => item.toString() === resolvedUserId?.toString(),
+        );
+        match.userId = hasMatchedExplicitUser ? resolvedUserId : { $in: [] };
+      } else {
+        match.userId = matchingIds.length > 0 ? { $in: matchingIds } : { $in: [] };
+      }
+    } else if (resolvedUserId) {
+      match.userId = resolvedUserId;
     }
 
     if (filters.featureType) {
@@ -476,6 +515,10 @@ export class AiMonitoringService {
     }
 
     return `${normalized.slice(0, maxLength - 3)}...`;
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private normalizeResponseTime(value: number | undefined): number | undefined {

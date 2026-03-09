@@ -12,7 +12,7 @@ import {
   MinLength,
   Matches,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import type { UserRole } from '../entities/user.entity';
 
 export class UpdateUserDto {
@@ -228,13 +228,35 @@ export class BanUserDto {
 
 export class AdminUsersQueryDto {
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed)) {
+      return value;
+    }
+
+    return Math.max(1, parsed);
+  })
   @IsInt({ message: 'La page doit etre un nombre entier' })
   @Min(1, { message: 'La page doit etre superieure ou egale a 1' })
   page?: number = 1;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed)) {
+      return value;
+    }
+
+    return Math.min(100, Math.max(1, parsed));
+  })
   @IsInt({ message: 'La limite doit etre un nombre entier' })
   @Min(1, { message: 'La limite doit etre superieure ou egale a 1' })
   @Max(100, { message: 'La limite ne peut pas depasser 100' })

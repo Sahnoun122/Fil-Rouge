@@ -64,12 +64,23 @@ const asIso = (value: unknown): string | undefined => {
   return date.toISOString();
 };
 
-const normalizeLimit = (value?: number): number | undefined => {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
+const normalizePositiveInt = (
+  value: unknown,
+  min: number,
+  max: number,
+): number | undefined => {
+  if (typeof value === "undefined" || value === null || value === "") {
     return undefined;
   }
 
-  return Math.min(100, Math.max(1, Math.trunc(value)));
+  const parsed =
+    typeof value === "number" ? value : Number.parseInt(String(value), 10);
+
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
 };
 
 const normalizeFeatureType = (value: unknown): AiFeatureType => {
@@ -166,16 +177,19 @@ const normalizeUsageByUserItem = (value: unknown): AdminAiUsageByUserItem => {
 const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
   const params = new URLSearchParams();
 
-  if (filters.page) params.set("page", String(filters.page));
-  if (filters.limit) {
-    const safeLimit = normalizeLimit(filters.limit);
-    if (safeLimit) {
-      params.set("limit", String(safeLimit));
-    }
+  const safePage = normalizePositiveInt(filters.page, 1, 1000000);
+  if (safePage) {
+    params.set("page", String(safePage));
+  }
+
+  const safeLimit = normalizePositiveInt(filters.limit, 1, 100);
+  if (safeLimit) {
+    params.set("limit", String(safeLimit));
   }
   if (filters.dateFrom?.trim()) params.set("dateFrom", filters.dateFrom.trim());
   if (filters.dateTo?.trim()) params.set("dateTo", filters.dateTo.trim());
   if (filters.userId?.trim()) params.set("userId", filters.userId.trim());
+  if (filters.userSearch?.trim()) params.set("userSearch", filters.userSearch.trim());
   if (filters.featureType) params.set("featureType", filters.featureType);
   if (filters.status) params.set("status", filters.status);
   if (filters.actionType?.trim()) params.set("actionType", filters.actionType.trim());

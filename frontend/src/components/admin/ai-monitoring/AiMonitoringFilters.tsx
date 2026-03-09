@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   AdminAiMonitoringFilters,
-  AdminAiUsageByUserItem,
   AiFeatureType,
   AiLogStatus,
 } from "@/src/types/admin-ai-monitoring.types";
 
 interface AiMonitoringFiltersProps {
   filters: AdminAiMonitoringFilters;
-  users: AdminAiUsageByUserItem[];
   isLoading?: boolean;
   onApply: (nextFilters: AdminAiMonitoringFilters) => void;
   onReset: () => void;
@@ -21,7 +19,7 @@ interface DraftFilters {
   dateTo: string;
   featureType: AiFeatureType | "";
   status: AiLogStatus | "";
-  userId: string;
+  userSearch: string;
 }
 
 const buildDraft = (filters: AdminAiMonitoringFilters): DraftFilters => ({
@@ -29,12 +27,11 @@ const buildDraft = (filters: AdminAiMonitoringFilters): DraftFilters => ({
   dateTo: filters.dateTo ?? "",
   featureType: filters.featureType ?? "",
   status: filters.status ?? "",
-  userId: filters.userId ?? "",
+  userSearch: filters.userSearch ?? "",
 });
 
 export default function AiMonitoringFilters({
   filters,
-  users,
   isLoading = false,
   onApply,
   onReset,
@@ -44,26 +41,6 @@ export default function AiMonitoringFilters({
   useEffect(() => {
     setDraft(buildDraft(filters));
   }, [filters]);
-
-  const userOptions = useMemo(() => {
-    const dedup = new Map<string, string>();
-
-    for (const item of users) {
-      if (!item.userId) {
-        continue;
-      }
-
-      if (dedup.has(item.userId)) {
-        continue;
-      }
-
-      const fullName = item.user?.fullName?.trim() || "Utilisateur";
-      const email = item.user?.email?.trim() || "";
-      dedup.set(item.userId, email ? `${fullName} (${email})` : fullName);
-    }
-
-    return Array.from(dedup.entries()).map(([id, label]) => ({ id, label }));
-  }, [users]);
 
   const updateDraft = <K extends keyof DraftFilters>(key: K, value: DraftFilters[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -77,7 +54,8 @@ export default function AiMonitoringFilters({
       dateTo: draft.dateTo || undefined,
       featureType: draft.featureType || undefined,
       status: draft.status || undefined,
-      userId: draft.userId || undefined,
+      userSearch: draft.userSearch.trim() || undefined,
+      userId: undefined,
     });
   };
 
@@ -87,7 +65,7 @@ export default function AiMonitoringFilters({
       dateTo: "",
       featureType: "",
       status: "",
-      userId: "",
+      userSearch: "",
     });
     onReset();
   };
@@ -144,19 +122,14 @@ export default function AiMonitoringFilters({
         </label>
 
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">User</span>
-          <select
-            value={draft.userId}
-            onChange={(event) => updateDraft("userId", event.target.value)}
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">User search</span>
+          <input
+            type="text"
+            value={draft.userSearch}
+            onChange={(event) => updateDraft("userSearch", event.target.value)}
+            placeholder="Name, surname or email"
             className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
-          >
-            <option value="">All users</option>
-            {userOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          />
         </label>
       </div>
 

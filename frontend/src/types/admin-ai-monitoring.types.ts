@@ -7,6 +7,7 @@ export interface AdminAiMonitoringFilters {
   dateFrom?: string;
   dateTo?: string;
   userId?: string;
+  userSearch?: string;
   featureType?: AiFeatureType;
   status?: AiLogStatus;
   actionType?: string;
