@@ -1,0 +1,288 @@
+import { api } from "@/src/utils/fetcher";
+import type {
+  AdminAiLog,
+  AdminAiLogsResult,
+  AdminAiMonitoringFilters,
+  AdminAiOverview,
+  AdminAiUsageByFeatureItem,
+  AdminAiUsageByUserItem,
+  AiFeatureType,
+  AiLogStatus,
+} from "@/src/types/admin-ai-monitoring.types";
+
+type ApiEnvelope<T> = {
+  success?: boolean;
+  message?: string;
+  data?: T;
+};
+
+type RawLogsData = {
+  logs?: unknown;
+  pagination?: unknown;
+};
+
+const FEATURE_TYPES: AiFeatureType[] = ["strategy", "swot", "content", "planning"];
+const LOG_STATUSES: AiLogStatus[] = ["success", "failed"];
+
+const asRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value === "object" && value !== null) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+};
+
+const asString = (value: unknown, fallback = ""): string => {
+  return typeof value === "string" ? value : fallback;
+};
+
+const asNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+};
+
+const asIso = (value: unknown): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  return date.toISOString();
+};
+
+const normalizeFeatureType = (value: unknown): AiFeatureType => {
+  return FEATURE_TYPES.includes(value as AiFeatureType)
+    ? (value as AiFeatureType)
+    : "content";
+};
+
+const normalizeLogStatus = (value: unknown): AiLogStatus => {
+  return LOG_STATUSES.includes(value as AiLogStatus)
+    ? (value as AiLogStatus)
+    : "failed";
+};
+
+const normalizeUser = (value: unknown): AdminAiLog["user"] => {
+  const source = asRecord(value);
+  const rawId = source.id ?? source._id;
+  const id = typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
+  const fullName = asString(source.fullName);
+  const email = asString(source.email);
+
+  if (!id && !fullName && !email) {
+    return undefined;
+  }
+
+  return {
+    id,
+    fullName: fullName || "Utilisateur inconnu",
+    email: email || "-",
+    companyName: asString(source.companyName) || undefined,
+    role: asString(source.role) || undefined,
+  };
+};
+
+const normalizeLog = (value: unknown): AdminAiLog => {
+  const source = asRecord(value);
+  const rawId = source.id ?? source._id;
+  const id = typeof rawId === "string" ? rawId : asString(rawId?.toString?.(), "");
+
+  const userSource = normalizeUser(source.userId);
+  const userId = userSource?.id || asString(source.userId) || "";
+  const createdAt = asIso(source.createdAt) || new Date().toISOString();
+  const updatedAt = asIso(source.updatedAt) || createdAt;
+
+  return {
+    id,
+    userId,
+    user: userSource,
+    featureType: normalizeFeatureType(source.featureType),
+    actionType: asString(source.actionType, "unknown"),
+    relatedEntityId: asString(source.relatedEntityId) || undefined,
+    status: normalizeLogStatus(source.status),
+    inputSummary: asString(source.inputSummary) || undefined,
+    responseSummary: asString(source.responseSummary) || undefined,
+    modelName: asString(source.modelName) || undefined,
+    responseTimeMs:
+      typeof source.responseTimeMs === "number" ? source.responseTimeMs : undefined,
+    errorMessage: asString(source.errorMessage) || undefined,
+    createdAt,
+    updatedAt,
+  };
+};
+
+const normalizeUsageByFeatureItem = (value: unknown): AdminAiUsageByFeatureItem => {
+  const source = asRecord(value);
+
+  return {
+    featureType: normalizeFeatureType(source.featureType),
+    totalRequests: asNumber(source.totalRequests),
+    successfulRequests: asNumber(source.successfulRequests),
+    failedRequests: asNumber(source.failedRequests),
+    successRate: asNumber(source.successRate),
+    averageResponseTimeMs: asNumber(source.averageResponseTimeMs),
+    lastUsedAt: asIso(source.lastUsedAt),
+  };
+};
+
+const normalizeUsageByUserItem = (value: unknown): AdminAiUsageByUserItem => {
+  const source = asRecord(value);
+  const user = normalizeUser(source.user);
+
+  return {
+    userId: asString(source.userId),
+    user: user ?? {},
+    totalRequests: asNumber(source.totalRequests),
+    successfulRequests: asNumber(source.successfulRequests),
+    failedRequests: asNumber(source.failedRequests),
+    successRate: asNumber(source.successRate),
+    averageResponseTimeMs: asNumber(source.averageResponseTimeMs),
+    lastUsedAt: asIso(source.lastUsedAt),
+  };
+};
+
+const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
+  const params = new URLSearchParams();
+
+  if (filters.page) params.set("page", String(filters.page));
+  if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.dateFrom?.trim()) params.set("dateFrom", filters.dateFrom.trim());
+  if (filters.dateTo?.trim()) params.set("dateTo", filters.dateTo.trim());
+  if (filters.userId?.trim()) params.set("userId", filters.userId.trim());
+  if (filters.featureType) params.set("featureType", filters.featureType);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.actionType?.trim()) params.set("actionType", filters.actionType.trim());
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
+
+export class AdminAiMonitoringService {
+  static async getOverview(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<AdminAiOverview> {
+    const query = buildQuery(filters);
+    const response = (await api.get(
+      `/admin/ai-monitoring/overview${query}`,
+      true,
+    )) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !response.data) {
+      throw new Error(response?.message || "Impossible de recuperer l'overview IA");
+    }
+
+    const source = asRecord(response.data);
+    const usageByFeature = Array.isArray(source.usageByFeature)
+      ? source.usageByFeature.map((item) => normalizeUsageByFeatureItem(item))
+      : [];
+
+    const topUsers = Array.isArray(source.topUsers)
+      ? source.topUsers.map((item) => normalizeUsageByUserItem(item))
+      : [];
+
+    return {
+      totalRequests: asNumber(source.totalRequests),
+      successfulRequests: asNumber(source.successfulRequests),
+      failedRequests: asNumber(source.failedRequests),
+      successRate: asNumber(source.successRate),
+      averageResponseTimeMs: asNumber(source.averageResponseTimeMs),
+      uniqueUsers: asNumber(source.uniqueUsers),
+      latestRequestAt: asIso(source.latestRequestAt),
+      usageByFeature,
+      topUsers,
+    };
+  }
+
+  static async getLogs(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<AdminAiLogsResult> {
+    const query = buildQuery(filters);
+    const response = (await api.get(
+      `/admin/ai-monitoring/logs${query}`,
+      true,
+    )) as ApiEnvelope<RawLogsData>;
+
+    if (!response?.success || !response.data) {
+      throw new Error(response?.message || "Impossible de recuperer les logs IA");
+    }
+
+    const logsValue = response.data.logs;
+    if (!Array.isArray(logsValue)) {
+      throw new Error("Reponse logs IA invalide");
+    }
+
+    const pagination = asRecord(response.data.pagination);
+    const page = asNumber(pagination.page, filters.page ?? 1);
+    const limit = asNumber(pagination.limit, filters.limit ?? 20);
+    const total = asNumber(pagination.total, 0);
+
+    return {
+      logs: logsValue.map((item) => normalizeLog(item)),
+      total,
+      page,
+      limit,
+      totalPages: asNumber(pagination.pages, Math.max(1, Math.ceil(total / Math.max(limit, 1)))),
+    };
+  }
+
+  static async getLogById(logId: string): Promise<AdminAiLog> {
+    const response = (await api.get(
+      `/admin/ai-monitoring/logs/${logId}`,
+      true,
+    )) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !response.data) {
+      throw new Error(response?.message || "Impossible de recuperer ce log IA");
+    }
+
+    return normalizeLog(response.data);
+  }
+
+  static async getUsageByFeature(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<AdminAiUsageByFeatureItem[]> {
+    const query = buildQuery(filters);
+    const response = (await api.get(
+      `/admin/ai-monitoring/usage-by-feature${query}`,
+      true,
+    )) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !Array.isArray(response.data)) {
+      throw new Error(response?.message || "Impossible de recuperer usage by feature");
+    }
+
+    return response.data.map((item) => normalizeUsageByFeatureItem(item));
+  }
+
+  static async getUsageByUser(
+    filters: AdminAiMonitoringFilters = {},
+  ): Promise<AdminAiUsageByUserItem[]> {
+    const query = buildQuery(filters);
+    const response = (await api.get(
+      `/admin/ai-monitoring/usage-by-user${query}`,
+      true,
+    )) as ApiEnvelope<unknown>;
+
+    if (!response?.success || !Array.isArray(response.data)) {
+      throw new Error(response?.message || "Impossible de recuperer usage by user");
+    }
+
+    return response.data.map((item) => normalizeUsageByUserItem(item));
+  }
+}
+
+export default AdminAiMonitoringService;
