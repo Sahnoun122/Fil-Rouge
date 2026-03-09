@@ -169,6 +169,7 @@ export const userNavigation: NavigationItem[] = [
   { name: "My Strategies", href: "/user/strategies", icon: strategiesIcon },
   { name: "Content", href: "/user/content", icon: contentIcon },
   { name: "SWOT", href: "/user/swot", icon: analyticsIcon },
+  { name: "AI Monitoring", href: "/user/ai-monitoring", icon: monitoringIcon },
   { name: "Calendar", href: "/calendar", icon: calendarIcon },
   { name: "Profile", href: "/user/profile", icon: profileIcon },
   { name: "Settings", href: "/user/settings", icon: settingsIcon },
