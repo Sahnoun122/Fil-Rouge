@@ -112,6 +112,14 @@ const toIso = (value: unknown, fallback?: string): string => {
   return date.toISOString();
 };
 
+const normalizeLimit = (value?: number): number | undefined => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+
+  return Math.min(100, Math.max(1, Math.trunc(value)));
+};
+
 const normalizeAdminUser = (payload: unknown): AdminUser => {
   const source = asRecord(payload);
 
@@ -487,7 +495,10 @@ const buildUsersQuery = (filters: AdminUsersFilters): string => {
   }
 
   if (filters.limit) {
-    params.set("limit", String(filters.limit));
+    const safeLimit = normalizeLimit(filters.limit);
+    if (safeLimit) {
+      params.set("limit", String(safeLimit));
+    }
   }
 
   if (filters.search?.trim()) {
@@ -510,7 +521,10 @@ const buildStrategiesQuery = (filters: AdminStrategiesFilters): string => {
   }
 
   if (filters.limit) {
-    params.set("limit", String(filters.limit));
+    const safeLimit = normalizeLimit(filters.limit);
+    if (safeLimit) {
+      params.set("limit", String(safeLimit));
+    }
   }
 
   if (filters.search?.trim()) {
@@ -529,7 +543,10 @@ const buildSwotsQuery = (filters: AdminSwotFilters): string => {
   }
 
   if (filters.limit) {
-    params.set("limit", String(filters.limit));
+    const safeLimit = normalizeLimit(filters.limit);
+    if (safeLimit) {
+      params.set("limit", String(safeLimit));
+    }
   }
 
   if (filters.search?.trim()) {
@@ -548,7 +565,10 @@ const buildContentsQuery = (filters: AdminContentsFilters): string => {
   }
 
   if (filters.limit) {
-    params.set("limit", String(filters.limit));
+    const safeLimit = normalizeLimit(filters.limit);
+    if (safeLimit) {
+      params.set("limit", String(safeLimit));
+    }
   }
 
   if (filters.search?.trim()) {
@@ -578,7 +598,10 @@ const buildUserCalendarQuery = (filters: AdminUserCalendarFilters): string => {
   }
 
   if (filters.limit) {
-    params.set("limit", String(filters.limit));
+    const safeLimit = normalizeLimit(filters.limit);
+    if (safeLimit) {
+      params.set("limit", String(safeLimit));
+    }
   }
 
   return `?${params.toString()}`;

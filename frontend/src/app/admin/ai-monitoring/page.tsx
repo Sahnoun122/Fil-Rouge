@@ -246,7 +246,7 @@ export default function AdminAiMonitoringPage() {
   const loadAllUsers = useCallback(async () => {
     try {
       const users = await AdminAiMonitoringService.getUsageByUser({
-        limit: 200,
+        limit: 100,
       });
       setAllUsers(users);
     } catch {
@@ -271,7 +271,7 @@ export default function AdminAiMonitoringPage() {
           AdminAiMonitoringService.getLogs({
             ...nextFilters,
             page: 1,
-            limit: 200,
+            limit: 100,
           }),
         ]);
 

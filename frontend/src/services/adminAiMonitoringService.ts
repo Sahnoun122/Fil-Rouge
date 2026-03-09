@@ -64,6 +64,14 @@ const asIso = (value: unknown): string | undefined => {
   return date.toISOString();
 };
 
+const normalizeLimit = (value?: number): number | undefined => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+
+  return Math.min(100, Math.max(1, Math.trunc(value)));
+};
+
 const normalizeFeatureType = (value: unknown): AiFeatureType => {
   return FEATURE_TYPES.includes(value as AiFeatureType)
     ? (value as AiFeatureType)
@@ -159,7 +167,12 @@ const buildQuery = (filters: AdminAiMonitoringFilters = {}): string => {
   const params = new URLSearchParams();
 
   if (filters.page) params.set("page", String(filters.page));
-  if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.limit) {
+    const safeLimit = normalizeLimit(filters.limit);
+    if (safeLimit) {
+      params.set("limit", String(safeLimit));
+    }
+  }
   if (filters.dateFrom?.trim()) params.set("dateFrom", filters.dateFrom.trim());
   if (filters.dateTo?.trim()) params.set("dateTo", filters.dateTo.trim());
   if (filters.userId?.trim()) params.set("userId", filters.userId.trim());

@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
       const [statsResult, usersResult, strategiesResult, campaignsResult, swotsResult] =
         await Promise.allSettled([
           AdminService.getStats(),
-          AdminService.getUsers({ page: 1, limit: 120 }),
+          AdminService.getUsers({ page: 1, limit: 100 }),
           AdminService.getStrategies({ page: 1, limit: 1 }),
           AdminService.getContents({ page: 1, limit: 1 }),
           AdminService.getSwots({ page: 1, limit: 1 }),
