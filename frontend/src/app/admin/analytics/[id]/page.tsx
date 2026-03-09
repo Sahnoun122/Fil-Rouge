@@ -1,7 +1,14 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import AdminSwotAnalyticsDetailPage from '@/src/app/admin/swot-analytics/[id]/page';
+type AdminAnalyticsDetailAliasPageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
-export default function AdminAnalyticsDetailAliasPage() {
-  return <AdminSwotAnalyticsDetailPage />;
+export default async function AdminAnalyticsDetailAliasPage(
+  props: AdminAnalyticsDetailAliasPageProps,
+) {
+  const params = await props.params;
+  redirect(`/admin/swot-analytics/${params.id}`);
 }

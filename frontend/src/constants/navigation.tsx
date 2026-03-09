@@ -185,7 +185,6 @@ export const adminNavigation: NavigationItem[] = [
     href: "/admin/swot-analytics",
     icon: analyticsIcon,
   },
-  { name: "Analytics", href: "/admin/analytics", icon: analyticsIcon },
   { name: "AI Monitoring", href: "/admin/ai-monitoring", icon: monitoringIcon },
   { name: "Settings", href: "/admin/settings", icon: settingsIcon },
 ];

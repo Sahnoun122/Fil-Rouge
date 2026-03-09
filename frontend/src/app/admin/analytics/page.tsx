@@ -1,7 +1,5 @@
-'use client';
-
-import AdminSwotAnalyticsPage from '@/src/app/admin/swot-analytics/page';
+import { redirect } from 'next/navigation';
 
 export default function AdminAnalyticsAliasPage() {
-  return <AdminSwotAnalyticsPage />;
+  redirect('/admin/swot-analytics');
 }
