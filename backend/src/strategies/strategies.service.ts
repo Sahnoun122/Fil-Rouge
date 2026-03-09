@@ -26,6 +26,8 @@ import {
   buildImproveSectionPrompt,
 } from '../ai/prompts/strategy.prompts';
 import { User, UserDocument } from '../users/entities/user.entity';
+import { AiMonitoringService } from '../ai-monitoring/ai-monitoring.service';
+import { AiFeatureType } from '../ai-monitoring/schemas/ai-log.schema';
 
 type StrategyPhaseKey = 'avant' | 'pendant' | 'apres';
 
@@ -68,6 +70,7 @@ export class StrategiesService {
     @InjectModel(Strategy.name) private strategyModel: Model<StrategyDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private aiService: AiService,
+    private readonly aiMonitoringService: AiMonitoringService,
   ) {}
 
   /**
@@ -78,10 +81,8 @@ export class StrategiesService {
     dto: GenerateStrategyDto,
   ): Promise<StrategyDocument> {
     try {
-      // Vérification du plan FREE : maximum 3 stratégies
       await this.checkFreePlanLimit(userId);
 
-      // Construction des informations business depuis le DTO
       const businessInfo = {
         businessName: dto.businessName,
         industry: dto.industry,
@@ -94,70 +95,54 @@ export class StrategiesService {
         language: dto.language,
       };
 
-      // Construction du prompt pour l'IA
       const businessInfoForPrompt = {
         companyName: dto.businessName,
         industry: dto.industry,
         targetAudience: dto.targetAudience,
         products: dto.productOrService,
         objectives: this.getObjectiveDescription(dto.mainObjective),
-        budget: dto.budget ? `${dto.budget}€` : 'Budget non spécifié',
-        timeline: 'À définir selon les besoins',
+        budget: dto.budget ? `${dto.budget}€` : 'Budget non specifie',
+        timeline: 'A definir selon les besoins',
         language: dto.language,
       };
 
       const prompt = buildFullStrategyPrompt(businessInfoForPrompt);
 
-      // Appel à l'IA avec parsing JSON automatique
-      const generatedStrategy =
-        await this.aiService.callNemotronAndParseJson(prompt);
+      const strategyForMongo = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'strategy',
+        actionType: 'generate_full_strategy',
+        inputSummary: prompt,
+        execute: async () => {
+          const aiResponse = await this.aiService.callNemotronAndParseJson(
+            prompt,
+          );
 
-      // Debug: Log de la réponse IA pour diagnostic
-      console.log(
-        '🤖 AI Response Structure:',
-        JSON.stringify(generatedStrategy, null, 2),
-      );
+          if (!aiResponse || !aiResponse.avant || !aiResponse.pendant || !aiResponse.apres) {
+            throw new InternalServerErrorException('Format de reponse IA invalide');
+          }
 
-      // Validation de la structure de réponse
-      if (
-        !generatedStrategy ||
-        !generatedStrategy.avant ||
-        !generatedStrategy.pendant ||
-        !generatedStrategy.apres
-      ) {
-        console.error('❌ Structure IA invalide:', {
-          hasAvant: !!generatedStrategy?.avant,
-          hasPendant: !!generatedStrategy?.pendant,
-          hasApres: !!generatedStrategy?.apres,
-          actualStructure: Object.keys(generatedStrategy || {}),
-        });
-        throw new InternalServerErrorException('Format de réponse IA invalide');
-      }
+          return this.transformAiResponseToMongoFormat(aiResponse);
+        },
+      });
 
-      // Transformation de la réponse IA vers le format MongoDB
-      const strategyForMongo =
-        this.transformAiResponseToMongoFormat(generatedStrategy);
-
-      // Sauvegarde en base de données
       const strategyDocument = new this.strategyModel({
         userId: new Types.ObjectId(userId),
         businessInfo,
         generatedStrategy: strategyForMongo,
       });
 
-      const savedStrategy = await strategyDocument.save();
-      return savedStrategy;
+      return await strategyDocument.save();
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
       }
 
       throw new InternalServerErrorException(
-        `Erreur lors de la génération de la stratégie: ${error.message}`,
+        `Erreur lors de la generation de la strategie: ${error.message}`,
       );
     }
   }
-
   /**
    * Récupère toutes les stratégies d'un utilisateur avec pagination
    */
@@ -734,8 +719,20 @@ export class StrategiesService {
       );
 
       // Appel à l'IA avec parsing JSON automatique
-      const newSectionData =
-        await this.aiService.callNemotronAndParseJson(prompt);
+      const newSectionData = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'strategy',
+        actionType: 'regenerate_section',
+        relatedEntityId: strategyId,
+        inputSummary: {
+          sectionKey: dto.sectionKey,
+          instruction:
+            dto.instruction ||
+            'Regenerate this section with fresh and actionable content',
+          prompt,
+        },
+        execute: () => this.aiService.callNemotronAndParseJson(prompt),
+      });
 
       // Mettre à jour la section dans la stratégie
       const updatedStrategy = strategy.toObject();
@@ -821,8 +818,20 @@ export class StrategiesService {
       );
 
       // Appel à l'IA avec parsing JSON automatique
-      const improvedSectionData =
-        await this.aiService.callNemotronAndParseJson(prompt);
+      const improvedSectionData = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'strategy',
+        actionType: 'improve_section',
+        relatedEntityId: strategyId,
+        inputSummary: {
+          sectionKey: dto.sectionKey,
+          instruction:
+            dto.instruction ||
+            'Improve this section with more precision and actionability',
+          prompt,
+        },
+        execute: () => this.aiService.callNemotronAndParseJson(prompt),
+      });
 
       // Mettre à jour la section dans la stratégie
       const updatedStrategy = strategy.toObject();
@@ -1004,5 +1013,87 @@ export class StrategiesService {
     const suffix = new Date().toISOString().slice(0, 10);
     const companyPart = normalized || 'strategie-marketing';
     return `${companyPart}-${suffix}.pdf`;
+  }
+
+  private async executeAiCallWithMonitoring<T>(params: {
+    userId: string;
+    featureType: AiFeatureType;
+    actionType: string;
+    relatedEntityId?: string;
+    inputSummary?: unknown;
+    execute: () => Promise<T>;
+  }): Promise<T> {
+    const startedAt = Date.now();
+
+    try {
+      const result = await params.execute();
+
+      await this.aiMonitoringService.createLog({
+        userId: params.userId,
+        featureType: params.featureType,
+        actionType: params.actionType,
+        relatedEntityId: params.relatedEntityId,
+        status: 'success',
+        inputSummary: this.buildLogSummary(params.inputSummary),
+        responseSummary: this.buildLogSummary(result),
+        modelName: this.aiService.getModelName(),
+        responseTimeMs: Date.now() - startedAt,
+      });
+
+      return result;
+    } catch (error) {
+      await this.aiMonitoringService.createLog({
+        userId: params.userId,
+        featureType: params.featureType,
+        actionType: params.actionType,
+        relatedEntityId: params.relatedEntityId,
+        status: 'failed',
+        inputSummary: this.buildLogSummary(params.inputSummary),
+        modelName: this.aiService.getModelName(),
+        responseTimeMs: Date.now() - startedAt,
+        errorMessage: this.extractErrorMessage(error),
+      });
+
+      throw error;
+    }
+  }
+
+  private buildLogSummary(payload: unknown, maxLength = 1200): string | undefined {
+    if (payload === null || payload === undefined) {
+      return undefined;
+    }
+
+    if (typeof payload === 'string') {
+      const text = this.truncate(payload, maxLength);
+      return text || undefined;
+    }
+
+    try {
+      const text = this.truncate(JSON.stringify(payload), maxLength);
+      return text || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private truncate(value: string, maxLength: number): string {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, maxLength - 3)}...`;
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return this.truncate(error.message, 1200);
+    }
+
+    return this.truncate(String(error), 1200);
   }
 }

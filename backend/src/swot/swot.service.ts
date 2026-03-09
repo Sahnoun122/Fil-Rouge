@@ -7,6 +7,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AiService } from '../ai/ai.service';
+import { AiMonitoringService } from '../ai-monitoring/ai-monitoring.service';
+import { AiFeatureType } from '../ai-monitoring/schemas/ai-log.schema';
 import {
   buildImproveSwotPrompt,
   buildSwotFromStrategyPrompt,
@@ -85,6 +87,7 @@ export class SwotService {
     private readonly strategyModel: Model<StrategyDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly aiService: AiService,
+    private readonly aiMonitoringService: AiMonitoringService,
   ) {}
 
   async createManual(
@@ -131,8 +134,21 @@ export class SwotService {
       businessInfo,
       inputs as unknown as Record<string, unknown>,
     );
-    const aiResult = await this.aiService.callNemotronAndParseJson(prompt);
-    const validatedSwot = this.validateSwotPayload(aiResult, true);
+    const validatedSwot = await this.executeAiCallWithMonitoring({
+      userId,
+      featureType: 'swot',
+      actionType: 'generate_swot_from_strategy',
+      relatedEntityId: dto.strategyId,
+      inputSummary: {
+        strategyId: dto.strategyId,
+        inputs,
+        prompt,
+      },
+      execute: async () => {
+        const aiResult = await this.aiService.callNemotronAndParseJson(prompt);
+        return this.validateSwotPayload(aiResult, true);
+      },
+    });
 
     const swotDocument = new this.swotModel({
       userId: this.toObjectId(userId, 'userId'),
@@ -164,8 +180,21 @@ export class SwotService {
       dto.instruction ?? '',
     );
 
-    const aiResult = await this.aiService.callNemotronAndParseJson(prompt);
-    const validatedSwot = this.validateSwotPayload(aiResult, true);
+    const validatedSwot = await this.executeAiCallWithMonitoring({
+      userId,
+      featureType: 'swot',
+      actionType: 'improve_swot',
+      relatedEntityId: swotId,
+      inputSummary: {
+        swotId,
+        instruction: dto.instruction ?? '',
+        prompt,
+      },
+      execute: async () => {
+        const aiResult = await this.aiService.callNemotronAndParseJson(prompt);
+        return this.validateSwotPayload(aiResult, true);
+      },
+    });
 
     swotDocument.swot = validatedSwot;
     swotDocument.isAiGenerated = true;
@@ -622,6 +651,88 @@ export class SwotService {
       .map((item) => item.trim())
       .filter((item) => item.length > 0)
       .slice(0, maxItems);
+  }
+
+  private async executeAiCallWithMonitoring<T>(params: {
+    userId: string;
+    featureType: AiFeatureType;
+    actionType: string;
+    relatedEntityId?: string;
+    inputSummary?: unknown;
+    execute: () => Promise<T>;
+  }): Promise<T> {
+    const startedAt = Date.now();
+
+    try {
+      const result = await params.execute();
+
+      await this.aiMonitoringService.createLog({
+        userId: params.userId,
+        featureType: params.featureType,
+        actionType: params.actionType,
+        relatedEntityId: params.relatedEntityId,
+        status: 'success',
+        inputSummary: this.buildLogSummary(params.inputSummary),
+        responseSummary: this.buildLogSummary(result),
+        modelName: this.aiService.getModelName(),
+        responseTimeMs: Date.now() - startedAt,
+      });
+
+      return result;
+    } catch (error) {
+      await this.aiMonitoringService.createLog({
+        userId: params.userId,
+        featureType: params.featureType,
+        actionType: params.actionType,
+        relatedEntityId: params.relatedEntityId,
+        status: 'failed',
+        inputSummary: this.buildLogSummary(params.inputSummary),
+        modelName: this.aiService.getModelName(),
+        responseTimeMs: Date.now() - startedAt,
+        errorMessage: this.extractErrorMessage(error),
+      });
+
+      throw error;
+    }
+  }
+
+  private buildLogSummary(payload: unknown, maxLength = 1200): string | undefined {
+    if (payload === null || payload === undefined) {
+      return undefined;
+    }
+
+    if (typeof payload === 'string') {
+      const text = this.truncate(payload, maxLength);
+      return text || undefined;
+    }
+
+    try {
+      const text = this.truncate(JSON.stringify(payload), maxLength);
+      return text || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private truncate(value: string, maxLength: number): string {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, maxLength - 3)}...`;
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return this.truncate(error.message, 1200);
+    }
+
+    return this.truncate(String(error), 1200);
   }
 
   private buildPdfFileName(title: string): string {

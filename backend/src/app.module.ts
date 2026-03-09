@@ -17,6 +17,7 @@ import { SwotModule } from './swot/swot.module';
 import { ContentModule } from './content/content.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AiMonitoringModule } from './ai-monitoring/ai-monitoring.module';
 
 // Guards globaux
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -58,6 +59,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ContentModule,
     CalendarModule,
     NotificationsModule,
+    AiMonitoringModule,
   ],
 
   controllers: [AppController, HealthController],

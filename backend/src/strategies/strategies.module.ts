@@ -5,6 +5,7 @@ import { StrategiesController } from './strategies.controller';
 import { Strategy, StrategySchema } from './schemas/strategy.schema';
 import { AiModule } from '../ai/ai.module';
 import { User, UserSchema } from '../users/entities/user.entity';
+import { AiMonitoringModule } from '../ai-monitoring/ai-monitoring.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { User, UserSchema } from '../users/entities/user.entity';
       { name: User.name, schema: UserSchema },
     ]),
     AiModule,
+    AiMonitoringModule,
   ],
   controllers: [StrategiesController],
   providers: [StrategiesService],

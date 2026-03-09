@@ -9,6 +9,7 @@ import { User, UserSchema } from '../users/entities/user.entity';
 import { SwotController } from './swot.controller';
 import { Swot, SwotSchema } from './schemas/swot.schema';
 import { SwotService } from './swot.service';
+import { AiMonitoringModule } from '../ai-monitoring/ai-monitoring.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SwotService } from './swot.service';
       { name: User.name, schema: UserSchema },
     ]),
     AiModule,
+    AiMonitoringModule,
   ],
   controllers: [SwotController],
   providers: [SwotService],

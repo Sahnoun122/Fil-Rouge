@@ -9,6 +9,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AiService } from '../ai/ai.service';
+import { AiMonitoringService } from '../ai-monitoring/ai-monitoring.service';
+import { AiFeatureType } from '../ai-monitoring/schemas/ai-log.schema';
 import { CalendarService } from '../calendar/calendar.service';
 import {
   buildAutoScheduleAdvicePrompt,
@@ -71,6 +73,7 @@ export class ContentService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly aiService: AiService,
+    private readonly aiMonitoringService: AiMonitoringService,
     private readonly autoSchedulerService: AutoSchedulerService,
     private readonly calendarService: CalendarService,
   ) {}
@@ -151,22 +154,42 @@ export class ContentService {
         instruction,
       );
 
-      const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const generatedPosts = this.normalizeGeneratedPosts(
-        aiResponse,
-        generationPlatforms,
-        {
-          requireAllPlatforms: true,
+      const generationResult = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'content',
+        actionType: 'generate_campaign_content',
+        relatedEntityId: campaignId,
+        inputSummary: {
+          campaignId,
+          mode: campaign.mode,
+          platforms: generationPlatforms,
+          instruction,
+          prompt,
         },
-      );
-      const campaignSummary = this.normalizeCampaignSummary(
-        aiResponse,
-        (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
-      );
+        execute: async () => {
+          const aiResponse = await this.aiService.callNemotronAndParseJson(
+            prompt,
+          );
+
+          return {
+            generatedPosts: this.normalizeGeneratedPosts(
+              aiResponse,
+              generationPlatforms,
+              {
+                requireAllPlatforms: true,
+              },
+            ),
+            campaignSummary: this.normalizeCampaignSummary(
+              aiResponse,
+              (campaign.inputs ?? {}) as unknown as Record<string, unknown>,
+            ),
+          };
+        },
+      });
 
       campaign.platforms = generationPlatforms;
-      campaign.generatedPosts = generatedPosts;
-      campaign.campaignSummary = campaignSummary;
+      campaign.generatedPosts = generationResult.generatedPosts;
+      campaign.campaignSummary = generationResult.campaignSummary;
       const savedCampaign = await campaign.save();
 
       this.logger.log(
@@ -366,15 +389,29 @@ export class ContentService {
         instruction,
       );
 
-      const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const regeneratedPlatformPosts = this.normalizeGeneratedPosts(
-        aiResponse,
-        generationPlatforms,
-        {
-          forcedPlatform: resolvedPlatform,
-          requireAllPlatforms: true,
+      const regeneratedPlatformPosts = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'content',
+        actionType: 'regenerate_platform_content',
+        relatedEntityId: campaignId,
+        inputSummary: {
+          campaignId,
+          platform: resolvedPlatform,
+          mode: campaign.mode,
+          instruction,
+          prompt,
         },
-      );
+        execute: async () => {
+          const aiResponse = await this.aiService.callNemotronAndParseJson(
+            prompt,
+          );
+
+          return this.normalizeGeneratedPosts(aiResponse, generationPlatforms, {
+            forcedPlatform: resolvedPlatform,
+            requireAllPlatforms: true,
+          });
+        },
+      });
 
       const untouchedPosts = campaign.generatedPosts.filter(
         (post) =>
@@ -447,12 +484,30 @@ export class ContentService {
         instruction,
       );
 
-      const aiResponse = await this.aiService.callNemotronAndParseJson(prompt);
-      const regeneratedPost = this.normalizeSinglePost(
-        aiResponse,
-        singlePostPlatforms,
-        forcedPlatform,
-      );
+      const regeneratedPost = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'content',
+        actionType: 'regenerate_single_post',
+        relatedEntityId: campaignId,
+        inputSummary: {
+          campaignId,
+          postIndex: targetIndex,
+          platform: forcedPlatform,
+          instruction,
+          prompt,
+        },
+        execute: async () => {
+          const aiResponse = await this.aiService.callNemotronAndParseJson(
+            prompt,
+          );
+
+          return this.normalizeSinglePost(
+            aiResponse,
+            singlePostPlatforms,
+            forcedPlatform,
+          );
+        },
+      });
 
       const previousPostId = (
         existingPost as unknown as { _id?: Types.ObjectId }
@@ -532,6 +587,8 @@ export class ContentService {
       ...campaign.generatedPosts.map((post) => post.platform),
     ]);
     const autoScheduleAdvice = await this.getAutoScheduleAdvice(
+      userId,
+      campaignId,
       strategy.businessInfo as unknown as Record<string, unknown>,
       strategy.generatedStrategy as unknown as Record<string, unknown>,
       campaign.campaignSummary?.contentPillars ??
@@ -1275,6 +1332,8 @@ export class ContentService {
   }
 
   private async getAutoScheduleAdvice(
+    userId: string,
+    campaignId: string,
     businessInfo: Record<string, unknown>,
     strategyJson: Record<string, unknown>,
     contentPillars: string[],
@@ -1293,8 +1352,28 @@ export class ContentService {
         startDate,
         endDate,
       );
-      const advice = await this.aiService.callNemotronAndParseJson(prompt);
-      return this.normalizeAutoScheduleAdvice(advice);
+      const advice = await this.executeAiCallWithMonitoring({
+        userId,
+        featureType: 'planning',
+        actionType: 'auto_schedule_advice',
+        relatedEntityId: campaignId,
+        inputSummary: {
+          campaignId,
+          contentPillars,
+          platforms,
+          frequencyPerWeek,
+          startDate,
+          endDate,
+          prompt,
+        },
+        execute: async () => {
+          const aiResponse = await this.aiService.callNemotronAndParseJson(
+            prompt,
+          );
+          return this.normalizeAutoScheduleAdvice(aiResponse);
+        },
+      });
+      return advice;
     } catch (error) {
       this.logger.warn(
         `Auto-schedule advice fallback to local heuristics: ${error instanceof Error ? error.message : 'unknown error'}`,
@@ -1526,6 +1605,88 @@ export class ContentService {
 
   private escapeRegex(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private async executeAiCallWithMonitoring<T>(params: {
+    userId: string;
+    featureType: AiFeatureType;
+    actionType: string;
+    relatedEntityId?: string;
+    inputSummary?: unknown;
+    execute: () => Promise<T>;
+  }): Promise<T> {
+    const startedAt = Date.now();
+
+    try {
+      const result = await params.execute();
+
+      await this.aiMonitoringService.createLog({
+        userId: params.userId,
+        featureType: params.featureType,
+        actionType: params.actionType,
+        relatedEntityId: params.relatedEntityId,
+        status: 'success',
+        inputSummary: this.buildLogSummary(params.inputSummary),
+        responseSummary: this.buildLogSummary(result),
+        modelName: this.aiService.getModelName(),
+        responseTimeMs: Date.now() - startedAt,
+      });
+
+      return result;
+    } catch (error) {
+      await this.aiMonitoringService.createLog({
+        userId: params.userId,
+        featureType: params.featureType,
+        actionType: params.actionType,
+        relatedEntityId: params.relatedEntityId,
+        status: 'failed',
+        inputSummary: this.buildLogSummary(params.inputSummary),
+        modelName: this.aiService.getModelName(),
+        responseTimeMs: Date.now() - startedAt,
+        errorMessage: this.extractErrorMessage(error),
+      });
+
+      throw error;
+    }
+  }
+
+  private buildLogSummary(payload: unknown, maxLength = 1200): string | undefined {
+    if (payload === null || payload === undefined) {
+      return undefined;
+    }
+
+    if (typeof payload === 'string') {
+      const text = this.truncate(payload, maxLength);
+      return text || undefined;
+    }
+
+    try {
+      const text = this.truncate(JSON.stringify(payload), maxLength);
+      return text || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private truncate(value: string, maxLength: number): string {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, maxLength - 3)}...`;
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return this.truncate(error.message, 1200);
+    }
+
+    return this.truncate(String(error), 1200);
   }
 
   private wrapUnexpectedError(error: unknown, message: string): Error {

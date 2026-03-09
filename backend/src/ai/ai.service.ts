@@ -42,6 +42,10 @@ export class AiService {
     }
   }
 
+  getModelName(): string {
+    return this.model;
+  }
+
   /**
    * Calls OpenRouter API (nvidia/nemotron-3-nano-30b-a3b:free) and returns the response text
    */

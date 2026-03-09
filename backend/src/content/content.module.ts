@@ -14,6 +14,7 @@ import {
   ContentCampaignSchema,
 } from './schemas/content-campaign.schema';
 import { AutoSchedulerService } from './auto-scheduler.service';
+import { AiMonitoringModule } from '../ai-monitoring/ai-monitoring.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AutoSchedulerService } from './auto-scheduler.service';
     ]),
     AiModule,
     CalendarModule,
+    AiMonitoringModule,
   ],
   controllers: [ContentController],
   providers: [ContentService, AutoSchedulerService],
