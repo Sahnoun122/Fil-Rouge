@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AiMonitoringController } from './ai-monitoring.controller';
+import { AiMonitoringUserController } from './ai-monitoring-user.controller';
 import { AiMonitoringService } from './ai-monitoring.service';
 import { AiLog, AiLogSchema } from './schemas/ai-log.schema';
 import { User, UserSchema } from '../users/entities/user.entity';
@@ -12,7 +13,7 @@ import { User, UserSchema } from '../users/entities/user.entity';
       { name: User.name, schema: UserSchema },
     ]),
   ],
-  controllers: [AiMonitoringController],
+  controllers: [AiMonitoringController, AiMonitoringUserController],
   providers: [AiMonitoringService],
   exports: [AiMonitoringService],
 })

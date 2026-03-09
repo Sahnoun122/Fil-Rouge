@@ -67,6 +67,14 @@ export interface AiUsageByUserItem {
   lastUsedAt: Date | null;
 }
 
+export interface AiUsageOverTimeItem {
+  date: string;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTimeMs: number;
+}
+
 type CsvCellValue = string | number | boolean | null | undefined;
 
 @Injectable()
@@ -224,6 +232,30 @@ export class AiMonitoringService {
     return log;
   }
 
+  async getLogByIdForUser(id: string, userId: string): Promise<AiLogDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Id de log IA invalide');
+    }
+
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Utilisateur authentifie invalide');
+    }
+
+    const log = await this.aiLogModel
+      .findOne({
+        _id: new Types.ObjectId(id),
+        userId: new Types.ObjectId(userId),
+      })
+      .populate('userId', 'fullName email companyName role')
+      .exec();
+
+    if (!log) {
+      throw new NotFoundException('Log IA introuvable');
+    }
+
+    return log;
+  }
+
   async getUsageByFeature(
     filters: Partial<FilterAiLogsDto> = {},
   ): Promise<AiUsageByFeatureItem[]> {
@@ -289,6 +321,53 @@ export class AiMonitoringService {
     const safeLimit = Math.min(200, Math.max(1, Number(limit) || 50));
 
     return this.aggregateUsageByUser(match, safeLimit);
+  }
+
+  async getUsageOverTime(
+    filters: Partial<FilterAiLogsDto> = {},
+  ): Promise<AiUsageOverTimeItem[]> {
+    const match = await this.buildMatchFilters(filters);
+
+    const usage = await this.aiLogModel
+      .aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: '%Y-%m-%d',
+                date: '$createdAt',
+              },
+            },
+            totalRequests: { $sum: 1 },
+            successfulRequests: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'success'] }, 1, 0],
+              },
+            },
+            failedRequests: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'failed'] }, 1, 0],
+              },
+            },
+            averageResponseTimeMs: { $avg: '$responseTimeMs' },
+          },
+        },
+        {
+          $sort: {
+            _id: 1,
+          },
+        },
+      ])
+      .exec();
+
+    return usage.map((item) => ({
+      date: String(item._id ?? ''),
+      totalRequests: Number(item.totalRequests ?? 0),
+      successfulRequests: Number(item.successfulRequests ?? 0),
+      failedRequests: Number(item.failedRequests ?? 0),
+      averageResponseTimeMs: Math.round(Number(item.averageResponseTimeMs ?? 0)),
+    }));
   }
 
   async exportLogsCsv(filters: Partial<FilterAiLogsDto> = {}): Promise<string> {
