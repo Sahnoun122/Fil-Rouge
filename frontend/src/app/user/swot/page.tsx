@@ -178,7 +178,7 @@ export default function UserSwotListPage() {
       setDeleteTarget(null);
       toast.success('SWOT deleted successfully');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error deleting SWOT');
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression');
     } finally {
       setIsDeleting(false);
     }
@@ -191,13 +191,26 @@ export default function UserSwotListPage() {
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">SWOT Analytics</p>
             <h1 className="text-3xl font-bold">Mes analyses SWOT</h1>
-            <p className="mt-2 text-sm text-slate-200">
+            <p className="mt-2 text-sm text-slate-300">
               Consultez, recherchez et gérez toutes vos analyses SWOT en un seul endroit.
             </p>
+            {!isLoading && (
+              <div className="mt-4 flex items-center gap-4">
+                <span className="text-sm text-slate-200">
+                  <span className="text-2xl font-bold text-white">{swots.length}</span>
+                  <span className="ml-2">analyse{swots.length > 1 ? 's' : ''}</span>
+                </span>
+                <span className="h-4 w-px bg-white/20" />
+                <span className="text-sm text-slate-200">
+                  <span className="text-xl font-bold text-emerald-300">{swots.filter(s => s.isAiGenerated).length}</span>
+                  <span className="ml-2">généré{swots.filter(s => s.isAiGenerated).length > 1 ? 'es' : 'e'} par IA</span>
+                </span>
+              </div>
+            )}
           </div>
           <Link
             href="/user/swot/new"
-            className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300 active:scale-95"
+            className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm shadow-cyan-300/30 transition hover:bg-cyan-300 active:scale-95"
           >
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle analyse
@@ -235,23 +248,23 @@ export default function UserSwotListPage() {
           <p>{error}</p>
           <button
             onClick={() => void loadSwots()}
-            className="mt-3 rounded-lg border border-rose-300 px-3 py-1.5 font-medium text-rose-700 transition hover:bg-rose-100"
+            className="mt-3 rounded-lg border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
           >
-            Retry
+            Réessayer
           </button>
         </section>
       ) : null}
 
       {isLoading ? (
         <SwotTableSkeleton />
-      ) : filteredAndSortedSwots.length === 0 ? (
+      ) : swots.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-500 to-slate-700 shadow-md">
-            <Search className="h-7 w-7 text-white" />
+            <Plus className="h-7 w-7 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-slate-900">Aucune analyse trouvée</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Aucune analyse SWOT</h2>
           <p className="mt-2 text-sm text-slate-500">
-            Commencez par créer votre première analyse SWOT.
+            Commencez par créer votre première analyse SWOT générée par IA.
           </p>
           <Link
             href="/user/swot/new"
@@ -260,6 +273,13 @@ export default function UserSwotListPage() {
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle analyse
           </Link>
+        </section>
+      ) : filteredAndSortedSwots.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
+            <Search className="h-6 w-6 text-slate-400" />
+          </div>
+          <p className="text-sm text-slate-500">Aucun résultat pour votre recherche.</p>
         </section>
       ) : (
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

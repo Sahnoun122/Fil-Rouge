@@ -34,7 +34,7 @@ function getPlatformClass(platform: string) {
 
 function formatDate(value?: string): string {
   if (!value) return '-';
-  return new Date(value).toLocaleDateString('en-US', {
+  return new Date(value).toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -62,7 +62,7 @@ function CampaignCard({
   onDelete: (id: string) => void;
 }) {
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+    <article className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-violet-200 hover:shadow-md">
       <div className="absolute inset-x-0 top-0 h-0.5 bg-linear-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
 
       <div className="flex items-start justify-between gap-4">
@@ -107,13 +107,13 @@ function CampaignCard({
             <span className="font-semibold text-slate-700">{campaign.generatedPosts.length}</span> posts
           </span>
           <span className="text-slate-200">|</span>
-          <span>Updated {formatDate(campaign.updatedAt)}</span>
+          <span>Mis à jour le {formatDate(campaign.updatedAt)}</span>
         </div>
         <Link
           href={`/user/content/${campaign._id}`}
-          className="rounded-xl bg-linear-to-r from-slate-800 to-slate-900 px-4 py-1.5 text-xs font-semibold text-white transition hover:from-slate-700 hover:to-slate-800"
+          className="rounded-xl bg-linear-to-r from-violet-600 to-purple-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:from-violet-700 hover:to-purple-700 active:scale-95"
         >
-          Open →
+          Ouvrir →
         </Link>
       </div>
     </article>
@@ -147,7 +147,7 @@ export default function ContentCampaignsPage() {
   );
 
   const handleDelete = async (campaignId: string) => {
-    if (!window.confirm('Delete this content campaign?')) return;
+    if (!window.confirm('Supprimer cette campagne de contenu ?')) return;
     await deleteCampaign(campaignId);
   };
 
@@ -163,7 +163,7 @@ export default function ContentCampaignsPage() {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Content</h1>
           </div>
           <p className="mt-2 text-sm text-slate-500">
-            Manage your AI content generation campaigns.
+            Gérez vos campagnes de génération de contenu par IA.
           </p>
         </div>
         <Link
@@ -171,7 +171,7 @@ export default function ContentCampaignsPage() {
           className="inline-flex items-center rounded-xl bg-linear-to-r from-cyan-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-purple-500"
         >
           <Plus className="mr-2 h-4 w-4" />
-          New campaign
+          Nouvelle campagne
         </Link>
       </section>
 
@@ -182,7 +182,7 @@ export default function ContentCampaignsPage() {
             <Layers className="h-5 w-5 text-cyan-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Campaigns</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Campagnes</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">{pagination.total}</p>
           </div>
         </article>
@@ -191,7 +191,7 @@ export default function ContentCampaignsPage() {
             <BarChart3 className="h-5 w-5 text-purple-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Generated posts</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Posts générés</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">{totalPosts}</p>
           </div>
         </article>
@@ -200,7 +200,7 @@ export default function ContentCampaignsPage() {
             <Share2 className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Platforms</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Plateformes</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">
               {new Set(campaigns.flatMap((campaign) => campaign.platforms)).size}
             </p>
@@ -216,16 +216,16 @@ export default function ContentCampaignsPage() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search a campaign..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/20"
+              placeholder="Rechercher une campagne..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
             />
           </label>
           <select
             value={modeFilter}
             onChange={(event) => setModeFilter(event.target.value as 'all' | ContentMode)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
           >
-            <option value="all">All modes</option>
+            <option value="all">Tous les modes</option>
             <option value="ADS">Ads</option>
             <option value="CONTENT_MARKETING">Content marketing</option>
           </select>
@@ -235,7 +235,7 @@ export default function ContentCampaignsPage() {
             className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            Actualiser
           </button>
         </div>
       </section>
@@ -253,16 +253,16 @@ export default function ContentCampaignsPage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-slate-100 to-slate-200">
             <Layers className="h-8 w-8 text-slate-400" />
           </div>
-          <h2 className="mt-5 text-xl font-semibold text-slate-900">No campaigns found</h2>
+          <h2 className="mt-5 text-xl font-semibold text-slate-900">Aucune campagne trouvée</h2>
           <p className="mt-2 text-sm text-slate-500">
-            Create your first Content campaign or adjust your filters.
+            Créez votre première campagne de contenu ou ajustez vos filtres.
           </p>
           <Link
             href="/user/content/new"
             className="mt-6 inline-flex items-center rounded-xl bg-linear-to-r from-cyan-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-purple-500"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create a campaign
+            Créer une campagne
           </Link>
         </section>
       ) : (
@@ -279,11 +279,11 @@ export default function ContentCampaignsPage() {
             <table className="w-full min-w-230">
               <thead>
                 <tr className="border-b border-slate-100 bg-linear-to-r from-slate-50 to-white text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-4">Campaign</th>
+                  <th className="px-5 py-4">Campagne</th>
                   <th className="px-5 py-4">Mode</th>
-                  <th className="px-5 py-4">Platforms</th>
+                  <th className="px-5 py-4">Plateformes</th>
                   <th className="px-5 py-4">Posts</th>
-                  <th className="px-5 py-4">Updated</th>
+                  <th className="px-5 py-4">Mis à jour</th>
                   <th className="px-5 py-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -326,9 +326,9 @@ export default function ContentCampaignsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/user/content/${campaign._id}`}
-                          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+                          className="rounded-lg bg-linear-to-r from-violet-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:from-violet-700 hover:to-purple-700"
                         >
-                          Open
+                          Ouvrir
                         </Link>
                         <button
                           type="button"
@@ -353,9 +353,9 @@ export default function ContentCampaignsPage() {
         <p className="text-sm text-slate-500">
           Page{' '}
           <span className="font-semibold text-slate-700">{pagination.page}</span>
-          {' '}of{' '}
+          {' '}sur{' '}
           <span className="font-semibold text-slate-700">{Math.max(1, pagination.pages)}</span>
-          {' '}— {pagination.total} campaign{pagination.total > 1 ? 's' : ''}
+          {' '}— {pagination.total} campagne{pagination.total > 1 ? 's' : ''}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -364,7 +364,7 @@ export default function ContentCampaignsPage() {
             disabled={pagination.page <= 1 || isLoading}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
           >
-            ← Previous
+            ← Précédent
           </button>
           <button
             type="button"
@@ -372,7 +372,7 @@ export default function ContentCampaignsPage() {
             disabled={pagination.page >= pagination.pages || pagination.pages === 0 || isLoading}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
           >
-            Next →
+            Suivant →
           </button>
         </div>
       </section>
