@@ -45,7 +45,7 @@ const PAGE = 1;
 const LIMIT = 10;
 
 const formatDate = (value: string): string =>
-  new Date(value).toLocaleDateString('en-US', {
+  new Date(value).toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -186,21 +186,21 @@ export default function UserSwotListPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 p-8 text-white shadow-xl">
+      <section className="rounded-3xl border border-slate-200 bg-linear-to-br from-slate-900 via-slate-800 to-cyan-900 p-8 text-white shadow-xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">SWOT Analytics</p>
-            <h1 className="text-3xl font-bold">My SWOT Analyses</h1>
+            <h1 className="text-3xl font-bold">Mes analyses SWOT</h1>
             <p className="mt-2 text-sm text-slate-200">
-              View, search, and manage your SWOT analyses in one place.
+              Consultez, recherchez et gérez toutes vos analyses SWOT en un seul endroit.
             </p>
           </div>
           <Link
             href="/user/swot/new"
-            className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300"
+            className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300 active:scale-95"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create SWOT
+            Nouvelle analyse
           </Link>
         </div>
       </section>
@@ -211,20 +211,20 @@ export default function UserSwotListPage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by title or strategy..."
+            placeholder="Rechercher par titre ou stratégie..."
             className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:bg-white focus:ring-2"
           />
         </label>
         {strategyFilter ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-200">
-              Strategy filter: {strategyNames[strategyFilter] || strategyFilter}
+              Filtre stratégie : {strategyNames[strategyFilter] || strategyFilter}
             </span>
             <Link
               href="/swot"
               className="inline-flex rounded-full border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
             >
-              Remove filter
+              Supprimer le filtre
             </Link>
           </div>
         ) : null}
@@ -245,17 +245,20 @@ export default function UserSwotListPage() {
       {isLoading ? (
         <SwotTableSkeleton />
       ) : filteredAndSortedSwots.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">No SWOT found</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Start by creating your first SWOT analysis.
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-500 to-slate-700 shadow-md">
+            <Search className="h-7 w-7 text-white" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900">Aucune analyse trouvée</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Commencez par créer votre première analyse SWOT.
           </p>
           <Link
             href="/user/swot/new"
-            className="mt-6 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="mt-6 inline-flex items-center rounded-xl bg-linear-to-br from-cyan-500 to-slate-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create SWOT
+            Nouvelle analyse
           </Link>
         </section>
       ) : (
@@ -265,16 +268,16 @@ export default function UserSwotListPage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Title
+                    Titre
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Linked strategy
+                    Stratégie liée
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    IA
+                    Généré par IA
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Created on
+                    Créé le
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                     Actions
@@ -300,7 +303,7 @@ export default function UserSwotListPage() {
                             : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
                         }`}
                       >
-                        {item.isAiGenerated ? 'Yes' : 'No'}
+                        {item.isAiGenerated ? 'Oui' : 'Non'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{formatDate(item.createdAt)}</td>
@@ -308,18 +311,18 @@ export default function UserSwotListPage() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/user/swot/${item._id}`}
-                          className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
                         >
                           <Eye className="mr-1.5 h-3.5 w-3.5" />
-                          View
+                          Voir
                         </Link>
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(item)}
-                          className="inline-flex items-center rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+                          className="inline-flex items-center rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
                         >
                           <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                          Delete
+                          Supprimer
                         </button>
                       </div>
                     </td>
@@ -336,29 +339,29 @@ export default function UserSwotListPage() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-3 flex items-center gap-2 text-rose-700">
               <AlertTriangle className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Confirm deletion</h3>
+              <h3 className="text-lg font-semibold">Confirmer la suppression</h3>
             </div>
             <p className="text-sm text-slate-600">
-              Do you want to delete the SWOT <span className="font-semibold text-slate-900">{deleteTarget.title}</span>?
-              This action is irreversible.
+              Voulez-vous supprimer l’analyse <span className="font-semibold text-slate-900">{deleteTarget.title}</span>?
+              Cette action est irréversible.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={isDeleting}
-                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="inline-flex items-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
               >
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Delete
+                Supprimer
               </button>
             </div>
           </div>

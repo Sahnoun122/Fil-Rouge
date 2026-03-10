@@ -95,9 +95,9 @@ export default function UserProfilePage() {
         persistAuthUser(newUser);
         await checkAuthStatus();
       }
-      setProfileToast({ type: 'success', message: 'Profile updated successfully!' });
+      setProfileToast({ type: 'success', message: 'Profil mis à jour avec succès !' });
     } catch (err: unknown) {
-      setProfileToast({ type: 'error', message: err instanceof Error ? err.message : 'Error updating profile' });
+      setProfileToast({ type: 'error', message: err instanceof Error ? err.message : 'Erreur lors de la mise à jour' });
     } finally {
       setProfileLoading(false);
     }
@@ -107,11 +107,11 @@ export default function UserProfilePage() {
     e.preventDefault();
     setPwToast(null);
     if (passwords.newPassword !== passwords.confirmPassword) {
-      setPwToast({ type: 'error', message: 'Passwords do not match' });
+      setPwToast({ type: 'error', message: 'Les mots de passe ne correspondent pas' });
       return;
     }
     if (passwords.newPassword.length < 8) {
-      setPwToast({ type: 'error', message: 'New password must be at least 8 characters' });
+      setPwToast({ type: 'error', message: 'Le nouveau mot de passe doit faire au moins 8 caractères' });
       return;
     }
     setPwLoading(true);
@@ -121,9 +121,9 @@ export default function UserProfilePage() {
         newPassword: passwords.newPassword,
       });
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setPwToast({ type: 'success', message: 'Password changed successfully!' });
+      setPwToast({ type: 'success', message: 'Mot de passe modifié avec succès !' });
     } catch (err: unknown) {
-      setPwToast({ type: 'error', message: err instanceof Error ? err.message : 'Error changing password' });
+      setPwToast({ type: 'error', message: err instanceof Error ? err.message : 'Erreur lors du changement de mot de passe' });
     } finally {
       setPwLoading(false);
     }
@@ -131,7 +131,7 @@ export default function UserProfilePage() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'DELETE') {
-      setDeleteError('Please type DELETE to confirm');
+      setDeleteError('Veuillez taper DELETE pour confirmer');
       return;
     }
     setDeleteLoading(true);
@@ -142,7 +142,7 @@ export default function UserProfilePage() {
       clearPersistedAuthUser();
       router.replace('/');
     } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : 'Error deleting account');
+      setDeleteError(err instanceof Error ? err.message : 'Erreur lors de la suppression du compte');
       setDeleteLoading(false);
     }
   };
@@ -169,8 +169,8 @@ export default function UserProfilePage() {
       <section className="rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-200/50 p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Personal information</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Update your profile information</p>
+            <h2 className="text-base font-bold text-slate-900">Informations personnelles</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Mettez à jour vos informations de profil</p>
           </div>
           <User className="w-5 h-5 text-violet-400" />
         </div>
@@ -192,7 +192,7 @@ export default function UserProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Full name
+                Nom complet
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -208,7 +208,7 @@ export default function UserProfilePage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Phone
+                Téléphone
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -224,7 +224,7 @@ export default function UserProfilePage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Company
+                Entreprise
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -240,7 +240,7 @@ export default function UserProfilePage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Industry
+                Secteur d'activité
               </label>
               <div className="relative">
                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -249,7 +249,7 @@ export default function UserProfilePage() {
                   onChange={(e) => setProfile((p) => ({ ...p, industry: e.target.value }))}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:bg-white appearance-none"
                 >
-                  <option value="">Select</option>
+                  <option value="">Sélectionner</option>
                   {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
                 </select>
               </div>
@@ -259,7 +259,7 @@ export default function UserProfilePage() {
           {/* Read-only email */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-              Email <span className="normal-case font-normal text-slate-400">(cannot be changed)</span>
+              Email <span className="normal-case font-normal text-slate-400">(non modifiable)</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
@@ -279,7 +279,7 @@ export default function UserProfilePage() {
               className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/25 transition hover:from-violet-700 hover:to-purple-700 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {profileLoading ? 'Saving...' : 'Save'}
+              {profileLoading ? 'Enregistrement...' : 'Enregistrer'}
             </button>
           </div>
         </form>
@@ -289,8 +289,8 @@ export default function UserProfilePage() {
       <section className="rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-200/50 p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Change password</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Use a strong password (8+ characters)</p>
+            <h2 className="text-base font-bold text-slate-900">Modifier le mot de passe</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Utilisez un mot de passe fort (8+ caractères)</p>
           </div>
           <Lock className="w-5 h-5 text-violet-400" />
         </div>
@@ -333,7 +333,7 @@ export default function UserProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                New password
+                Nouveau mot de passe
               </label>
               <div className="relative">
                 <input
@@ -353,7 +353,7 @@ export default function UserProfilePage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Confirm
+                Confirmation
               </label>
               <input
                 type={showNewPw ? 'text' : 'password'}
@@ -377,7 +377,7 @@ export default function UserProfilePage() {
               className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/25 transition hover:from-violet-700 hover:to-purple-700 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-              {pwLoading ? 'Updating...' : 'Update'}
+              {pwLoading ? 'Modification...' : 'Modifier'}
             </button>
           </div>
         </form>
@@ -390,12 +390,12 @@ export default function UserProfilePage() {
             <Trash2 className="w-4 h-4 text-red-500" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Delete my account</h2>
-            <p className="text-xs text-slate-500 mt-0.5">This action is irreversible</p>
+            <h2 className="text-base font-bold text-slate-900">Supprimer mon compte</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Cette action est irréversible</p>
           </div>
         </div>
         <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-          Deleting your account permanently erases all your data: strategies, content, calendar, and history. This action cannot be undone.
+          Supprimer votre compte efface définitivement toutes vos données : stratégies, contenus, calendrier et historique. Cette action ne peut pas être annulée.
         </p>
         <button
           type="button"
@@ -403,7 +403,7 @@ export default function UserProfilePage() {
           className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100 hover:border-red-300"
         >
           <Trash2 className="w-4 h-4" />
-          Delete my account
+          Supprimer mon compte
         </button>
       </section>
 
@@ -417,13 +417,13 @@ export default function UserProfilePage() {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-black text-slate-900">Confirm deletion</h3>
-                <p className="text-xs text-slate-500">Irreversible action</p>
+                <h3 className="font-black text-slate-900">Confirmer la suppression</h3>
+                <p className="text-xs text-slate-500">Action irréversible</p>
               </div>
             </div>
 
             <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-              Type <span className="font-bold text-red-600">DELETE</span> to permanently confirm the deletion of your account.
+              Tapez <span className="font-bold text-red-600">DELETE</span> pour confirmer la suppression définitive de votre compte.
             </p>
 
             <input
@@ -450,7 +450,7 @@ export default function UserProfilePage() {
                 onClick={() => { setDeleteOpen(false); setDeleteConfirm(''); setDeleteError(''); }}
                 className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 type="button"
@@ -459,7 +459,7 @@ export default function UserProfilePage() {
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleteLoading ? 'Deleting...' : 'Delete'}
+                {deleteLoading ? 'Suppression...' : 'Supprimer'}
               </button>
             </div>
           </div>

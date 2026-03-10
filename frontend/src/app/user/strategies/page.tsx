@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStrategiesList } from '../../../hooks/useStrategies';
@@ -25,60 +26,49 @@ import { Strategy, OBJECTIVE_LABELS, TONE_LABELS } from '../../../types/strategy
 import strategiesService from '../../../services/strategiesService';
 import { generateStrategyPdf } from '../../../lib/strategyPdf';
 
-// Composant pour l'état vide
 const EmptyState = () => (
-  <div className="text-center py-16">
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-12 max-w-lg mx-auto">
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-        <Sparkles className="w-10 h-10 text-white" />
+  <div className="py-16 text-center">
+    <div className="mx-auto max-w-md rounded-2xl border border-dashed border-slate-300 bg-white p-12 shadow-sm">
+      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25">
+        <Sparkles className="h-8 w-8 text-white" />
       </div>
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">
-      No strategies yet
-      </h3>
-      <p className="text-gray-600 mb-8 text-lg">
-        Start by creating your first AI-powered personalized marketing strategy
+      <h3 className="text-xl font-bold text-slate-900 mb-2">Aucune stratégie encore</h3>
+      <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+        Commencez en créant votre première stratégie marketing personnalisée par IA.
       </p>
-      <Link href="/user/strategies/new">
-        <button className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-          <Plus className="w-5 h-5 mr-2" />
-          Create my first strategy
-        </button>
+      <Link
+        href="/user/strategies/new"
+        className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-violet-500/25 transition hover:from-violet-700 hover:to-purple-700 hover:-translate-y-0.5"
+      >
+        <Plus className="h-4 w-4" />
+        Créer ma première stratégie
       </Link>
     </div>
   </div>
 );
 
-// Composant pour le squelette de chargement
 const LoadingSkeleton = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
     {[1, 2, 3, 4, 5, 6].map((i) => (
-      <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="animate-pulse">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gray-200 rounded-lg mr-3"></div>
-              <div>
-                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-20"></div>
-              </div>
-            </div>
-            <div className="w-6 h-6 bg-gray-200 rounded"></div>
-          </div>
-          <div className="space-y-3">
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-          </div>
-          <div className="mt-6">
-            <div className="h-10 bg-gray-200 rounded-lg"></div>
+      <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 animate-pulse">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-slate-200 rounded-xl shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-slate-200 rounded w-3/4" />
+            <div className="h-3 bg-slate-100 rounded w-1/2" />
           </div>
         </div>
+        <div className="space-y-2.5 mb-5">
+          <div className="h-3 bg-slate-100 rounded" />
+          <div className="h-3 bg-slate-100 rounded w-4/5" />
+          <div className="h-3 bg-slate-100 rounded w-2/3" />
+        </div>
+        <div className="h-9 bg-slate-200 rounded-xl" />
       </div>
     ))}
   </div>
 );
 
-// Composant pour une carte de stratégie
 interface StrategyCardProps {
   strategy: Strategy;
   onDelete: (id: string) => void;
@@ -102,12 +92,12 @@ const StrategyCard = ({
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this strategy?')) {
+    if (window.confirm('Supprimer cette stratégie ?')) {
       try {
         await onDelete(strategy._id);
-        toast.success('Strategy deleted successfully');
+        toast.success('Stratégie supprimée');
       } catch {
-        toast.error('Error deleting strategy');
+        toast.error('Erreur lors de la suppression');
       }
     }
     setShowMenu(false);
@@ -118,80 +108,81 @@ const StrategyCard = ({
     setShowMenu(false);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
-  };
 
   const formatBudget = (budget?: number) => {
-    if (!budget) return 'Not defined';
-    return new Intl.NumberFormat('en-US', {
+    if (!budget) return 'Non défini';
+    return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
       maximumFractionDigits: 0,
     }).format(budget);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 relative">
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-violet-200 hover:shadow-md hover:-translate-y-0.5">
+      {/* Top accent on hover */}
+      <div className="absolute inset-x-0 top-0 h-0.5 bg-linear-to-r from-violet-500 to-purple-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-10 h-10 rounded-lg flex items-center justify-center">
-            <Building className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-violet-600 to-purple-600 shadow-sm shadow-violet-500/20">
+            <Building className="h-5 w-5 text-white" />
           </div>
-          <div className="ml-3">
-            <h3 className="font-semibold text-gray-900 text-lg truncate">
+          <div className="min-w-0">
+            <h3 className="truncate font-bold text-slate-900 leading-tight">
               {strategy.businessInfo.businessName}
             </h3>
-            <p className="text-sm text-gray-500">
-              {strategy.businessInfo.industry}
-            </p>
+            <p className="truncate text-xs text-slate-500 mt-0.5">{strategy.businessInfo.industry}</p>
           </div>
         </div>
 
-        {/* Menu contextuel */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
             disabled={isDeleting}
+            type="button"
           >
-            <MoreHorizontal className="w-4 h-4 text-gray-500" />
+            <MoreHorizontal className="h-4 w-4" />
           </button>
-          
+
           {showMenu && (
             <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setShowMenu(false)}
-              ></div>
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+              <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 mt-1.5 z-20 w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg shadow-slate-200/80">
                 <button
                   onClick={handleView}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                  type="button"
                 >
-                  <Eye className="w-4 h-4 mr-2" />
-                  View details
+                  <Eye className="h-4 w-4 text-slate-400" />
+                  Voir les détails
                 </button>
                 <button
                   onClick={handleDownload}
                   disabled={isDownloading}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  type="button"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+                  <Download className="h-4 w-4 text-slate-400" />
+                  {isDownloading ? 'Génération PDF...' : 'Télécharger PDF'}
                 </button>
+                <div className="my-1 border-t border-slate-100" />
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                  type="button"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
                 </button>
               </div>
             </>
@@ -199,60 +190,60 @@ const StrategyCard = ({
         </div>
       </div>
 
-      {/* Informations clés */}
-      <div className="space-y-3 mb-6">
-        <div className="flex items-center text-sm text-gray-600">
-          <Users className="w-4 h-4 mr-2 text-gray-400" />
-          <span>{strategy.businessInfo.targetAudience}</span>
+      {/* Info rows */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <Users className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="truncate">{strategy.businessInfo.targetAudience}</span>
         </div>
-        
-        <div className="flex items-center text-sm text-gray-600">
-          <Target className="w-4 h-4 mr-2 text-gray-400" />
-          <span>{OBJECTIVE_LABELS[strategy.businessInfo.mainObjective]}</span>
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <Target className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="truncate">{OBJECTIVE_LABELS[strategy.businessInfo.mainObjective]}</span>
         </div>
-
-        <div className="flex items-center text-sm text-gray-600">
-          <DollarSign className="w-4 h-4 mr-2 text-gray-400" />
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <DollarSign className="h-3.5 w-3.5 text-slate-400 shrink-0" />
           <span>{formatBudget(strategy.businessInfo.budget)}</span>
         </div>
-
-        <div className="flex items-center text-sm text-gray-600">
-          <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-          <span>Created on {formatDate(strategy.createdAt)}</span>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span>Créé le {formatDate(strategy.createdAt)}</span>
         </div>
       </div>
 
-      {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+      {/* Badges */}
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-700">
           {TONE_LABELS[strategy.businessInfo.tone]}
         </span>
-        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
           {strategy.businessInfo.location}
         </span>
       </div>
 
-      {/* Action */}
+      {/* Actions */}
       <div className="space-y-2">
         <button
           onClick={handleView}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+          className="w-full rounded-xl bg-linear-to-br from-violet-600 to-purple-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-500/20 transition hover:from-violet-700 hover:to-purple-700 active:scale-[0.98]"
+          type="button"
         >
-          View full strategy
+          Voir la stratégie complète
         </button>
         <button
           onClick={handleDownload}
           disabled={isDownloading}
-          className="w-full border border-gray-300 bg-white text-gray-700 text-sm font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-50 active:scale-[0.98]"
+          type="button"
         >
-          {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+          {isDownloading ? 'Génération PDF...' : 'Télécharger PDF'}
         </button>
       </div>
     </div>
   );
 };
 
-// Composant principal
+
+
 export default function StrategiesPage() {
   const {
     strategies,
@@ -269,28 +260,19 @@ export default function StrategiesPage() {
   const [filterBy, setFilterBy] = useState<'all' | string>('all');
   const [downloadingStrategyId, setDownloadingStrategyId] = useState<string | null>(null);
 
-  // Filtrer et trier les stratégies
   const filteredStrategies = strategies
-    .filter(strategy => {
-      const matchesSearch = strategy.businessInfo.businessName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-        strategy.businessInfo.industry
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      
-      const matchesFilter = filterBy === 'all' || 
-        strategy.businessInfo.mainObjective === filterBy;
-      
+    .filter((strategy) => {
+      const matchesSearch =
+        strategy.businessInfo.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        strategy.businessInfo.industry.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterBy === 'all' || strategy.businessInfo.mainObjective === filterBy;
       return matchesSearch && matchesFilter;
     })
-    .sort((a, b) => {
-      if (sortBy === 'date') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      } else {
-        return a.businessInfo.businessName.localeCompare(b.businessInfo.businessName);
-      }
-    });
+    .sort((a, b) =>
+      sortBy === 'date'
+        ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        : a.businessInfo.businessName.localeCompare(b.businessInfo.businessName),
+    );
 
   const handleDeleteStrategy = async (id: string) => {
     await deleteStrategy(id);
@@ -301,9 +283,9 @@ export default function StrategiesPage() {
     try {
       const payload = await strategiesService.getStrategyPdfPayload(id);
       generateStrategyPdf(payload);
-      toast.success('PDF generated successfully');
+      toast.success('PDF généré avec succès');
     } catch {
-      toast.error('Error generating PDF');
+      toast.error('Erreur lors de la génération du PDF');
     } finally {
       setDownloadingStrategyId(null);
     }
@@ -311,185 +293,160 @@ export default function StrategiesPage() {
 
   if (isLoading && strategies.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Strategies</h1>
-              <p className="text-gray-600 mt-2">Loading...</p>
-            </div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="h-7 w-48 animate-pulse rounded-xl bg-slate-200" />
+            <div className="h-4 w-64 animate-pulse rounded-lg bg-slate-100" />
           </div>
-          <LoadingSkeleton />
         </div>
+        <LoadingSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <section className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-sm shadow-violet-500/20">
+            <TrendingUp className="h-5 w-5 text-white" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Marketing Strategies</h1>
-            <p className="text-gray-600 mt-2">
-              {strategies.length > 0 
-                ? `${pagination.total} strategy${pagination.total > 1 ? 'ies' : ''} found`
-                : 'Manage your AI-generated marketing strategies'
-              }
+            <h1 className="text-2xl font-bold text-slate-900">Mes stratégies marketing</h1>
+            <p className="text-sm text-slate-500">
+              {strategies.length > 0
+                ? `${pagination.total} stratégie${pagination.total > 1 ? 's' : ''} trouvée${pagination.total > 1 ? 's' : ''}`
+                : 'Gérez vos stratégies marketing générées par IA'}
             </p>
           </div>
-          
-                  <Link href="/user/strategies/new">
-            <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-              <Plus className="w-5 h-5 mr-2" />
-              New Strategy
-            </button>
-          </Link>
         </div>
+        <Link
+          href="/user/strategies/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/20 transition hover:from-violet-700 hover:to-purple-700 hover:-translate-y-0.5"
+        >
+          <Plus className="h-4 w-4" />
+          Nouvelle stratégie
+        </Link>
+      </section>
 
-        {/* Erreur */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700">{error}</p>
-            <button 
-              onClick={refresh}
-              className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
+      {/* Error */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={refresh} className="text-xs font-semibold text-red-700 underline hover:text-red-900">
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {/* Filters */}
+      {strategies.length > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom ou secteur..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-500/15"
+              />
+            </div>
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 sm:w-48"
             >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Filtres et recherche */}
-        {strategies.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Recherche */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by company name or industry..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Filtre par objectif */}
-              <div className="sm:w-48">
-                <select
-                  value={filterBy}
-                  onChange={(e) => setFilterBy(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All objectives</option>
-                  {Object.entries(OBJECTIVE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Tri */}
-              <div className="sm:w-48">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'date' | 'name')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="date">Most recent</option>
-                  <option value="name">By name</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Liste des stratégies */}
-        {filteredStrategies.length === 0 && strategies.length === 0 ? (
-          <EmptyState />
-        ) : filteredStrategies.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No strategy matches your search criteria.</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {filteredStrategies.map((strategy) => (
-                <StrategyCard
-                  key={strategy._id}
-                  strategy={strategy}
-                  onDelete={handleDeleteStrategy}
-                  onDownload={handleDownloadStrategy}
-                  isDeleting={isLoading}
-                  isDownloading={downloadingStrategyId === strategy._id}
-                />
+              <option value="all">Tous les objectifs</option>
+              {Object.entries(OBJECTIVE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
               ))}
-            </div>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'date' | 'name')}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 sm:w-44"
+            >
+              <option value="date">Plus récent</option>
+              <option value="name">Par nom</option>
+            </select>
+          </div>
+        </section>
+      )}
 
-            {/* Pagination */}
-            {pagination.pages > 1 && (
-              <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4">
-                <div className="text-sm text-gray-700">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                  {pagination.total} strategies
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => changePage(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-                      .filter(page => 
-                        page === 1 || 
-                        page === pagination.pages || 
-                        Math.abs(page - pagination.page) <= 1
-                      )
-                      .map((page, index, array) => (
-                        <React.Fragment key={page}>
-                          {index > 0 && array[index - 1] !== page - 1 && (
-                            <span className="px-2 text-gray-400">...</span>
-                          )}
-                          <button
-                            onClick={() => changePage(page)}
-                            className={`px-3 py-2 text-sm rounded-lg ${
-                              page === pagination.page
-                                ? 'bg-blue-600 text-white'
-                                : 'border border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        </React.Fragment>
-                      ))
-                    }
-                  </div>
-                  
-                  <button
-                    onClick={() => changePage(pagination.page + 1)}
-                    disabled={pagination.page === pagination.pages}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+      {/* Content */}
+      {filteredStrategies.length === 0 && strategies.length === 0 ? (
+        <EmptyState />
+      ) : filteredStrategies.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center shadow-sm">
+          <Search className="mx-auto mb-3 h-8 w-8 text-slate-300" />
+          <p className="text-sm text-slate-500">Aucune stratégie ne correspond à votre recherche.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredStrategies.map((strategy) => (
+              <StrategyCard
+                key={strategy._id}
+                strategy={strategy}
+                onDelete={handleDeleteStrategy}
+                onDownload={handleDownloadStrategy}
+                isDeleting={isLoading}
+                isDownloading={downloadingStrategyId === strategy._id}
+              />
+            ))}
+          </div>
+
+          {pagination.pages > 1 && (
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-sm text-slate-500">
+                Affichage {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} sur {pagination.total}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => changePage(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  type="button"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+                  .filter((page) => page === 1 || page === pagination.pages || Math.abs(page - pagination.page) <= 1)
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-1 text-slate-400 text-xs">…</span>
+                      )}
+                      <button
+                        onClick={() => changePage(page)}
+                        className={`min-w-8.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                          page === pagination.page
+                            ? 'bg-violet-600 text-white shadow-sm'
+                            : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                        type="button"
+                      >
+                        {page}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                <button
+                  onClick={() => changePage(pagination.page + 1)}
+                  disabled={pagination.page === pagination.pages}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  type="button"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
-            )}
-          </>
-        )}
-
-      </div>
+            </section>
+          )}
+        </>
+      )}
     </div>
   );
 }
