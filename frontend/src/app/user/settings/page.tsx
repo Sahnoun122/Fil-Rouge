@@ -10,8 +10,8 @@
           </svg>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">ParamÃ¨tres</h1>
-          <p className="text-sm text-slate-500">Configurez votre expÃ©rience sur la plateforme</p>
+          <h1 className="text-2xl font-bold text-slate-900">Paramètres</h1>
+          <p className="text-sm text-slate-500">Configurez votre expérience sur la plateforme</p>
         </div>
       </div>
 
@@ -27,16 +27,16 @@
         </div>
         <div className="space-y-4">
           {[
-            { label: 'Notifications par email', description: 'Recevoir des mises Ã  jour par email' },
-            { label: 'Rappels de contenu', description: 'ÃŠtre notifiÃ© avant chaque publication planifiÃ©e' },
-            { label: 'RÃ©sumÃ© hebdomadaire', description: 'Recevoir un rapport de performance chaque semaine' },
+            { label: 'Notifications par email', description: 'Recevoir des mises à jour par email' },
+            { label: 'Rappels de contenu', description: 'Être notifié avant chaque publication planifiée' },
+            { label: 'Résumé hebdomadaire', description: 'Recevoir un rapport de performance chaque semaine' },
           ].map((item) => (
             <div key={item.label} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-slate-900">{item.label}</p>
                 <p className="text-xs text-slate-500">{item.description}</p>
               </div>
-              <div className="relative h-6 w-11 cursor-not-allowed rounded-full bg-slate-200 opacity-60" title="BientÃ´t disponible">
+              <div className="relative h-6 w-11 cursor-not-allowed rounded-full bg-slate-200 opacity-60" title="Bientôt disponible">
                 <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm" />
               </div>
             </div>
@@ -58,12 +58,12 @@
           {[
             { label: 'Clair', active: true },
             { label: 'Sombre', active: false },
-            { label: 'SystÃ¨me', active: false },
+            { label: 'Système', active: false },
           ].map((theme) => (
             <button
               key={theme.label}
               disabled
-              title="BientÃ´t disponible"
+              title="Bientôt disponible"
               className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
                 theme.active
                   ? 'border-violet-400 bg-violet-50 text-violet-700 ring-2 ring-violet-500/20'
@@ -87,7 +87,7 @@
           <h2 className="text-base font-semibold text-slate-900">Compte</h2>
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <span className="font-semibold">BientÃ´t disponible.</span> Les prÃ©fÃ©rences de compte seront configurables dans une prochaine version.
+          <span className="font-semibold">Bientôt disponible.</span> Les préférences de compte seront configurables dans une prochaine version.
         </div>
       </section>
     </div>

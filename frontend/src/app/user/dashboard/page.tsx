@@ -307,9 +307,9 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-xs font-semibold tracking-[0.2em] uppercase text-violet-200 mb-1">Creator Cockpit</p>
-              <h1 className="text-2xl font-black text-white sm:text-3xl">Bonjour, {firstName} ðŸ‘‹</h1>
+              <h1 className="text-2xl font-black text-white sm:text-3xl">Bonjour, {firstName} 👋</h1>
               <p className="mt-0.5 text-sm text-violet-200">
-                Suivez votre rythme de publication et gardez un planning rÃ©gulier.
+                Suivez votre rythme de publication et gardez un planning régulier.
               </p>
             </div>
           </div>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
             className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-95"
           >
             <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:block">RafraÃ®chir</span>
+            <span className="hidden sm:block">Rafraîchir</span>
           </button>
         </div>
       </section>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
-              label="StratÃ©gies"
+              label="Stratégies"
               value={overview?.strategiesTotal ?? 0}
               iconBg="bg-violet-50"
               iconColor="text-violet-600"
@@ -388,7 +388,7 @@ export default function DashboardPage() {
                   <h2 className="text-lg font-bold text-slate-900">Tendance des 6 prochaines semaines</h2>
                 </div>
                 <span className="shrink-0 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                  {overview?.upcomingPostsTotal ?? 0} posts Ã  venir
+                  {overview?.upcomingPostsTotal ?? 0} posts à venir
                 </span>
               </div>
 
@@ -407,7 +407,7 @@ export default function DashboardPage() {
             <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md lg:col-span-4">
               <div className="mb-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Platform Mix</p>
-                <h2 className="text-lg font-bold text-slate-900">RÃ©partition des posts</h2>
+                <h2 className="text-lg font-bold text-slate-900">Répartition des posts</h2>
               </div>
 
               <DonutChart segments={platformSegments} total={totalSegmentPosts} />
@@ -415,7 +415,7 @@ export default function DashboardPage() {
               <div className="mt-4 space-y-2">
                 {platformSegments.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400">
-                    Aucune donnÃ©e pour le moment.
+                    Aucune donnée pour le moment.
                   </div>
                 ) : (
                   platformSegments.map((segment) => (
@@ -462,13 +462,13 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500">
-                    ðŸ“… {new Date(overview.nextPost.scheduledAt).toLocaleString()}
+                    📅 {new Date(overview.nextPost.scheduledAt).toLocaleString()}
                   </p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center">
                   <CalendarDays className="mx-auto mb-2 h-8 w-8 text-slate-300" />
-                  <p className="text-sm text-slate-500">Aucun post planifiÃ© dans les prochaines semaines.</p>
+                  <p className="text-sm text-slate-500">Aucun post planifié dans les prochaines semaines.</p>
                   <Link href="/user/calendar/new" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline">
                     Planifier un post â†’
                   </Link>
@@ -483,10 +483,10 @@ export default function DashboardPage() {
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {[
-                  { label: 'âœ¦ Nouvelle stratÃ©gie', href: '/user/strategies/new', color: 'hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700' },
-                  { label: 'âœ¦ Nouvelle campagne', href: '/user/content/new', color: 'hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700' },
-                  { label: 'âœ¦ Planifier un post', href: '/user/calendar/new', color: 'hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700' },
-                  { label: 'âœ¦ Ouvrir contenu', href: '/user/content', color: 'hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' },
+                  { label: '✦ Nouvelle stratégie', href: '/user/strategies/new', color: 'hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700' },
+                  { label: '✦ Nouvelle campagne', href: '/user/content/new', color: 'hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700' },
+                  { label: '✦ Planifier un post', href: '/user/calendar/new', color: 'hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700' },
+                  { label: '✦ Ouvrir contenu', href: '/user/content', color: 'hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' },
                 ].map(({ label, href, color }) => (
                   <Link
                     key={href}
