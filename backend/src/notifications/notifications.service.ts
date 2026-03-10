@@ -30,7 +30,7 @@ type ReminderDefinition = {
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private readonly maxReminderDelayMs = 60 * 1000;
+  private readonly maxReminderDelayMs = 10 * 60 * 1000;
   private readonly reminderDefinitions: ReminderDefinition[] = [
     {
       reminderType: NotificationReminderType.BEFORE_60_MIN,
@@ -250,17 +250,32 @@ export class NotificationsService {
     if (
       !post ||
       post.status === ScheduledPostStatus.PUBLISHED ||
-      post.scheduledAt.getTime() <= now.getTime()
+      post.scheduledAt.getTime() < claimedReminder.scheduledFor.getTime()
     ) {
       await this.notificationModel.deleteOne({ _id: claimedReminder._id }).exec();
       return false;
     }
 
+    const user = await this.userModel.findById(claimedReminder.userId).exec();
+    const prefs = user?.preferences ?? {
+      emailNotifications: true,
+      contentReminders: true,
+      weeklyDigest: false,
+    };
+
     if (claimedReminder.type === NotificationType.IN_APP) {
+      if (!prefs.contentReminders) {
+        await this.notificationModel.deleteOne({ _id: claimedReminder._id }).exec();
+        return false;
+      }
       return true;
     }
 
-    const user = await this.userModel.findById(claimedReminder.userId).exec();
+    if (!prefs.emailNotifications) {
+      await this.notificationModel.deleteOne({ _id: claimedReminder._id }).exec();
+      return false;
+    }
+
     if (!user?.email) {
       this.logger.warn(
         `Skipping EMAIL reminder ${claimedReminder._id.toString()} because user email is missing`,

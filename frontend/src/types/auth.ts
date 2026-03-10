@@ -1,5 +1,11 @@
 export type UserRole = "admin" | "user";
 
+export interface UserPreferences {
+  emailNotifications: boolean;
+  contentReminders: boolean;
+  weeklyDigest: boolean;
+}
+
 export interface User {
   id: string;
   fullName: string;
@@ -11,6 +17,7 @@ export interface User {
   companyName?: string;
   industry?: string;
   lastLoginAt?: string;
+  preferences?: UserPreferences;
 
   createdAt: string;
   updatedAt: string;

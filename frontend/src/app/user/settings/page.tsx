@@ -1,7 +1,128 @@
-﻿export default function UserSettingsPage() {
+﻿'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { Bell, Palette, User, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useAuth } from '@/src/hooks/useAuth';
+import { userService } from '@/src/services/userService';
+import { persistAuthUser } from '@/src/utils/authStorage';
+import type { UserPreferences } from '@/src/types/auth';
+
+type Toast = { type: 'success' | 'error'; message: string };
+
+const DEFAULT_PREFS: UserPreferences = {
+  emailNotifications: true,
+  contentReminders: true,
+  weeklyDigest: false,
+};
+
+function Toggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${
+        checked ? 'bg-violet-600' : 'bg-slate-200'
+      } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+    >
+      <span
+        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+          checked ? 'translate-x-5' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
+  );
+}
+
+export default function UserSettingsPage() {
+  const { user, checkAuthStatus } = useAuth();
+
+  const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFS);
+  const [saving, setSaving] = useState<keyof UserPreferences | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+
+  useEffect(() => {
+    if (user?.preferences) {
+      setPrefs(user.preferences);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const handleToggle = useCallback(
+    async (key: keyof UserPreferences, value: boolean) => {
+      const previous = prefs[key];
+      setPrefs((p) => ({ ...p, [key]: value }));
+      setSaving(key);
+      try {
+        const updated = await userService.updatePreferences({ [key]: value });
+        if (user && updated) {
+          const newUser = { ...user, preferences: updated.preferences ?? { ...prefs, [key]: value } };
+          persistAuthUser(newUser);
+          await checkAuthStatus();
+        }
+        setToast({ type: 'success', message: 'Preference mise a jour.' });
+      } catch (err) {
+        setPrefs((p) => ({ ...p, [key]: previous }));
+        setToast({ type: 'error', message: err instanceof Error ? err.message : 'Erreur lors de la mise a jour' });
+      } finally {
+        setSaving(null);
+      }
+    },
+    [prefs, user, checkAuthStatus],
+  );
+
+  const notifItems: { key: keyof UserPreferences; label: string; description: string }[] = [
+    {
+      key: 'emailNotifications',
+      label: 'Notifications par email',
+      description: 'Recevoir des rappels de publication par email',
+    },
+    {
+      key: 'contentReminders',
+      label: 'Rappels de contenu',
+      description: 'Recevoir des rappels in-app avant chaque publication planifiee',
+    },
+    {
+      key: 'weeklyDigest',
+      label: 'Resume hebdomadaire',
+      description: 'Recevoir un rapport de performance chaque semaine',
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl border px-4 py-3 shadow-lg text-sm font-medium transition-all ${
+            toast.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-sm shadow-violet-500/20">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -10,84 +131,112 @@
           </svg>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Paramètres</h1>
-          <p className="text-sm text-slate-500">Configurez votre expérience sur la plateforme</p>
+          <h1 className="text-2xl font-bold text-slate-900">Parametres</h1>
+          <p className="text-sm text-slate-500">Configurez votre experience sur la plateforme</p>
         </div>
       </div>
 
-      {/* Notifications */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 border-b border-slate-100 pb-4">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+            <Bell className="h-4 w-4 text-violet-600" />
           </div>
           <h2 className="text-base font-semibold text-slate-900">Notifications</h2>
         </div>
-        <div className="space-y-4">
-          {[
-            { label: 'Notifications par email', description: 'Recevoir des mises à jour par email' },
-            { label: 'Rappels de contenu', description: 'Être notifié avant chaque publication planifiée' },
-            { label: 'Résumé hebdomadaire', description: 'Recevoir un rapport de performance chaque semaine' },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+        <div className="divide-y divide-slate-100">
+          {notifItems.map((item) => (
+            <div key={item.key} className="flex items-center justify-between px-6 py-4">
               <div>
                 <p className="text-sm font-medium text-slate-900">{item.label}</p>
                 <p className="text-xs text-slate-500">{item.description}</p>
               </div>
-              <div className="relative h-6 w-11 cursor-not-allowed rounded-full bg-slate-200 opacity-60" title="Bientôt disponible">
-                <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm" />
+              <div className="flex items-center gap-2">
+                {saving === item.key && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" />
+                )}
+                <Toggle
+                  checked={prefs[item.key]}
+                  onChange={(v) => void handleToggle(item.key, v)}
+                  disabled={saving !== null}
+                />
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Apparence */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 border-b border-slate-100 pb-4">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-            </svg>
+            <Palette className="h-4 w-4 text-violet-600" />
           </div>
           <h2 className="text-base font-semibold text-slate-900">Apparence</h2>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[
-            { label: 'Clair', active: true },
-            { label: 'Sombre', active: false },
-            { label: 'Système', active: false },
-          ].map((theme) => (
-            <button
-              key={theme.label}
-              disabled
-              title="Bientôt disponible"
-              className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
-                theme.active
-                  ? 'border-violet-400 bg-violet-50 text-violet-700 ring-2 ring-violet-500/20'
-                  : 'border-slate-200 bg-white text-slate-500 opacity-60'
-              } cursor-not-allowed`}
-            >
-              {theme.label}
-            </button>
-          ))}
+        <div className="px-6 py-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              { label: 'Clair', active: true },
+              { label: 'Sombre', active: false },
+              { label: 'Systeme', active: false },
+            ].map((theme) => (
+              <button
+                key={theme.label}
+                disabled
+                title="Bientot disponible"
+                className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
+                  theme.active
+                    ? 'border-violet-400 bg-violet-50 text-violet-700 ring-2 ring-violet-500/20'
+                    : 'border-slate-200 bg-white text-slate-400 opacity-60 cursor-not-allowed'
+                }`}
+              >
+                {theme.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-400">Le mode sombre sera disponible dans une prochaine version.</p>
         </div>
       </section>
 
-      {/* Compte */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 border-b border-slate-100 pb-4">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-4">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+            <User className="h-4 w-4 text-violet-600" />
           </div>
           <h2 className="text-base font-semibold text-slate-900">Compte</h2>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <span className="font-semibold">Bientôt disponible.</span> Les préférences de compte seront configurables dans une prochaine version.
+        <div className="px-6 py-4 space-y-3">
+          <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-xs text-slate-500">Nom complet</p>
+              <p className="text-sm font-medium text-slate-900">{user?.fullName || '-'}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-xs text-slate-500">Email</p>
+              <p className="text-sm font-medium text-slate-900">{user?.email || '-'}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-xs text-slate-500">Membre depuis</p>
+              <p className="text-sm font-medium text-slate-900">
+                {user?.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+                  : '-'}
+              </p>
+            </div>
+          </div>
+          {user?.lastLoginAt && (
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-xs text-slate-500">Derniere connexion</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {new Date(user.lastLoginAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

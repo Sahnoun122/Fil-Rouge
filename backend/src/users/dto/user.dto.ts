@@ -55,6 +55,20 @@ export class UpdateUserDto {
   industry?: string;
 }
 
+export class UpdateUserPreferencesDto {
+  @IsOptional()
+  @IsBoolean({ message: 'emailNotifications doit etre un booleen' })
+  emailNotifications?: boolean;
+
+  @IsOptional()
+  @IsBoolean({ message: 'contentReminders doit etre un booleen' })
+  contentReminders?: boolean;
+
+  @IsOptional()
+  @IsBoolean({ message: 'weeklyDigest doit etre un booleen' })
+  weeklyDigest?: boolean;
+}
+
 export class ChangePasswordDto {
   @IsNotEmpty({ message: 'Le mot de passe actuel est requis' })
   @IsString({

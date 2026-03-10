@@ -85,6 +85,24 @@ export class User {
   })
   lastLoginAt?: Date;
 
+  @Prop({
+    type: {
+      emailNotifications: { type: Boolean, default: true },
+      contentReminders: { type: Boolean, default: true },
+      weeklyDigest: { type: Boolean, default: false },
+    },
+    default: () => ({
+      emailNotifications: true,
+      contentReminders: true,
+      weeklyDigest: false,
+    }),
+  })
+  preferences: {
+    emailNotifications: boolean;
+    contentReminders: boolean;
+    weeklyDigest: boolean;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }

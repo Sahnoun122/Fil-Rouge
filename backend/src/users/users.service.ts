@@ -13,6 +13,7 @@ import {
   AdminUpdateUserDto,
   ChangePasswordDto,
   UpdateUserDto,
+  UpdateUserPreferencesDto,
 } from './dto/user.dto';
 
 export interface CreateUserData {
@@ -127,6 +128,39 @@ export class UsersService {
         throw error;
       }
       throw new BadRequestException('Erreur lors de la mise a jour du profil');
+    }
+  }
+
+  async updatePreferences(
+    userId: string,
+    dto: UpdateUserPreferencesDto,
+  ): Promise<UserDocument> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      const current = user.preferences ?? {
+        emailNotifications: true,
+        contentReminders: true,
+        weeklyDigest: false,
+      };
+
+      user.preferences = {
+        emailNotifications: dto.emailNotifications ?? current.emailNotifications,
+        contentReminders: dto.contentReminders ?? current.contentReminders,
+        weeklyDigest: dto.weeklyDigest ?? current.weeklyDigest,
+      };
+
+      return await user.save();
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        'Erreur lors de la mise a jour des preferences',
+      );
     }
   }
 

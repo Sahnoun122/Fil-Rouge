@@ -24,6 +24,7 @@ import {
   BanUserDto,
   ChangePasswordDto,
   UpdateUserDto,
+  UpdateUserPreferencesDto,
   UpdateUserRoleDto,
 } from './dto/user.dto';
 
@@ -89,6 +90,22 @@ export class UsersController {
     return {
       success: true,
       message: 'Compte supprime avec succes',
+    };
+  }
+
+  @Put('preferences')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async updatePreferences(
+    @Request() req: any,
+    @Body() dto: UpdateUserPreferencesDto,
+  ) {
+    const userId = this.getAuthenticatedUserId(req);
+    const updatedUser = await this.usersService.updatePreferences(userId, dto);
+
+    return {
+      success: true,
+      message: 'Preferences mises a jour avec succes',
+      data: updatedUser,
     };
   }
 

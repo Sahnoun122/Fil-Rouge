@@ -1,4 +1,5 @@
 import { api } from '../utils/fetcher';
+import type { UserPreferences } from '../types/auth';
 
 export interface UpdateProfileData {
   fullName?: string;
@@ -35,5 +36,11 @@ export const userService = {
     const res: any = await api.delete('/users/profile', true);
     if (!res.success) throw new Error(res.message || 'Erreur lors de la suppression du compte');
     return res;
+  },
+
+  async updatePreferences(data: Partial<UserPreferences>) {
+    const res: any = await api.put('/users/preferences', data, true);
+    if (!res.success) throw new Error(res.message || 'Erreur lors de la mise à jour des préférences');
+    return res.data;
   },
 };
