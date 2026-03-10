@@ -45,7 +45,7 @@ function Toggle({
 }
 
 export default function UserSettingsPage() {
-  const { user, checkAuthStatus } = useAuth();
+  const { user } = useAuth();
 
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFS);
   const [saving, setSaving] = useState<keyof UserPreferences | null>(null);
@@ -69,11 +69,11 @@ export default function UserSettingsPage() {
       setPrefs((p) => ({ ...p, [key]: value }));
       setSaving(key);
       try {
-        const updated = await userService.updatePreferences({ [key]: value });
-        if (user && updated) {
-          const newUser = { ...user, preferences: updated.preferences ?? { ...prefs, [key]: value } };
-          persistAuthUser(newUser);
-          await checkAuthStatus();
+        const updatedUser = await userService.updatePreferences({ [key]: value });
+        const newPrefs: UserPreferences = updatedUser?.preferences ?? { ...prefs, [key]: value };
+        setPrefs(newPrefs);
+        if (user) {
+          persistAuthUser({ ...user, preferences: newPrefs });
         }
         setToast({ type: 'success', message: 'Preference mise a jour.' });
       } catch (err) {
@@ -83,7 +83,7 @@ export default function UserSettingsPage() {
         setSaving(null);
       }
     },
-    [prefs, user, checkAuthStatus],
+    [prefs, user],
   );
 
   const notifItems: { key: keyof UserPreferences; label: string; description: string }[] = [

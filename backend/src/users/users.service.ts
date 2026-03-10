@@ -152,6 +152,7 @@ export class UsersService {
         contentReminders: dto.contentReminders ?? current.contentReminders,
         weeklyDigest: dto.weeklyDigest ?? current.weeklyDigest,
       };
+      user.markModified('preferences');
 
       return await user.save();
     } catch (error) {

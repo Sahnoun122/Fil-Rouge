@@ -24,6 +24,7 @@ const normalizeUser = (payload: any): User => {
     lastLoginAt: payload?.lastLoginAt
       ? new Date(payload.lastLoginAt).toISOString()
       : undefined,
+    preferences: payload?.preferences ?? undefined,
     createdAt,
     updatedAt,
   };
