@@ -186,36 +186,27 @@ export default function UserSwotListPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-slate-200 bg-linear-to-br from-slate-900 via-slate-800 to-cyan-900 p-8 text-white shadow-xl">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">SWOT Analytics</p>
-            <h1 className="text-3xl font-bold">Mes analyses SWOT</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              Consultez, recherchez et gérez toutes vos analyses SWOT en un seul endroit.
-            </p>
-            {!isLoading && (
-              <div className="mt-4 flex items-center gap-4">
-                <span className="text-sm text-slate-200">
-                  <span className="text-2xl font-bold text-white">{swots.length}</span>
-                  <span className="ml-2">analyse{swots.length > 1 ? 's' : ''}</span>
-                </span>
-                <span className="h-4 w-px bg-white/20" />
-                <span className="text-sm text-slate-200">
-                  <span className="text-xl font-bold text-emerald-300">{swots.filter(s => s.isAiGenerated).length}</span>
-                  <span className="ml-2">généré{swots.filter(s => s.isAiGenerated).length > 1 ? 'es' : 'e'} par IA</span>
-                </span>
-              </div>
-            )}
+      <section className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-sm shadow-violet-500/20">
+            <Search className="h-5 w-5 text-white" />
           </div>
-          <Link
-            href="/user/swot/new"
-            className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm shadow-cyan-300/30 transition hover:bg-cyan-300 active:scale-95"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle analyse
-          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Mes analyses SWOT</h1>
+            <p className="text-sm text-slate-500">
+              {!isLoading
+                ? `${swots.length} analyse${swots.length > 1 ? 's' : ''} · ${swots.filter((s) => s.isAiGenerated).length} générée${swots.filter((s) => s.isAiGenerated).length > 1 ? 's' : ''} par IA`
+                : 'Gérez vos analyses SWOT générées par IA'}
+            </p>
+          </div>
         </div>
+        <Link
+          href="/user/swot/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/20 transition hover:from-violet-700 hover:to-purple-700 hover:-translate-y-0.5"
+        >
+          <Plus className="h-4 w-4" />
+          Nouvelle analyse
+        </Link>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -225,12 +216,12 @@ export default function UserSwotListPage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Rechercher par titre ou stratégie..."
-            className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none ring-cyan-500 transition focus:border-cyan-500 focus:bg-white focus:ring-2"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-500/15"
           />
         </label>
         {strategyFilter ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-200">
+            <span className="inline-flex rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200">
               Filtre stratégie : {strategyNames[strategyFilter] || strategyFilter}
             </span>
             <Link
@@ -259,7 +250,7 @@ export default function UserSwotListPage() {
         <SwotTableSkeleton />
       ) : swots.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-500 to-slate-700 shadow-md">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-md shadow-violet-500/25">
             <Plus className="h-7 w-7 text-white" />
           </div>
           <h2 className="text-xl font-semibold text-slate-900">Aucune analyse SWOT</h2>
@@ -268,7 +259,7 @@ export default function UserSwotListPage() {
           </p>
           <Link
             href="/user/swot/new"
-            className="mt-6 inline-flex items-center rounded-xl bg-linear-to-br from-cyan-500 to-slate-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/25 transition hover:from-violet-700 hover:to-purple-700 hover:-translate-y-0.5"
           >
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle analyse

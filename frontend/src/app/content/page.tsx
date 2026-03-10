@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -157,7 +157,7 @@ export default function ContentCampaignsPage() {
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-500 to-purple-600 shadow-lg shadow-cyan-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-lg shadow-violet-500/20">
               <Megaphone className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Content</h1>
@@ -168,7 +168,7 @@ export default function ContentCampaignsPage() {
         </div>
         <Link
           href="/user/content/new"
-          className="inline-flex items-center rounded-xl bg-linear-to-r from-cyan-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-purple-500"
+          className="inline-flex items-center rounded-xl bg-linear-to-r from-violet-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-500/20 transition hover:from-violet-700 hover:to-purple-700"
         >
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle campagne
@@ -259,7 +259,7 @@ export default function ContentCampaignsPage() {
           </p>
           <Link
             href="/user/content/new"
-            className="mt-6 inline-flex items-center rounded-xl bg-linear-to-r from-cyan-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-purple-500"
+            className="mt-6 inline-flex items-center rounded-xl bg-linear-to-r from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-500/20 transition hover:from-violet-700 hover:to-purple-700"
           >
             <Plus className="mr-2 h-4 w-4" />
             Créer une campagne

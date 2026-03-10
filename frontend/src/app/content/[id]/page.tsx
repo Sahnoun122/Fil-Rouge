@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -270,7 +270,7 @@ function PostCard({ post, mode }: { post: PostWithIndex; mode: string }) {
           {post.suggestedVisual && (
             <div>
               <div className="mb-1 flex items-center gap-1.5">
-                <MonitorPlay className="h-3.5 w-3.5 text-cyan-500" />
+                <MonitorPlay className="h-3.5 w-3.5 text-purple-500" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Visuel suggéré</span>
               </div>
               <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-2.5 text-sm text-cyan-800">
@@ -582,7 +582,7 @@ export default function ContentCampaignDetailPage() {
               type="button"
               onClick={handleGeneratePlanning}
               disabled={isScheduling || isSubmitting}
-              className="inline-flex items-center rounded-xl bg-linear-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center rounded-xl bg-linear-to-r from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-500/20 transition hover:from-violet-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isScheduling ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Bot, RefreshCw } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import UserAiMonitoringService from '@/src/services/userAiMonitoringService';
 import UserAiMonitoringStats from '@/src/components/user/ai-monitoring/UserAiMonitoringStats';
@@ -107,7 +108,7 @@ function FeatureUsageChart({
   if (items.length === 0) {
     return (
       <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-        No feature usage data.
+        Aucune donnée d&apos;utilisation disponible.
       </div>
     );
   }
@@ -124,7 +125,7 @@ function FeatureUsageChart({
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-linear-to-r from-cyan-500 to-blue-500"
+              className="h-full rounded-full bg-linear-to-r from-violet-600 to-purple-500"
               style={{ width: `${Math.max(6, Math.round((item.totalRequests / maxValue) * 100))}%` }}
             />
           </div>
@@ -148,7 +149,7 @@ function UsageOverTimeChart({
   if (points.length === 0) {
     return (
       <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-        No activity in this period.
+        Aucune activité sur cette période.
       </div>
     );
   }
@@ -162,7 +163,7 @@ function UsageOverTimeChart({
         {displayed.map((point) => (
           <div key={point.date} className="group relative flex flex-1 items-end justify-center">
             <div
-              className="w-full rounded-t bg-linear-to-t from-cyan-600 to-cyan-400 transition-opacity group-hover:opacity-80"
+              className="w-full rounded-t bg-linear-to-t from-violet-700 to-violet-400 transition-opacity group-hover:opacity-80"
               style={{ height: `${Math.max(4, Math.round((point.totalRequests / maxValue) * 100))}%` }}
             />
             <div className="pointer-events-none absolute -top-8 rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
@@ -334,28 +335,27 @@ export default function UserAiMonitoringPage() {
     <section className="space-y-6">
       <Toaster position="top-right" />
 
-      <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-linear-to-r from-cyan-50 via-white to-indigo-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-24 -top-16 h-48 w-48 rounded-full bg-cyan-200/30 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-8 h-44 w-44 rounded-full bg-indigo-200/30 blur-2xl" />
-
-        <div className="relative flex flex-wrap items-start justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-sm shadow-violet-500/20">
+            <Bot className="h-5 w-5 text-white" />
+          </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">My Workspace</p>
-            <h1 className="mt-2 text-2xl font-black text-slate-900 sm:text-3xl">AI Monitoring</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              Track your personal AI usage, performance and failures across strategy, SWOT, content and planning.
+            <h1 className="text-2xl font-bold text-slate-900">Monitoring IA</h1>
+            <p className="text-sm text-slate-500">
+              Suivez votre utilisation, performance et échecs de l&apos;IA.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-400 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isLoading ? 'Refreshing...' : 'Refresh'}
-          </button>
         </div>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? 'Actualisation...' : 'Actualiser'}
+        </button>
       </header>
 
       <UserAiMonitoringStats overview={overview} isLoading={isLoading} />
@@ -369,16 +369,16 @@ export default function UserAiMonitoringPage() {
 
       <section className="grid gap-4 lg:grid-cols-12">
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6">
-          <h2 className="text-lg font-black text-slate-900">Usage by Feature</h2>
-          <p className="mt-1 text-sm text-slate-500">Requests grouped by AI capability.</p>
+          <h2 className="text-lg font-black text-slate-900">Utilisation par fonctionnalité</h2>
+          <p className="mt-1 text-sm text-slate-500">Requêtes groupées par module IA.</p>
           <div className="mt-4">
             <FeatureUsageChart items={usageByFeature} isLoading={isLoading} />
           </div>
         </article>
 
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6">
-          <h2 className="text-lg font-black text-slate-900">Usage over Time</h2>
-          <p className="mt-1 text-sm text-slate-500">Daily trend based on your AI logs.</p>
+          <h2 className="text-lg font-black text-slate-900">Utilisation dans le temps</h2>
+          <p className="mt-1 text-sm text-slate-500">Tendance quotidienne de vos logs IA.</p>
           <div className="mt-4">
             <UsageOverTimeChart points={sortedUsageOverTime} isLoading={isLoading} />
           </div>

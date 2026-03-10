@@ -535,7 +535,7 @@ export default function SwotDetailPage() {
 
           <article className="rounded-2xl border border-cyan-200 bg-cyan-50/40 p-4">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-cyan-700">
-              <span className="h-2.5 w-2.5 rounded-full bg-cyan-500" />
+              <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
               Opportunités
             </h3>
             {isEditing ? (
@@ -545,7 +545,7 @@ export default function SwotDetailPage() {
                   setForm((prev) => (prev ? { ...prev, matrix: { ...prev.matrix, opportunities: parseList(event.target.value) } } : prev))
                 }
                 rows={6}
-                className="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                className="w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                 placeholder="Un élément par ligne…"
               />
             ) : (
@@ -553,7 +553,7 @@ export default function SwotDetailPage() {
                 {form.matrix.opportunities.length > 0 ? (
                   form.matrix.opportunities.map((item, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm text-slate-700">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" />
                       {item}
                     </li>
                   ))

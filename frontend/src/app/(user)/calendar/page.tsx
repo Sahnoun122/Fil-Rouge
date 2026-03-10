@@ -529,16 +529,16 @@ export default function CalendarPage() {
     };
 
     return (
-      <div className="w-full rounded-xl border border-stone-200 bg-white/95 px-2.5 py-2 text-left shadow-sm">
+      <div className="w-full rounded-xl border border-slate-200 bg-white/95 px-2.5 py-2 text-left shadow-sm">
         <div className="flex flex-wrap items-center gap-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {arg.timeText} {platform ? `- ${platform}` : ""}
           </p>
-          <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-700">
+          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-violet-700">
             {normalizePostTypeLabel(postType)}
           </span>
         </div>
-        <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-4 text-stone-800">
+        <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-4 text-slate-800">
           {arg.event.title}
         </p>
       </div>
@@ -564,96 +564,64 @@ export default function CalendarPage() {
           duration: 3500,
           style: {
             borderRadius: "18px",
-            border: "1px solid #e7e5e4",
-            background: "#fffaf4",
-            color: "#1c1917",
+            border: "1px solid #e2e8f0",
+            background: "#ffffff",
+            color: "#1e293b",
           },
         }}
       />
 
-      <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_rgba(248,242,232,0.95)_40%,_rgba(231,229,228,0.85)_100%)] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-              Planning editorial
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-950">
-              Planning de contenu
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-stone-600">
-              Consulte les plannings de campagne sous forme de cards editoriales
-              avec les contenus generes par l IA et leurs slots de publication.
-            </p>
-            {campaignIdFilter ? (
-              <div className="mt-4 rounded-[22px] border border-cyan-200 bg-cyan-50/80 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                  Campagne active
-                </p>
-                <p className="mt-2 text-lg font-semibold text-stone-950">
-                  {campaignDetail?.name || "Chargement de la campagne..."}
-                </p>
-                <p className="mt-1 text-sm text-stone-600">
-                  {campaignDetail?.platforms?.join(", ") ||
-                    "Filtre campagne actif"}
-                </p>
-              </div>
-            ) : null}
+      <section className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 to-purple-600 shadow-sm shadow-violet-500/20">
+            <CalendarClock className="h-5 w-5 text-white" />
           </div>
-
-          <div className="grid gap-3 rounded-[28px] border border-stone-200 bg-white/70 p-4 text-sm text-stone-700 sm:grid-cols-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
-                Visible
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-stone-950">
-                {scopedPosts.length}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
-                Loaded
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-stone-950">
-                {campaignIdFilter ? scopedPosts.length : total}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
-                Refs
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-stone-950">
-                {isMetaLoading
-                  ? "..."
-                  : `${strategies.length}/${campaigns.length}`}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Planning éditorial</h1>
+            <p className="text-sm text-slate-500">
+              {scopedPosts.length} post{scopedPosts.length === 1 ? "" : "s"} ·{" "}
+              {campaigns.length} campagne{campaigns.length === 1 ? "" : "s"}
+            </p>
           </div>
         </div>
+        {campaignIdFilter ? (
+          <div className="rounded-xl border border-violet-100 bg-violet-50 px-4 py-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-700">
+              Campagne active
+            </p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {campaignDetail?.name || "Chargement de la campagne..."}
+            </p>
+            <p className="text-xs text-slate-500">
+              {campaignDetail?.platforms?.join(", ") || "Filtre campagne actif"}
+            </p>
+          </div>
+        ) : null}
       </section>
 
       {campaignIdFilter ? (
         <section className="grid gap-4 lg:grid-cols-3">
-          <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Campagne
             </p>
-            <p className="mt-3 text-2xl font-semibold text-stone-950">
+            <p className="mt-3 text-2xl font-semibold text-slate-900">
               {campaignDetail?.name || "..."}
             </p>
           </article>
-          <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
-              Posts planifies
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Posts planifiés
             </p>
-            <p className="mt-3 text-2xl font-semibold text-stone-950">
+            <p className="mt-3 text-2xl font-semibold text-slate-900">
               {planningCards.filter((post) => post.scheduleDateTime).length}
             </p>
           </article>
-          <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Plateformes
             </p>
-            <p className="mt-3 text-2xl font-semibold text-stone-950">
+            <p className="mt-3 text-2xl font-semibold text-slate-900">
               {campaignDetail?.platforms?.length ??
                 scopedCampaigns[0]?.platforms?.length ??
                 0}
@@ -663,21 +631,21 @@ export default function CalendarPage() {
       ) : null}
 
       {campaignIdFilter ? (
-        <section className="rounded-[32px] border border-stone-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Vue calendrier
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-stone-950">
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">
                 Date et heure des publications
               </h2>
-              <p className="mt-2 text-sm text-stone-600">
-                Clique sur une publication pour ouvrir sa page detail.
+              <p className="mt-2 text-sm text-slate-600">
+                Cliquez sur une publication pour ouvrir sa page détail.
               </p>
             </div>
 
-            <div className="inline-flex rounded-2xl border border-stone-200 bg-stone-100 p-1">
+            <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1">
               {[
                 { label: "Mois", value: "dayGridMonth" as const },
                 { label: "Semaine", value: "timeGridWeek" as const },
@@ -693,8 +661,8 @@ export default function CalendarPage() {
                   }
                   className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
                     filters.view === option.value
-                      ? "bg-stone-950 text-white shadow-sm"
-                      : "text-stone-600 hover:text-stone-950"
+                      ? "bg-violet-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   {option.label}
@@ -703,10 +671,10 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <div className="relative mt-5 overflow-hidden rounded-[24px] border border-stone-200 bg-[#f8f2e8] p-3">
+          <div className="relative mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-3">
             {planningEvents.length === 0 ? (
-              <div className="rounded-[20px] border border-dashed border-stone-300 bg-white p-10 text-center text-sm text-stone-500">
-                Aucune publication planifiee avec date et heure.
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+                Aucune publication planifiée avec date et heure.
               </div>
             ) : (
               <FullCalendar
@@ -733,8 +701,8 @@ export default function CalendarPage() {
             )}
 
             {isLoading ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f8f2e8]/70 backdrop-blur-[2px]">
-                <div className="rounded-2xl border border-stone-200 bg-white px-5 py-3 text-sm font-medium text-stone-700 shadow-sm">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/70 backdrop-blur-[2px]">
+                <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm">
                   Chargement du calendrier...
                 </div>
               </div>
@@ -744,18 +712,18 @@ export default function CalendarPage() {
       ) : null}
 
       {!campaignIdFilter ? (
-        <section className="rounded-[32px] border border-stone-200 bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Vue campagne
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-stone-950">
-              Ouvre une campagne pour voir son planning detaille
+            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+              Ouvrez une campagne pour voir son planning détaillé
             </h2>
-            <p className="mt-3 text-sm leading-6 text-stone-600">
-              Chaque campagne affiche maintenant une vue calendrier
-              professionnelle avec la date, l heure de publication et l acces
-              direct au detail de chaque post.
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Chaque campagne affiche une vue calendrier professionnelle avec
+              la date, l&apos;heure de publication et l&apos;accès direct au
+              détail de chaque post.
             </p>
           </div>
 
@@ -764,18 +732,18 @@ export default function CalendarPage() {
               <Link
                 key={campaign._id}
                 href={`/calendar?campaignId=${campaign._id}`}
-                className="group rounded-[24px] border border-stone-200 bg-stone-50/70 p-5 transition hover:-translate-y-0.5 hover:border-stone-300 hover:bg-white hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]"
+                className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-5 transition hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-base font-semibold text-stone-950">
+                    <p className="text-base font-semibold text-slate-900">
                       {campaign.name}
                     </p>
-                    <p className="mt-1 text-sm text-stone-600">
+                    <p className="mt-1 text-sm text-slate-600">
                       {campaign.platforms.join(", ") || "Sans plateforme"}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
                     Ouvrir
                     <ArrowUpRight className="h-3.5 w-3.5" />
                   </span>
@@ -787,23 +755,23 @@ export default function CalendarPage() {
       ) : null}
 
       {campaignIdFilter ? (
-        <section className="rounded-[32px] border border-stone-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Planning IA
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-stone-950">
-                Cartes editoriales du planning
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+                Cartes éditoriales du planning
               </h2>
             </div>
-            <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-700">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
               {planningCards.length} carte(s)
             </span>
           </div>
 
           {planningCards.length === 0 ? (
-            <div className="mt-6 rounded-[24px] border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-stone-500">
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
               Aucun planning disponible pour cette campagne.
             </div>
           ) : (
@@ -817,22 +785,22 @@ export default function CalendarPage() {
                       ? `/calendar/planning/${post.scheduledPostId}`
                       : "#")
                   }
-                  className="group overflow-hidden rounded-[24px] border border-stone-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_22px_50px_-30px_rgba(15,23,42,0.45)]"
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
                 >
-                  <div className="border-b border-stone-200 bg-stone-50/90 p-3">
+                  <div className="border-b border-slate-200 bg-slate-50/90 p-3">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-stone-950 px-2.5 py-1 text-xs font-semibold text-white">
+                        <span className="rounded-full bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white">
                           {post.platform}
                         </span>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
                           {post.postType}
                         </span>
-                        <span className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700">
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
                           {normalizeStatusLabel(post.status)}
                         </span>
                       </div>
-                      <div className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700 transition group-hover:border-stone-300 group-hover:text-stone-950">
+                      <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition group-hover:border-violet-200 group-hover:text-violet-700">
                         Ouvrir
                         <ArrowUpRight className="h-3.5 w-3.5" />
                       </div>
@@ -842,63 +810,63 @@ export default function CalendarPage() {
                   <div className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                          <CalendarClock className="h-3.5 w-3.5" />
-                          Slot planning
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-stone-950">
-                          {post.scheduleLabel}
-                        </p>
-                        <p className="text-xs text-stone-500">
-                          {post.timezone}
-                          {post.scheduleDate && post.scheduleTime
-                            ? ` - ${post.scheduleDate} ${post.scheduleTime}`
-                            : ""}
-                        </p>
+                          <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                            <CalendarClock className="h-3.5 w-3.5" />
+                            Slot planning
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">
+                            {post.scheduleLabel}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {post.timezone}
+                            {post.scheduleDate && post.scheduleTime
+                              ? ` - ${post.scheduleDate} ${post.scheduleTime}`
+                              : ""}
+                          </p>
+                        </div>
+                        {(post.hashtags ?? []).length > 0 ? (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
+                            {(post.hashtags ?? []).length} tag(s)
+                          </span>
+                        ) : null}
                       </div>
-                      {(post.hashtags ?? []).length > 0 ? (
-                        <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700">
-                          {(post.hashtags ?? []).length} tag(s)
-                        </span>
-                      ) : null}
-                    </div>
 
                     {post.title ? (
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                           Angle
                         </p>
-                        <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-stone-950">
+                        <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-slate-900">
                           {post.title}
                         </p>
                       </div>
                     ) : null}
 
                     {post.hook ? (
-                      <div className="rounded-[18px] border border-cyan-200 bg-cyan-50/80 p-3">
-                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-700">
+                      <div className="rounded-xl border border-violet-100 bg-violet-50 p-3">
+                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700">
                           <Sparkles className="h-3.5 w-3.5" />
                           Hook IA
                         </p>
-                        <p className="mt-1 line-clamp-2 text-sm font-medium leading-6 text-cyan-950">
+                        <p className="mt-1 line-clamp-2 text-sm font-medium leading-6 text-violet-900">
                           {post.hook}
                         </p>
                       </div>
                     ) : null}
 
                     <div>
-                      <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                      <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                         <TextQuote className="h-3.5 w-3.5" />
                         Caption IA
                       </p>
-                      <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                      <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
                         {post.caption}
                       </p>
                     </div>
 
                     {(post.hashtags ?? []).length > 0 ? (
                       <div>
-                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                           <Tags className="h-3.5 w-3.5" />
                           Hashtags
                         </p>
@@ -906,13 +874,13 @@ export default function CalendarPage() {
                           {post.hashtags?.slice(0, 4).map((tag) => (
                             <span
                               key={`${post._id || post.index}-${tag}`}
-                              className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700"
+                              className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700"
                             >
                               #{tag}
                             </span>
                           ))}
                           {(post.hashtags?.length ?? 0) > 4 ? (
-                            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-700">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
                               +{(post.hashtags?.length ?? 0) - 4}
                             </span>
                           ) : null}
@@ -920,12 +888,12 @@ export default function CalendarPage() {
                       </div>
                     ) : null}
 
-                    <div className="flex items-center justify-between border-t border-stone-200 pt-3">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500">
-                        Details du planning
+                    <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                        Détails du planning
                       </p>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-stone-950 px-3 py-1.5 text-[11px] font-semibold text-white">
-                        Voir le detail
+                      <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-br from-violet-600 to-purple-600 px-3 py-1.5 text-[11px] font-semibold text-white">
+                        Voir le détail
                         <ArrowUpRight className="h-3.5 w-3.5" />
                       </span>
                     </div>
@@ -938,8 +906,8 @@ export default function CalendarPage() {
       ) : null}
 
       {isMutating ? (
-        <div className="fixed bottom-5 right-5 z-40 inline-flex items-center rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-lg">
-          <span className="mr-2 h-2.5 w-2.5 animate-pulse rounded-full bg-stone-950" />
+        <div className="fixed bottom-5 right-5 z-40 inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-lg">
+          <span className="mr-2 h-2.5 w-2.5 animate-pulse rounded-full bg-violet-500" />
           Synchronisation...
         </div>
       ) : null}
