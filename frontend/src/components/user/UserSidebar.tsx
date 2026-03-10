@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Zap, LogOut, Plus, Settings, User } from 'lucide-react';
+import { Zap, LogOut, Plus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { userNavigation } from '@/src/constants/navigation';
 
@@ -145,36 +145,19 @@ export default function UserSidebar({ isOpen, setIsOpen }: UserSidebarProps) {
         </nav>
 
         {/* Bottom links */}
-        <div className="px-3 pb-3 space-y-0.5">
-          <Link
-            href="/user/settings"
-            onClick={() => setIsOpen(false)}
-            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-              isActivePath('/user/settings')
-                ? 'bg-violet-50 text-violet-700'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <Settings className={`h-5 w-5 shrink-0 transition-colors ${isActivePath('/user/settings') ? 'text-violet-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-            <span>Settings</span>
-          </Link>
-          <Link
-            href="/user/profile"
-            onClick={() => setIsOpen(false)}
-            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-              isActivePath('/user/profile')
-                ? 'bg-violet-50 text-violet-700'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <User className={`h-5 w-5 shrink-0 transition-colors ${isActivePath('/user/profile') ? 'text-violet-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-            <span>Profile</span>
-          </Link>
-        </div>
+
 
         {/* User footer */}
         <div className="border-t border-slate-100 p-4 space-y-3">
-          <div className="flex items-center gap-3 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/80 px-3 py-2.5 border border-slate-100">
+          <Link
+            href="/user/profile"
+            onClick={() => setIsOpen(false)}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-150 ${
+              isActivePath('/user/profile')
+                ? 'bg-violet-50 border-violet-100'
+                : 'bg-linear-to-br from-slate-50 to-slate-100/80 border-slate-100 hover:border-violet-200 hover:bg-violet-50/60'
+            }`}
+          >
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm shadow-violet-500/30">
               {initials}
             </div>
@@ -182,7 +165,7 @@ export default function UserSidebar({ isOpen, setIsOpen }: UserSidebarProps) {
               <p className="truncate text-sm font-semibold text-slate-900 leading-tight">{user?.fullName || 'Utilisateur'}</p>
               <p className="truncate text-[11px] text-slate-500">{user?.email || '-'}</p>
             </div>
-          </div>
+          </Link>
 
           <button
             onClick={handleLogout}

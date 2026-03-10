@@ -171,7 +171,6 @@ export const userNavigation: NavigationItem[] = [
   { name: "SWOT", href: "/user/swot", icon: analyticsIcon },
   { name: "AI Monitoring", href: "/user/ai-monitoring", icon: monitoringIcon },
   { name: "Calendar", href: "/calendar", icon: calendarIcon },
-  { name: "Profile", href: "/user/profile", icon: profileIcon },
   { name: "Settings", href: "/user/settings", icon: settingsIcon },
 ];
 
