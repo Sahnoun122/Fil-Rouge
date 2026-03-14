@@ -231,40 +231,47 @@ export default function AdminDashboardPage() {
     ];
   }, [overview]);
 
-  const recentUsers = useMemo(() => (overview?.usersSample ?? []).slice(0, 6), [overview?.usersSample]);
+  const recentUsers = useMemo(
+    () => (overview?.usersSample ?? []).filter((u) => u.role === 'user').slice(0, 6),
+    [overview?.usersSample],
+  );
 
-  const statCards = useMemo(() => [
-    {
-      label: 'Total utilisateurs',
-      value: overview?.stats.total ?? 0,
-      icon: Users,
-      accent: 'bg-violet-50 text-violet-600 border-violet-100',
-      bar: 'from-violet-500 to-purple-500',
-    },
-    {
-      label: 'Admins',
-      value: overview?.stats.admins ?? 0,
-      icon: Shield,
-      accent: 'bg-purple-50 text-purple-600 border-purple-100',
-      bar: 'from-purple-500 to-indigo-500',
-    },
-    {
-      label: 'Bannis',
-      value: overview?.stats.banned ?? 0,
-      icon: Ban,
-      accent: 'bg-orange-50 text-orange-600 border-orange-100',
-      bar: 'from-orange-500 to-amber-500',
-    },
-    {
-      label: 'Health score',
-      value: `${adminHealthScore}%`,
-      icon: TrendingUp,
-      accent: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      bar: 'from-emerald-500 to-teal-500',
-      isScore: true,
-      score: adminHealthScore,
-    },
-  ], [overview?.stats, adminHealthScore]);
+  const statCards = useMemo(() => {
+    const totalUsers = Math.max((overview?.stats.total ?? 0) - (overview?.stats.admins ?? 0), 0);
+    const active = Math.max(totalUsers - (overview?.stats.banned ?? 0), 0);
+    return [
+      {
+        label: 'Total utilisateurs',
+        value: totalUsers,
+        icon: Users,
+        accent: 'bg-violet-50 text-violet-600 border-violet-100',
+        bar: 'from-violet-500 to-purple-500',
+      },
+      {
+        label: 'Actifs',
+        value: active,
+        icon: TrendingUp,
+        accent: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        bar: 'from-emerald-500 to-teal-500',
+      },
+      {
+        label: 'Bannis',
+        value: overview?.stats.banned ?? 0,
+        icon: Ban,
+        accent: 'bg-orange-50 text-orange-600 border-orange-100',
+        bar: 'from-orange-500 to-amber-500',
+      },
+      {
+        label: 'Health score',
+        value: `${adminHealthScore}%`,
+        icon: Shield,
+        accent: 'bg-purple-50 text-purple-600 border-purple-100',
+        bar: 'from-purple-500 to-indigo-500',
+        isScore: true,
+        score: adminHealthScore,
+      },
+    ];
+  }, [overview?.stats, adminHealthScore]);
 
   const quickActions = useMemo(() => [
     { label: 'Gérer les utilisateurs', href: '/admin/users', icon: Users, color: 'violet' },
@@ -330,7 +337,7 @@ export default function AdminDashboardPage() {
           )}
 
           {/* Stat cards */}
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {statCards.map((card) => {
               const Icon = card.icon;
               return (

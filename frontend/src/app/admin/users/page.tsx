@@ -105,7 +105,7 @@ export default function AdminUsersPage() {
   } = useAdminUsers({ page: 1, limit: DEFAULT_PAGE_SIZE });
 
   const [searchInput, setSearchInput] = useState('');
-  const [roleFilter, setRoleFilter] = useState<AdminUserRole | 'all'>('all');
+  const [roleFilter, setRoleFilter] = useState<AdminUserRole | 'all'>('user');
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -148,13 +148,14 @@ export default function AdminUsersPage() {
 
   const statsCards = useMemo(() => {
     if (!stats) return [
-      { label: 'Total comptes', value: '-', sub: '-', icon: Users, accent: 'bg-violet-50 text-violet-600 border-violet-100' },
+      { label: 'Total utilisateurs', value: '-', sub: '-', icon: Users, accent: 'bg-violet-50 text-violet-600 border-violet-100' },
       { label: 'Bannis', value: '-', sub: '-', icon: Ban, accent: 'bg-orange-50 text-orange-600 border-orange-100' },
       { label: 'Nouveaux (30j)', value: '-', sub: '-', icon: TrendingUp, accent: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
     ];
-    const active = Math.max(stats.total - stats.banned, 0);
+    const totalUsers = Math.max(stats.total - stats.admins, 0);
+    const active = Math.max(totalUsers - stats.banned, 0);
     return [
-      { label: 'Total comptes', value: String(stats.total), sub: `${active} actifs`, icon: Users, accent: 'bg-violet-50 text-violet-600 border-violet-100' },
+      { label: 'Total utilisateurs', value: String(totalUsers), sub: `${active} actifs`, icon: Users, accent: 'bg-violet-50 text-violet-600 border-violet-100' },
       { label: 'Bannis', value: String(stats.banned), sub: `${active} disponibles`, icon: Ban, accent: 'bg-orange-50 text-orange-600 border-orange-100' },
       { label: 'Nouveaux (30j)', value: String(stats.recentSignups), sub: 'nouvelles inscriptions', icon: TrendingUp, accent: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
     ];
@@ -514,56 +515,50 @@ export default function AdminUsersPage() {
 
                         {/* Actions */}
                         <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Link
-                              href={`/admin/users/${u.id}`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
-                              title="Voir le profil"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </Link>
+                          {!isCurrentAdmin && (
+                            <div className="flex items-center gap-1.5">
+                              <Link
+                                href={`/admin/users/${u.id}`}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+                                title="Voir le profil"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </Link>
 
-                            {isCurrentAdmin ? (
-                              <span className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-semibold text-slate-400">
-                                Mon compte
-                              </span>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => openEditForm(u)}
-                                  disabled={disabled}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                  title="Modifier"
-                                  type="button"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
+                              <button
+                                onClick={() => openEditForm(u)}
+                                disabled={disabled}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                title="Modifier"
+                                type="button"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
 
-                                <button
-                                  onClick={() => void onToggleBan(u)}
-                                  disabled={disabled}
-                                  className={`inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                                    u.isBanned
-                                      ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                      : 'border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                  }`}
-                                  type="button"
-                                >
-                                  {u.isBanned ? 'Débannir' : 'Bannir'}
-                                </button>
+                              <button
+                                onClick={() => void onToggleBan(u)}
+                                disabled={disabled}
+                                className={`inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                  u.isBanned
+                                    ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                    : 'border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                }`}
+                                type="button"
+                              >
+                                {u.isBanned ? 'Débannir' : 'Bannir'}
+                              </button>
 
-                                <button
-                                  onClick={() => void onDeleteUser(u)}
-                                  disabled={disabled}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                  title="Supprimer"
-                                  type="button"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
-                          </div>
+                              <button
+                                onClick={() => void onDeleteUser(u)}
+                                disabled={disabled}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                title="Supprimer"
+                                type="button"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
