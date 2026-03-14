@@ -7,11 +7,15 @@ import {
   AlertCircle,
   ArrowLeft,
   Building,
+  Building2,
   Calendar,
   ChevronDown,
   ChevronRight,
   Clock,
+  Target,
   User,
+  MapPin,
+  FileText
 } from 'lucide-react';
 import { useAdminStrategy } from '@/src/hooks/useAdmin';
 
@@ -23,7 +27,7 @@ type SectionItem = {
 
 const formatSectionContent = (value: unknown): string => {
   if (value === null || value === undefined) {
-    return 'Content unavailable for this section.';
+    return 'Contenu indisponible pour cette section.';
   }
 
   if (typeof value === 'string') {
@@ -37,56 +41,66 @@ const formatSectionContent = (value: unknown): string => {
   try {
     return JSON.stringify(value, null, 2);
   } catch {
-    return 'Content unavailable for this section.';
+    return 'Contenu indisponible pour cette section.';
   }
 };
 
 const OBJECTIVE_LABELS: Record<string, string> = {
-  leads: 'Leads',
-  sales: 'Sales',
-  awareness: 'Awareness',
+  leads: 'Acquisition (Leads)',
+  sales: 'Ventes',
+  awareness: 'Notoriété',
   engagement: 'Engagement',
 };
 
 const TONE_LABELS: Record<string, string> = {
-  friendly: 'Friendly',
-  professional: 'Professional',
-  luxury: 'Luxury',
-  young: 'Young',
+  friendly: 'Amical',
+  professional: 'Professionnel',
+  luxury: 'Luxe',
+  young: 'Jeune & Dynamique',
 };
 
 interface StrategySectionCardProps {
   title: string;
   content: unknown;
+  defaultOpen?: boolean;
 }
 
-function StrategySectionCard({ title, content }: StrategySectionCardProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+function StrategySectionCard({ title, content, defaultOpen = true }: StrategySectionCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultOpen);
   const normalizedContent = formatSectionContent(content);
 
   return (
-    <article className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all focus-within:border-purple-300 focus-within:ring-4 focus-within:ring-purple-50">
       <header
-        className="cursor-pointer border-b border-gray-100 p-6 transition-colors hover:bg-gray-50"
+        className="group flex cursor-pointer items-center justify-between bg-slate-50/50 p-5 transition-colors hover:bg-purple-50/50"
         onClick={() => setIsExpanded((prev) => !prev)}
       >
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 shadow-sm transition-transform group-hover:scale-105 group-hover:text-purple-600 group-hover:border-purple-200">
+            <FileText className="h-4 w-4" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-900 transition-colors">
+            {title}
+          </h3>
+        </div>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 group-hover:border-purple-200 group-hover:text-purple-600 transition-all">
           {isExpanded ? (
-            <ChevronDown className="mr-2 h-5 w-5 text-gray-400" />
+            <ChevronDown className="h-4 w-4" />
           ) : (
-            <ChevronRight className="mr-2 h-5 w-5 text-gray-400" />
+            <ChevronRight className="h-4 w-4" />
           )}
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         </div>
       </header>
 
-      {isExpanded ? (
-        <div className="p-6">
-          <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-gray-700">
-            {normalizedContent}
-          </pre>
+      <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="border-t border-slate-100 p-6 bg-white">
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-slate-700">
+              {normalizedContent}
+            </pre>
+          </div>
         </div>
-      ) : null}
+      </div>
     </article>
   );
 }
@@ -100,7 +114,6 @@ export default function AdminStrategyDetailPage() {
     if (!strategyId) {
       return;
     }
-
     loadStrategy(strategyId).catch(() => undefined);
   }, [strategyId, loadStrategy]);
 
@@ -111,22 +124,22 @@ export default function AdminStrategyDetailPage() {
 
     return [
       {
-        title: 'Target Market',
+        title: 'Marché Cible',
         sectionKey: 'avant.marcheCible',
         content: strategy.generatedStrategy.avant?.marcheCible,
       },
       {
-        title: 'Marketing Message',
+        title: 'Message Marketing',
         sectionKey: 'avant.messageMarketing',
         content: strategy.generatedStrategy.avant?.messageMarketing,
       },
       {
-        title: 'Communication Channels',
+        title: 'Canaux de Communication',
         sectionKey: 'avant.canauxCommunication',
         content: strategy.generatedStrategy.avant?.canauxCommunication,
       },
       {
-        title: 'Lead Capture',
+        title: 'Capture de Prospects (Leads)',
         sectionKey: 'pendant.captureProspects',
         content: strategy.generatedStrategy.pendant?.captureProspects,
       },
@@ -141,17 +154,17 @@ export default function AdminStrategyDetailPage() {
         content: strategy.generatedStrategy.pendant?.conversion,
       },
       {
-        title: 'Customer Experience',
+        title: 'Expérience Client',
         sectionKey: 'apres.experienceClient',
         content: strategy.generatedStrategy.apres?.experienceClient,
       },
       {
-        title: 'Customer Value Growth',
+        title: 'Augmentation Valeur Client',
         sectionKey: 'apres.augmentationValeurClient',
         content: strategy.generatedStrategy.apres?.augmentationValeurClient,
       },
       {
-        title: 'Referral',
+        title: 'Recommandation',
         sectionKey: 'apres.recommandation',
         content: strategy.generatedStrategy.apres?.recommandation,
       },
@@ -160,9 +173,10 @@ export default function AdminStrategyDetailPage() {
 
   if (isLoadingStrategy) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="mx-auto max-w-4xl rounded-xl border border-gray-200 bg-white p-8 text-gray-500">
-          Loading strategy...
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500 border-t-transparent mb-4" />
+          <p className="text-sm font-medium text-slate-500">Chargement de la stratégie...</p>
         </div>
       </div>
     );
@@ -170,17 +184,21 @@ export default function AdminStrategyDetailPage() {
 
   if (error || !strategy) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
-          <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-gray-900">Strategy not found</h2>
-          <p className="mb-6 text-gray-600">{error || 'This strategy is unavailable.'}</p>
+      <div className="flex min-h-[60vh] items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+            <AlertCircle className="h-10 w-10" />
+          </div>
+          <h2 className="mb-2 text-2xl font-bold text-slate-900">Stratégie introuvable</h2>
+          <p className="mb-8 text-sm text-slate-600">
+            {error || 'Cette stratégie est indisponible.'}
+          </p>
           <Link
             href="/admin/strategies"
-            className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-white transition-colors hover:bg-slate-800"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to strategies
+            Retour à la liste
           </Link>
         </div>
       </div>
@@ -191,79 +209,122 @@ export default function AdminStrategyDetailPage() {
   const tone = TONE_LABELS[strategy.businessInfo.tone] || strategy.businessInfo.tone;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <nav className="mb-6 flex items-center space-x-2 text-sm text-gray-500">
-          <Link href="/admin/strategies" className="transition-colors hover:text-gray-700">
-            Admin strategies
-          </Link>
-          <span>-</span>
-          <span className="max-w-64 truncate font-medium text-gray-900">{strategy.businessInfo.businessName}</span>
-        </nav>
+    <section className="space-y-6 pb-12">
+      {/* Header Profile Area */}
+      <header className="relative overflow-hidden rounded-3xl border border-purple-100 bg-gradient-to-br from-purple-50 via-white to-indigo-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-purple-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 left-10 h-40 w-40 rounded-full bg-indigo-200/25 blur-3xl" />
 
-        <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-            <div className="flex-1">
-              <div className="mb-4 flex items-start gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-900">
-                  <Building className="h-8 w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h1 className="mb-2 text-2xl font-bold text-gray-900 lg:text-3xl">
+        <div className="relative flex flex-col gap-6">
+          <nav className="flex items-center space-x-2 text-xs font-semibold text-slate-500">
+            <Link href="/admin/strategies" className="hover:text-purple-700 transition">Stratégies</Link>
+            <span>/</span>
+            <span className="max-w-64 truncate text-slate-800">{strategy.businessInfo.businessName}</span>
+          </nav>
+
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4 flex-1">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white border border-purple-100 text-purple-600 shadow-sm">
+                <Target className="h-8 w-8" />
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
                     {strategy.businessInfo.businessName}
                   </h1>
-                  <p className="mb-4 text-lg text-gray-600">{strategy.businessInfo.industry}</p>
-
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">{objective}</span>
-                    <span className="rounded-full bg-purple-100 px-3 py-1 text-sm text-purple-700">{tone}</span>
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
-                      {strategy.businessInfo.location}
-                    </span>
-                  </div>
+                  <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5 mt-1">
+                    <Building2 className="w-4 h-4 text-purple-500" />
+                    {strategy.businessInfo.industry}
+                  </p>
                 </div>
-              </div>
-
-              <div className="grid gap-2 text-sm text-gray-500 sm:grid-cols-2">
-                <p className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  {strategy.user.fullName} ({strategy.user.email})
-                </p>
-                <p className="flex items-center">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Created on {new Date(strategy.createdAt).toLocaleDateString('en-US')}
-                </p>
-                <p className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4" />
-                  Updated on {new Date(strategy.updatedAt).toLocaleDateString('en-US')}
-                </p>
+                
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                    <Target className="w-3 h-3" /> {objective}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                    Ton : {tone}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                    <MapPin className="w-3 h-3" /> {strategy.businessInfo.location}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <Link
                 href="/admin/strategies"
-                className="flex items-center rounded-lg border border-slate-300 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to list
+                <ArrowLeft className="w-4 h-4" />
+                Retour
               </Link>
             </div>
           </div>
-        </section>
+        </div>
+      </header>
 
-        <section className="grid grid-cols-1 gap-8">
+      {/* Meta info cards */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
+            <User className="h-5 w-5" />
+          </div>
+           <div>
+             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Généré par</p>
+             <p className="text-sm font-bold text-slate-900 line-clamp-1">{strategy.user.fullName}</p>
+             <p className="text-xs font-medium text-slate-500 line-clamp-1">{strategy.user.email}</p>
+           </div>
+        </article>
+        
+        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+           <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
+            <Calendar className="h-5 w-5" />
+           </div>
+           <div>
+             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Création</p>
+             <p className="text-sm font-bold text-slate-900">{new Date(strategy.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+             <p className="text-xs font-medium text-slate-500">{new Date(strategy.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+           </div>
+        </article>
+
+        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3 sm:col-span-2 lg:col-span-1">
+           <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
+             <Clock className="h-5 w-5" />
+           </div>
+           <div>
+             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Dernière mise à jour</p>
+             <p className="text-sm font-bold text-slate-900">{new Date(strategy.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+             <p className="text-xs font-medium text-slate-500">{new Date(strategy.updatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+           </div>
+        </article>
+      </section>
+
+      {/* Sections */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-black text-slate-900 ml-1">Plan Stratégique IA</h2>
+        <div className="space-y-4">
           {sectionItems.length > 0 ? (
-            sectionItems.map((section) => (
-              <StrategySectionCard key={section.sectionKey} title={section.title} content={section.content} />
+            sectionItems.map((section, idx) => (
+              <StrategySectionCard 
+                key={section.sectionKey} 
+                title={section.title} 
+                content={section.content} 
+                defaultOpen={idx === 0} // Open the first one by default
+              />
             ))
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-600">
-              Strategy is being generated.
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-sm shadow-sm">
+              <Target className="mx-auto h-10 w-10 text-slate-300 mb-3" />
+              <p className="font-semibold text-slate-900">Aucun plan trouvé</p>
+              <p className="text-slate-500 mt-1 max-w-sm mx-auto">
+                La stratégie est peut-être encore en cours de génération ou a rencontré une erreur.
+              </p>
             </div>
           )}
-        </section>
-      </div>
-    </div>
+        </div>
+      </section>
+    </section>
   );
 }
