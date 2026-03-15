@@ -10,14 +10,14 @@ import {
 } from 'lucide-react';
 
 const FEATURES = [
-  { icon: Sparkles, title: 'AI Strategy Generator', description: 'Generate a complete marketing strategy from simple inputs about your business.', gradient: 'from-violet-500 to-purple-600' },
-  { icon: Target, title: 'SWOT Analysis', description: 'Auto-generate strengths, weaknesses, opportunities, and threats instantly.', gradient: 'from-emerald-500 to-teal-600' },
-  { icon: CalendarDays, title: 'Content Calendar', description: 'Organize all social media posts in a clear, structured, shareable calendar.', gradient: 'from-amber-500 to-orange-500' },
-  { icon: MessageSquare, title: 'Smart Suggestions', description: 'AI suggests post ideas, captions, and hashtags tailored to your audience.', gradient: 'from-sky-500 to-cyan-500' },
-  { icon: Layers, title: 'Funnel Structure', description: 'Organize your strategy into Prospect, Lead, and Client phases automatically.', gradient: 'from-pink-500 to-rose-500' },
-  { icon: FileDown, title: 'PDF Export', description: 'Export your full strategy into a professional, beautifully formatted PDF.', gradient: 'from-violet-500 to-indigo-600' },
-  { icon: BarChart3, title: 'Marketing Dashboard', description: 'Track strategies, publications, and AI insights all in one place.', gradient: 'from-teal-500 to-cyan-600' },
-  { icon: ShieldCheck, title: 'Admin Dashboard', description: 'Manage users and monitor all platform activity with complete control.', gradient: 'from-slate-600 to-slate-800' },
+  { icon: Sparkles, title: 'Générateur de Stratégie IA', description: 'Générez une stratégie marketing complète à partir de simples informations sur votre entreprise.', gradient: 'from-violet-500 to-purple-600' },
+  { icon: Target, title: 'Analyse SWOT', description: 'Générez automatiquement et instantanément vos forces, faiblesses, opportunités et menaces.', gradient: 'from-emerald-500 to-teal-600' },
+  { icon: CalendarDays, title: 'Calendrier de Contenu', description: 'Organisez toutes vos publications sur les réseaux sociaux dans un calendrier clair, structuré et partageable.', gradient: 'from-amber-500 to-orange-500' },
+  { icon: MessageSquare, title: 'Suggestions Intelligentes', description: 'L\'IA suggère des idées de publications, des légendes et des hashtags adaptés à votre audience.', gradient: 'from-sky-500 to-cyan-500' },
+  { icon: Layers, title: 'Structure de Tunnel', description: 'Organisez automatiquement votre stratégie en phases Prospect, Lead et Client.', gradient: 'from-pink-500 to-rose-500' },
+  { icon: FileDown, title: 'Exportation PDF', description: 'Exportez votre stratégie complète dans un PDF professionnel et magnifiquement formaté.', gradient: 'from-violet-500 to-indigo-600' },
+  { icon: BarChart3, title: 'Tableau de Bord Marketing', description: 'Suivez les stratégies, les publications et les analyses de l\'IA en un seul endroit.', gradient: 'from-teal-500 to-cyan-600' },
+  { icon: ShieldCheck, title: 'Tableau de Bord Admin', description: 'Gérez les utilisateurs et surveillez toute l\'activité de la plateforme avec un contrôle total.', gradient: 'from-slate-600 to-slate-800' },
 ];
 
 const Features = () => {
@@ -35,13 +35,13 @@ const Features = () => {
 
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
-          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">Features</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">Fonctionnalités</p>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Everything You Need to{' '}
-            <span className="bg-linear-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">Grow Faster</span>
+            Tout ce dont vous avez besoin pour{' '}
+            <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">Croître Plus Vite</span>
           </h2>
           <p className="mt-5 text-base text-slate-400 leading-relaxed">
-            All the tools to build, execute, and scale your marketing — in one platform.
+            Tous les outils pour concevoir, exécuter et mettre à l'échelle votre marketing — sur une seule plateforme.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ const Features = () => {
             >
               {/* Hover glow */}
               <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-violet-500/0 group-hover:bg-violet-500/10 blur-2xl transition-all duration-300" />
-              <div className={`w-11 h-11 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center mb-5 shadow-lg`}>
+              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-5 shadow-lg`}>
                 <Icon className="w-5 h-5 text-white" />
               </div>
               <h3 className="text-sm font-bold text-white mb-2 leading-snug">{title}</h3>

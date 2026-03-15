@@ -4,29 +4,29 @@ const STEPS = [
   {
     number: '01',
     icon: ClipboardEdit,
-    title: 'Enter Your Business Info',
-    description: 'Describe your business, goals, target audience, and preferred channels.',
+    title: 'Saisissez vos informations',
+    description: 'Décrivez votre entreprise, vos objectifs, votre public cible et vos canaux préférés.',
     gradient: 'from-violet-500 to-purple-600',
   },
   {
     number: '02',
     icon: Sparkles,
-    title: 'AI Generates Your Strategy',
-    description: 'Our AI instantly creates your full marketing strategy, SWOT, and funnel.',
+    title: 'L\'IA génère votre stratégie',
+    description: 'Notre IA crée instantanément votre stratégie marketing complète, votre SWOT et votre tunnel.',
     gradient: 'from-purple-500 to-fuchsia-600',
   },
   {
     number: '03',
     icon: CalendarDays,
-    title: 'Plan Your Content',
-    description: 'Schedule all social media content in the AI-powered marketing calendar.',
+    title: 'Planifiez votre contenu',
+    description: 'Programmez tout votre contenu social dans le calendrier marketing propulsé par l\'IA.',
     gradient: 'from-fuchsia-500 to-pink-600',
   },
   {
     number: '04',
     icon: FileDown,
-    title: 'Export as PDF',
-    description: 'Download your complete strategy as a clean, professional PDF to share.',
+    title: 'Exportez en PDF',
+    description: 'Téléchargez votre stratégie complète sous forme de PDF professionnel pour la partager.',
     gradient: 'from-violet-500 to-indigo-600',
   },
 ];
@@ -43,18 +43,18 @@ const HowItWorks = () => {
           opacity: 0.4,
         }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-white via-white/20 to-white" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-white/20 to-white" />
 
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
-          <p className="text-xs font-bold uppercase tracking-widest text-violet-600 mb-4">How It Works</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-600 mb-4">Comment ça marche</p>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            From Zero to Full Strategy
+            De Zéro à Stratégie Complète
             <br />
-            <span className="bg-linear-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">in 4 Simple Steps</span>
+            <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">en 4 Étapes Simples</span>
           </h2>
           <p className="mt-5 text-base text-slate-500 leading-relaxed">
-            No marketing degree required. Just answer a few questions.
+            Aucun diplôme en marketing requis. Répondez simplement à quelques questions.
           </p>
         </div>
 
@@ -65,13 +65,13 @@ const HowItWorks = () => {
               {/* Connector line */}
               {index < STEPS.length - 1 && (
                 <div
-                  className="hidden xl:block absolute top-[28px] h-px bg-linear-to-r from-violet-300 to-violet-100 z-0"
+                  className="hidden xl:block absolute top-[28px] h-px bg-gradient-to-r from-violet-300 to-violet-100 z-0"
                   style={{ left: '50%', width: '100%' }}
                 />
               )}
               <div className="relative z-10 flex flex-col items-center text-center bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-violet-200 hover:-translate-y-1 transition-all duration-200 p-7">
                 {/* Numbered badge */}
-                <div className={`w-14 h-14 rounded-2xl bg-linear-to-br ${gradient} flex items-center justify-center mb-6 shadow-md`}>
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-6 shadow-md`}>
                   <span className="text-white text-sm font-black">{number}</span>
                 </div>
                 {/* Icon */}

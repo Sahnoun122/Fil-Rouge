@@ -1,11 +1,11 @@
 import { AlertTriangle, XCircle } from 'lucide-react';
 
 const PROBLEMS = [
-  'No structured marketing plan',
-  'Difficulty organizing content',
-  'Lack of clear audience targeting',
-  'Low conversion rates',
-  'Wasted time and effort',
+  'Aucun plan marketing structuré',
+  'Difficulté à organiser le contenu',
+  'Manque de ciblage d\'audience clair',
+  'Faibles taux de conversion',
+  'Perte de temps et d\'efforts',
 ];
 
 export default function Problem() {
@@ -27,16 +27,16 @@ export default function Problem() {
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 rounded-full bg-red-500/10 border border-red-500/20 px-4 py-1.5 text-xs font-bold text-red-400 mb-6 uppercase tracking-widest">
             <AlertTriangle className="w-3.5 h-3.5" />
-            The Problem
+            Le Problème
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight tracking-tight">
-            Marketing Without Strategy{' '}
+            Le Marketing Sans Stratégie{' '}
             <br className="hidden sm:block" />
-            <span className="text-red-400">Is Just Guessing</span>
+            <span className="text-red-400">N'est Qu'une Devignette</span>
           </h2>
           <p className="mt-5 text-slate-400 text-base leading-relaxed">
-            Most businesses post content without a plan, losing time and money on strategies
-            that don&#39;t work.
+            La plupart des entreprises publient du contenu sans plan, perdant temps et argent sur des stratégies
+            qui ne fonctionnent pas.
           </p>
         </div>
 

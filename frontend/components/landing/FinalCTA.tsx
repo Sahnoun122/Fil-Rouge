@@ -22,19 +22,19 @@ export default function FinalCTA() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 text-xs font-bold text-violet-300 mb-8 uppercase tracking-widest">
           <Sparkles className="w-3.5 h-3.5" />
-          Get Started Today — It&#39;s Free
+          Commencez Aujourd'hui — C'est Gratuit
         </div>
 
         <h2 className="text-4xl sm:text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight">
-          Start Building Your
+          Commencez À Construire Votre
           <br />
-          <span className="bg-linear-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-            Marketing Strategy
+          <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent pb-1">
+            Stratégie Marketing
           </span>
         </h2>
 
         <p className="mt-6 text-lg text-slate-400 leading-relaxed max-w-xl mx-auto">
-          Join 10,000+ marketers and businesses using AI to build smarter, faster marketing strategies.
+          Rejoignez plus de 10 000 marketeurs et entreprises qui utilisent l'IA pour créer des stratégies marketing plus intelligentes et plus rapides.
         </p>
 
         {/* CTA group */}
@@ -43,19 +43,19 @@ export default function FinalCTA() {
             href="/register"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-extrabold text-violet-700 bg-white rounded-xl hover:bg-violet-50 transition-all shadow-xl shadow-violet-900/30 hover:shadow-violet-900/50 hover:-translate-y-0.5"
           >
-            Create My Strategy
+            Créer Ma Stratégie
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="#features"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-slate-300 rounded-xl border border-white/10 hover:bg-white/5 hover:border-violet-500/30 transition-all"
           >
-            See Features
+            Voir les Fonctionnalités
           </Link>
         </div>
 
         <p className="mt-7 text-slate-500 text-sm">
-          No credit card required · Free to start · Cancel anytime
+          Aucune carte de crédit requise · Démarrage gratuit · Annulable à tout moment
         </p>
       </div>
     </section>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -84,29 +84,29 @@ export default function LoginPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1.5 text-xs font-semibold text-violet-200 mb-6">
               <Sparkles className="w-3.5 h-3.5" />
-              Welcome back
+              Ravi de vous revoir
             </div>
             <h1 className="text-3xl xl:text-4xl font-black leading-tight text-white mb-4">
-              Ready to grow
+              Prêt à développer
               <br />
-              <span className="bg-linear-to-r from-violet-300 to-purple-300 bg-clip-text text-transparent">
-                your business
+              <span className="bg-gradient-to-r from-violet-300 to-purple-300 bg-clip-text text-transparent">
+                votre entreprise
               </span>
               <br />
-              today?
+              dès aujourd'hui ?
             </h1>
             <p className="text-sm text-violet-200/80 leading-relaxed">
-              Sign in to access your AI-powered marketing strategies,
-              content calendar, and growth analytics.
+              Connectez-vous pour accéder à vos stratégies marketing propulsées par l'IA,
+              votre calendrier de contenu et vos analyses de croissance.
             </p>
           </div>
 
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: BarChart3, label: 'Strategies', value: '10K+' },
-              { icon: TrendingUp, label: 'Avg. growth', value: '+38%' },
-              { icon: Shield, label: 'Uptime', value: '99.9%' },
+              { icon: BarChart3, label: 'Stratégies', value: '10K+' },
+              { icon: TrendingUp, label: 'Croissance moy.', value: '+38%' },
+              { icon: Shield, label: 'Disponibilité', value: '99.9%' },
             ].map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
@@ -122,9 +122,9 @@ export default function LoginPage() {
           {/* Feature list */}
           <ul className="space-y-3">
             {[
-              { icon: Sparkles, text: 'AI-generated marketing strategy' },
-              { icon: Target, text: 'Automated SWOT analysis' },
-              { icon: CalendarDays, text: 'Smart content calendar' },
+              { icon: Sparkles, text: 'Génération de stratégie marketing IA' },
+              { icon: Target, text: 'Analyse SWOT automatisée' },
+              { icon: CalendarDays, text: 'Calendrier de contenu intelligent' },
             ].map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg bg-violet-500/20 border border-violet-400/20 flex items-center justify-center shrink-0">
@@ -139,7 +139,7 @@ export default function LoginPage() {
         {/* Bottom note */}
         <div className="relative">
           <p className="text-xs text-slate-500">
-            © 2026 MarketPlan IA · Secure login · 256-bit encryption
+            © 2026 MarketPlan IA · Connexion sécurisée · Chiffrement 256-bit
           </p>
         </div>
       </div>
@@ -150,7 +150,7 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="mb-8 lg:hidden">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
               <Zap className="w-4.5 h-4.5 text-white" fill="white" />
             </div>
             <span className="font-extrabold text-base tracking-tight text-slate-900">
@@ -164,10 +164,10 @@ export default function LoginPage() {
           {/* Header */}
           <div className="mb-8">
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Sign in to your account
+              Se connecter
             </h2>
             <p className="mt-1.5 text-sm text-slate-500">
-              Enter your credentials to continue
+              Saisissez vos identifiants pour continuer
             </p>
           </div>
 
@@ -183,7 +183,7 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                Email address
+                Adresse email
               </label>
               <input
                 id="email"
@@ -191,7 +191,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@company.com"
+                placeholder="jean@entreprise.com"
                 required
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
               />
@@ -201,13 +201,13 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                  Password
+                  Mot de passe
                 </label>
                 <Link
                   href="/forgot-password"
                   className="text-xs text-violet-600 font-semibold hover:text-violet-500 transition-colors"
                 >
-                  Forgot password?
+                  Mot de passe oublié ?
                 </Link>
               </div>
               <div className="relative">
@@ -217,7 +217,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
+                  placeholder="Votre mot de passe"
                   required
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                 />
@@ -240,16 +240,16 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 px-5 py-3 text-sm font-bold text-white transition-all shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-1"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 px-5 py-3 text-sm font-bold text-white transition-all shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-1"
             >
               {isSubmitting ? (
                 <>
                   <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  Signing in...
+                  Connexion en cours...
                 </>
               ) : (
                 <>
-                  Sign in
+                  Se connecter
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -257,12 +257,12 @@ export default function LoginPage() {
 
             {/* Register link */}
             <p className="text-center text-sm text-slate-500 pt-1">
-              Don&apos;t have an account?{" "}
+              Vous n'avez pas de compte ?{" "}
               <Link
                 href="/register"
                 className="text-violet-600 font-semibold hover:text-violet-500 transition-colors"
               >
-                Create one for free
+                Créez-en un gratuitement
               </Link>
             </p>
           </form>

@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { Menu, X, Zap } from 'lucide-react';
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Pricing', href: '/pricing' },
+  { label: 'Fonctionnalités', href: '#features' },
+  { label: 'Comment ça marche', href: '#how-it-works' },
+  { label: 'Tarifs', href: '/pricing' },
 ];
 
 const Navbar = () => {
@@ -21,7 +21,7 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm shadow-violet-400/40">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm shadow-violet-400/40">
                 <Zap className="w-4 h-4 text-white" fill="white" />
               </div>
               <span className="font-extrabold text-sm tracking-tight text-slate-900">MarketPlan <span className="text-violet-600">IA</span></span>
@@ -43,13 +43,13 @@ const Navbar = () => {
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-2">
               <Link href="/login" className="px-4 py-2 text-sm font-medium text-slate-600 rounded-xl hover:bg-slate-100 transition-all">
-                Log in
+                Connexion
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 text-sm font-bold text-white rounded-xl bg-linear-to-br from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-all shadow-md shadow-violet-400/30 hover:shadow-violet-400/50 hover:-translate-y-px"
+                className="px-4 py-2 text-sm font-bold text-white rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-all shadow-md shadow-violet-400/30 hover:shadow-violet-400/50 hover:-translate-y-px"
               >
-                Start Free →
+                Essai Gratuit →
               </Link>
             </div>
 
@@ -83,11 +83,11 @@ const Navbar = () => {
           <div className="grid grid-cols-2 gap-2">
             <Link href="/login" onClick={() => setIsMenuOpen(false)}
               className="py-2.5 text-sm font-medium text-center text-slate-700 rounded-xl border border-slate-200 hover:bg-slate-50">
-              Log in
+              Connexion
             </Link>
             <Link href="/register" onClick={() => setIsMenuOpen(false)}
-              className="py-2.5 text-sm font-bold text-center text-white rounded-xl bg-linear-to-r from-violet-600 to-purple-600">
-              Start Free
+              className="py-2.5 text-sm font-bold text-center text-white rounded-xl bg-gradient-to-r from-violet-600 to-purple-600">
+              Essai Gratuit
             </Link>
           </div>
         </div>

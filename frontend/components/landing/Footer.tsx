@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { Zap, Twitter, Linkedin, Github } from 'lucide-react';
 
 const LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Log in', href: '/login' },
-  { label: 'Sign Up', href: '/register' },
+  { label: 'Fonctionnalités', href: '#features' },
+  { label: 'Comment ça marche', href: '#how-it-works' },
+  { label: 'Tarifs', href: '/pricing' },
+  { label: 'Connexion', href: '/login' },
+  { label: 'Inscription', href: '/register' },
 ];
 
 const SOCIALS = [
@@ -24,7 +24,7 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-xl bg-linear-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm shadow-violet-600/30">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-sm shadow-violet-600/30">
                 <Zap className="w-4 h-4 text-white" fill="white" />
               </div>
               <span className="font-extrabold text-sm text-white tracking-tight">
@@ -32,7 +32,7 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-              AI-powered marketing strategy and content planning platform for modern businesses.
+              Plateforme de stratégie marketing et de planification de contenu propulsée par l'IA pour les entreprises modernes.
             </p>
             {/* Socials */}
             <div className="flex items-center gap-3 mt-6">
@@ -65,10 +65,10 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="border-t border-white/5 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <p className="text-xs text-slate-500">© 2026 MarketPlan IA. All rights reserved.</p>
+          <p className="text-xs text-slate-500">© 2026 MarketPlan IA. Tous droits réservés.</p>
           <div className="flex items-center gap-5">
-            <Link href="/privacy" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Politique de Confidentialité</Link>
+            <Link href="/terms" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Conditions d'Utilisation</Link>
           </div>
         </div>
       </div>

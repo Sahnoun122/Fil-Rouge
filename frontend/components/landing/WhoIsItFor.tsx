@@ -1,12 +1,12 @@
 import { Users, Briefcase, Rocket, Store, PenTool, Lightbulb } from 'lucide-react';
 
 const AUDIENCES = [
-  { icon: Users, title: 'Digital Marketers', description: 'Manage complete strategies for multiple clients at scale.', color: 'bg-violet-500' },
-  { icon: Briefcase, title: 'Freelance Marketers', description: 'Deliver professional client strategies in minutes, not days.', color: 'bg-purple-500' },
-  { icon: Rocket, title: 'Startups', description: 'Launch with a clear AI-powered go-to-market plan from day one.', color: 'bg-fuchsia-500' },
-  { icon: Store, title: 'Small Businesses', description: 'Compete with bigger brands using smart, data-driven planning.', color: 'bg-pink-500' },
-  { icon: PenTool, title: 'Content Creators', description: 'Plan content consistently, grow your audience, monetize your brand.', color: 'bg-amber-500' },
-  { icon: Lightbulb, title: 'Entrepreneurs', description: 'Turn your business idea into a fully actionable marketing plan.', color: 'bg-teal-500' },
+  { icon: Users, title: 'Marketeurs Digitaux', description: 'Gérez des stratégies complètes pour plusieurs clients à grande échelle.', color: 'bg-violet-500' },
+  { icon: Briefcase, title: 'Marketeurs Freelance', description: 'Rendez des stratégies professionnelles à vos clients en quelques minutes, pas en quelques jours.', color: 'bg-purple-500' },
+  { icon: Rocket, title: 'Startups', description: 'Lancez-vous avec un plan de go-to-market propulsé par l\'IA dès le premier jour.', color: 'bg-fuchsia-500' },
+  { icon: Store, title: 'Petites Entreprises', description: 'Rivallisez avec les grandes marques grâce à une planification intelligente basée sur les données.', color: 'bg-pink-500' },
+  { icon: PenTool, title: 'Créateurs de Contenu', description: 'Planifiez du contenu de manière cohérente, développez votre audience, monétisez votre marque.', color: 'bg-amber-500' },
+  { icon: Lightbulb, title: 'Entrepreneurs', description: 'Transformez votre idée d\'entreprise en un plan marketing parfaitement actionnable.', color: 'bg-teal-500' },
 ];
 
 export default function WhoIsItFor() {
@@ -24,12 +24,12 @@ export default function WhoIsItFor() {
 
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16">
-          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">For Everyone</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">Pour Tous</p>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Who Is MarketPlan IA For?
+            À qui s'adresse MarketPlan IA ?
           </h2>
           <p className="mt-5 text-base text-slate-400 leading-relaxed">
-            Whether you&#39;re a solo creator or running a team, MarketPlan IA adapts to your needs.
+            Que vous soyez un créateur solo ou à la tête d'une équipe, MarketPlan IA s'adapte à vos besoins.
           </p>
         </div>
 
