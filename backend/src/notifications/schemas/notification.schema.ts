@@ -12,6 +12,7 @@ export enum NotificationReminderType {
   BEFORE_60_MIN = 'BEFORE_60_MIN',
   BEFORE_30_MIN = 'BEFORE_30_MIN',
   BEFORE_10_MIN = 'BEFORE_10_MIN',
+  IMMEDIATE = 'IMMEDIATE',
 }
 
 @Schema({

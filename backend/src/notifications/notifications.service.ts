@@ -27,6 +27,10 @@ type ReminderDefinition = {
   messagePrefix: string;
 };
 
+type ScheduledReminderDefinition = ReminderDefinition & {
+  scheduledFor: Date;
+};
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -325,15 +329,10 @@ export class NotificationsService {
     now: Date,
   ): Array<Omit<Notification, 'createdAt' | 'updatedAt'>> {
     const payloads: Array<Omit<Notification, 'createdAt' | 'updatedAt'>> = [];
+    const scheduledDefinitions = this.resolveScheduledDefinitions(post, now);
 
-    for (const definition of this.reminderDefinitions) {
-      const scheduledFor = new Date(
-        post.scheduledAt.getTime() - definition.minutesBefore * 60 * 1000,
-      );
-
-      if (scheduledFor.getTime() <= now.getTime()) {
-        continue;
-      }
+    for (const definition of scheduledDefinitions) {
+      const scheduledFor = definition.scheduledFor;
 
       const title = this.buildTitle(post, definition);
       const message = this.buildMessage(post, definition);
@@ -367,6 +366,43 @@ export class NotificationsService {
     return payloads;
   }
 
+  private resolveScheduledDefinitions(
+    post: ScheduledPostDocument,
+    now: Date,
+  ): ScheduledReminderDefinition[] {
+    const scheduledDefinitions = this.reminderDefinitions
+      .map((definition) => ({
+        ...definition,
+        scheduledFor: new Date(
+          post.scheduledAt.getTime() - definition.minutesBefore * 60 * 1000,
+        ),
+      }))
+      .filter((definition) => definition.scheduledFor.getTime() > now.getTime());
+
+    if (scheduledDefinitions.length > 0) {
+      return scheduledDefinitions;
+    }
+
+    if (post.scheduledAt.getTime() <= now.getTime()) {
+      return [];
+    }
+
+    const fallbackScheduledFor = this.getImmediateReminderTime(
+      post.scheduledAt,
+      now,
+    );
+
+    return [
+      {
+        reminderType: NotificationReminderType.IMMEDIATE,
+        minutesBefore: 0,
+        relativeText: 'bientot',
+        messagePrefix: 'Rappel : votre',
+        scheduledFor: fallbackScheduledFor,
+      },
+    ];
+  }
+
   private buildTitle(
     post: ScheduledPostDocument,
     definition: ReminderDefinition,
@@ -390,6 +426,15 @@ export class NotificationsService {
     const previewText = preview ? ` Apercu: "${preview}".` : '';
 
     return `${baseMessage}${details}${previewText}`;
+  }
+
+  private getImmediateReminderTime(scheduledAt: Date, now: Date): Date {
+    const oneSecondFromNow = now.getTime() + 1000;
+    const fiveSecondsFromNow = now.getTime() + 5000;
+    const oneSecondBeforePost = scheduledAt.getTime() - 1000;
+    const candidateTime = Math.min(fiveSecondsFromNow, oneSecondBeforePost);
+
+    return new Date(Math.max(oneSecondFromNow, candidateTime));
   }
 
   private getPostPreview(title?: string | null, caption?: string | null): string {

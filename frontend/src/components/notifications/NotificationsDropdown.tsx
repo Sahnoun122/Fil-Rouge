@@ -41,6 +41,23 @@ export default function NotificationsDropdown() {
   }, [loadNotifications]);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    void loadNotifications();
+  }, [isOpen, loadNotifications]);
+
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      void loadNotifications();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => window.removeEventListener('focus', handleWindowFocus);
+  }, [loadNotifications]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!containerRef.current) {
         return;
