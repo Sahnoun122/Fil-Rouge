@@ -37,8 +37,8 @@ services:
       - CORS_ORIGIN=http://localhost:3001
       - PORT=3000
       - OPENROUTER_API_URL=https://openrouter.ai/api/v1/chat/completions
-      - OPENROUTER_API_KEY=your-openrouter-api-key-here
-      - OPENROUTER_MODEL=nvidia/nemotron-3-nano-30b-a3b:free
+      - OPENROUTER_API_KEY=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
+      - OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free
     volumes:
       - ./backend:/app
       - /app/node_modules

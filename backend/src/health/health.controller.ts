@@ -1,8 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
+import { AiService } from '../ai/ai.service';
 import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('health')
 export class HealthController {
+  constructor(private readonly aiService: AiService) {}
+
   @Public()
   @Get()
   check() {
@@ -37,6 +40,7 @@ export class HealthController {
         heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
       },
       nodejs: process.version,
+      ai: this.aiService.getConfigurationSummary(),
     };
   }
 

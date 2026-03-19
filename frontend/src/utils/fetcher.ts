@@ -17,36 +17,34 @@ export class ApiError extends Error {
 
 class TokenManager {
   private static ACCESS_TOKEN_KEY = "accessToken";
-  private static REFRESH_TOKEN_KEY = "refreshToken";
+  private static LEGACY_REFRESH_TOKEN_KEY = "refreshToken";
 
   static getAccessToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(this.ACCESS_TOKEN_KEY);
   }
 
-  static getRefreshToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  static setTokens(accessToken: string, refreshToken: string): void {
+  static setTokens(accessToken: string): void {
     if (typeof window === "undefined") return;
+
     localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.removeItem(this.LEGACY_REFRESH_TOKEN_KEY);
   }
 
   static clearTokens(): void {
     if (typeof window === "undefined") return;
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem(this.LEGACY_REFRESH_TOKEN_KEY);
   }
 
-  static diagnose(): { accessToken: string | null; refreshToken: string | null; hasWindow: boolean } {
+  static diagnose(): {
+    accessToken: string | null;
+    hasWindow: boolean;
+  } {
     const hasWindow = typeof window !== "undefined";
     const accessToken = this.getAccessToken();
-    const refreshToken = this.getRefreshToken();
 
-    const snapshot = { accessToken, refreshToken, hasWindow };
+    const snapshot = { accessToken, hasWindow };
     if (hasWindow) {
       console.log("[TokenManager] diagnose", snapshot);
     }
@@ -55,35 +53,7 @@ class TokenManager {
   }
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-
-async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const refreshToken = TokenManager.getRefreshToken();
-    if (!refreshToken) return false;
-
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!res.ok) return false;
-
-    const data = await res.json();
-
-    if (data?.success && (data?.accessToken || data?.data?.accessToken) && (data?.refreshToken || data?.data?.refreshToken)) {
-      const accessToken = data.accessToken ?? data.data.accessToken;
-      const refreshToken = data.refreshToken ?? data.data.refreshToken;
-      TokenManager.setTokens(accessToken, refreshToken);
-      return true;
-    }
-
-    return false;
-  } catch {
-    return false;
-  }
-}
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002/api";
 
 export async function fetcher<T = any>(
   endpoint: string,
@@ -98,10 +68,9 @@ export async function fetcher<T = any>(
     ...(headers as Record<string, string>),
   };
 
-  // ✅ إذا requireAuth و ماكاينش token => error فقط
   if (requireAuth) {
     const token = TokenManager.getAccessToken();
-    if (!token) throw new Error("Token d'accès requis");
+    if (!token) throw new Error("Token d'acces requis");
     requestHeaders.Authorization = `Bearer ${token}`;
   }
 
@@ -110,32 +79,19 @@ export async function fetcher<T = any>(
     ...rest,
   });
 
-  // ✅ 401: حاول refresh و retry، بلا redirect هنا
+  const data = await res.json().catch(() => ({}));
+
   if (res.status === 401 && requireAuth) {
-    const ok = await refreshAccessToken();
-    if (!ok) throw new ApiError(401, "Session expirée", null);
-
-    const token = TokenManager.getAccessToken();
-    if (!token) throw new ApiError(401, "Session expirée", null);
-
-    const retryRes = await fetch(url, {
-      headers: { ...requestHeaders, Authorization: `Bearer ${token}` },
-      ...rest,
-    });
-
-    const retryData = await retryRes.json().catch(() => ({}));
-
-    if (!retryRes.ok)
-      throw new ApiError(retryRes.status, retryData?.message || `HTTP ${retryRes.status}`, retryData);
-    return retryData;
+    TokenManager.clearTokens();
+    throw new ApiError(res.status, data?.message || "Session expirée", data);
   }
 
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) throw new ApiError(res.status, data?.message || `HTTP ${res.status}`, data);
-
-    return data;
+  if (!res.ok) {
+    throw new ApiError(res.status, data?.message || `HTTP ${res.status}`, data);
   }
+
+  return data;
+}
 
 export const api = {
   get: <T>(endpoint: string, requireAuth = false) =>

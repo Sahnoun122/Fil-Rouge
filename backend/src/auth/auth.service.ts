@@ -169,16 +169,24 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     try {
+      this.logger.log(`[refreshTokens] Tentative de refresh avec token: ${refreshToken?.slice(0, 20)}...`);
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
+      this.logger.log(`[refreshTokens] Payload decode: ${JSON.stringify(payload)}`);
 
       const user = await this.usersService.findById(payload.sub);
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Token de rafraichissement invalide');
+      if (!user) {
+        this.logger.warn(`[refreshTokens] Utilisateur non trouvé pour sub=${payload.sub}`);
+        throw new UnauthorizedException('Token de rafraichissement invalide (user)');
+      }
+      if (!user.refreshToken) {
+        this.logger.warn(`[refreshTokens] Pas de refreshToken stocké pour user=${user._id}`);
+        throw new UnauthorizedException('Token de rafraichissement invalide (no token)');
       }
 
       if (user.isBanned) {
+        this.logger.warn(`[refreshTokens] Compte banni pour user=${user._id}`);
         throw new UnauthorizedException('Votre compte a ete banni');
       }
 
@@ -187,7 +195,8 @@ export class AuthService {
         user.refreshToken,
       );
       if (!isRefreshTokenValid) {
-        throw new UnauthorizedException('Token de rafraichissement invalide');
+        this.logger.warn(`[refreshTokens] Token fourni ne correspond pas au token stocké pour user=${user._id}`);
+        throw new UnauthorizedException('Token de rafraichissement invalide (mismatch)');
       }
 
       const newTokens = await this.generateTokens(user);
@@ -196,8 +205,10 @@ export class AuthService {
         newTokens.refreshToken,
       );
 
+      this.logger.log(`[refreshTokens] Refresh réussi pour user=${user._id}`);
       return newTokens;
-    } catch {
+    } catch (err) {
+      this.logger.error(`[refreshTokens] Echec: ${err?.message}`);
       throw new UnauthorizedException('Token de rafraichissement invalide');
     }
   }

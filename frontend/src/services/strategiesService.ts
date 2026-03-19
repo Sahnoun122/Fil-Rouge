@@ -10,66 +10,24 @@ import {
   UpdateSectionDto,
   StrategyPdfExportPayload,
 } from '../types/strategy.types';
-import { TokenManager } from '../utils/fetcher';
+import { fetcher, TokenManager } from '../utils/fetcher';
 
 class StrategiesService {
-  private baseURL: string;
-
-  constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-  }
-
-  private normalizeToken(token: string): string {
-    return token.replace(/^Bearer\s+/i, '').trim();
-  }
-
-  // Utilitaire pour récupérer le token d'authentification
-  private getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-
-    const accessToken = TokenManager.getAccessToken();
-    if (accessToken) return this.normalizeToken(accessToken);
-
-    // Compatibilité avec anciens builds qui stockaient "token".
-    const legacyToken = localStorage.getItem('token');
-    if (!legacyToken) return null;
-
-    const normalized = this.normalizeToken(legacyToken);
-    localStorage.setItem('accessToken', normalized);
-    return normalized;
-  }
-
-  // Utilitaire pour les headers avec authentification
-  private getAuthHeaders(): HeadersInit {
-    const token = this.getAuthToken();
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  }
-
-  // Utilitaire pour gérer les erreurs API
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const message = errorData.message || `HTTP Error: ${response.status}`;
-      throw new Error(message);
-    }
-    return response.json();
-  }
-
   /**
    * Génère une stratégie marketing complète
    */
   async generateFullStrategy(data: GenerateStrategyDto): Promise<Strategy> {
     try {
-      const response = await fetch(`${this.baseURL}/strategies/generate-full`, {
+      const result = await fetcher<Strategy>('/strategies/generate-full', {
         method: 'POST',
-        headers: this.getAuthHeaders(),
         body: JSON.stringify(data),
+        requireAuth: true,
       });
 
-      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      if (!result.data) {
+        throw new Error('Aucune donnee de strategie recue');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors de la génération de la stratégie:', error);
@@ -82,15 +40,18 @@ class StrategiesService {
    */
   async getAllStrategies(page = 1, limit = 10): Promise<StrategiesResponse> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/strategies?page=${page}&limit=${limit}`,
+      const result = await fetcher<StrategiesResponse>(
+        `/strategies?page=${page}&limit=${limit}`,
         {
           method: 'GET',
-          headers: this.getAuthHeaders(),
-        }
+          requireAuth: true,
+        },
       );
 
-      const result = await this.handleResponse<ApiResponse<StrategiesResponse>>(response);
+      if (!result.data) {
+        throw new Error('Aucune donnee de strategies recue');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors du chargement des stratégies:', error);
@@ -103,12 +64,15 @@ class StrategiesService {
    */
   async getStrategy(id: string): Promise<Strategy> {
     try {
-      const response = await fetch(`${this.baseURL}/strategies/${id}`, {
+      const result = await fetcher<Strategy>(`/strategies/${id}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        requireAuth: true,
       });
 
-      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      if (!result.data) {
+        throw new Error('Strategie introuvable');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors du chargement de la stratégie:', error);
@@ -121,12 +85,18 @@ class StrategiesService {
    */
   async getStrategyPdfPayload(id: string): Promise<StrategyPdfExportPayload> {
     try {
-      const response = await fetch(`${this.baseURL}/strategies/${id}/export-pdf`, {
+      const result = await fetcher<StrategyPdfExportPayload>(
+        `/strategies/${id}/export-pdf`,
+        {
         method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
+          requireAuth: true,
+        },
+      );
 
-      const result = await this.handleResponse<ApiResponse<StrategyPdfExportPayload>>(response);
+      if (!result.data) {
+        throw new Error("Aucune donnee d'export PDF recue");
+      }
+
       return result.data;
     } catch (error) {
       console.error("Erreur lors de la récupération des données d'export PDF:", error);
@@ -139,12 +109,10 @@ class StrategiesService {
    */
   async deleteStrategy(id: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseURL}/strategies/${id}`, {
+      await fetcher<ApiResponse<void>>(`/strategies/${id}`, {
         method: 'DELETE',
-        headers: this.getAuthHeaders(),
+        requireAuth: true,
       });
-
-      await this.handleResponse<ApiResponse<void>>(response);
     } catch (error) {
       console.error('Erreur lors de la suppression de la stratégie:', error);
       throw error;
@@ -156,13 +124,16 @@ class StrategiesService {
    */
   async updateStrategy(strategyId: string, data: BusinessInfo): Promise<Strategy> {
     try {
-      const response = await fetch(`${this.baseURL}/strategies/${strategyId}`, {
+      const result = await fetcher<Strategy>(`/strategies/${strategyId}`, {
         method: 'PATCH',
-        headers: this.getAuthHeaders(),
         body: JSON.stringify(data),
+        requireAuth: true,
       });
 
-      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      if (!result.data) {
+        throw new Error('Mise a jour de strategie echouee');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la stratégie:', error);
@@ -178,16 +149,19 @@ class StrategiesService {
     data: RegenerateSectionDto
   ): Promise<Strategy> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/strategies/${strategyId}/regenerate-section`,
+      const result = await fetcher<Strategy>(
+        `/strategies/${strategyId}/regenerate-section`,
         {
           method: 'POST',
-          headers: this.getAuthHeaders(),
           body: JSON.stringify(data),
-        }
+          requireAuth: true,
+        },
       );
 
-      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      if (!result.data) {
+        throw new Error('Regeneration de section echouee');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors de la régénération de la section:', error);
@@ -203,16 +177,19 @@ class StrategiesService {
     data: ImproveSectionDto
   ): Promise<Strategy> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/strategies/${strategyId}/improve-section`,
+      const result = await fetcher<Strategy>(
+        `/strategies/${strategyId}/improve-section`,
         {
           method: 'POST',
-          headers: this.getAuthHeaders(),
           body: JSON.stringify(data),
-        }
+          requireAuth: true,
+        },
       );
 
-      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      if (!result.data) {
+        throw new Error('Amelioration de section echouee');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors de l\'amélioration de la section:', error);
@@ -228,16 +205,19 @@ class StrategiesService {
     data: UpdateSectionDto
   ): Promise<Strategy> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/strategies/${strategyId}/update-section`,
+      const result = await fetcher<Strategy>(
+        `/strategies/${strategyId}/update-section`,
         {
           method: 'PATCH',
-          headers: this.getAuthHeaders(),
           body: JSON.stringify(data),
-        }
+          requireAuth: true,
+        },
       );
 
-      const result = await this.handleResponse<ApiResponse<Strategy>>(response);
+      if (!result.data) {
+        throw new Error('Mise a jour de section echouee');
+      }
+
       return result.data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la section:', error);
@@ -249,7 +229,7 @@ class StrategiesService {
    * Utilitaire pour vérifier si l'utilisateur est authentifié
    */
   isAuthenticated(): boolean {
-    return !!this.getAuthToken();
+    return !!TokenManager.getAccessToken();
   }
 }
 

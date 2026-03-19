@@ -1,6 +1,7 @@
 import {
   Injectable,
   ForbiddenException,
+  HttpException,
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -134,7 +135,10 @@ export class StrategiesService {
 
       return await strategyDocument.save();
     } catch (error) {
-      if (error instanceof ForbiddenException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof HttpException
+      ) {
         throw error;
       }
 

@@ -32,17 +32,12 @@ export class TokenValidator {
 
   static cleanupInvalidTokens(): void {
     const access = TokenManager.getAccessToken();
-    const refresh = TokenManager.getRefreshToken();
-    if (!access && !refresh) return;
+    if (!access) return;
 
     const looksJwt = (t: string | null) =>
       t && this.normalizeToken(t).split(".").length === 3;
 
-    // ✅ غير إلا كان JWT فعلاً
-    if (
-      (access && looksJwt(access) && !this.payload(access)) ||
-      (refresh && looksJwt(refresh) && !this.payload(refresh))
-    ) {
+    if (access && looksJwt(access) && !this.payload(access)) {
       TokenManager.clearTokens();
     }
   }

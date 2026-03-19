@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -48,7 +49,7 @@ export class StrategiesController {
     @Body() generateStrategyDto: GenerateStrategyDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const strategy = await this.strategiesService.generateFullStrategy(
       userId,
       generateStrategyDto,
@@ -70,7 +71,7 @@ export class StrategiesController {
     @Query('limit') limit: string = '10',
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const pageNumber = parseInt(page) || 1;
     const limitNumber = parseInt(limit) || 10;
 
@@ -153,7 +154,7 @@ export class StrategiesController {
     @Param('id') strategyId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const strategy = await this.strategiesService.findOne(userId, strategyId);
 
     return {
@@ -170,7 +171,7 @@ export class StrategiesController {
     @Param('id') strategyId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const payload = await this.strategiesService.buildPdfExportPayload(
       userId,
       strategyId,
@@ -191,7 +192,7 @@ export class StrategiesController {
     @Body() updateStrategyDto: UpdateStrategyDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const strategy = await this.strategiesService.updateStrategy(
       userId,
       strategyId,
@@ -214,7 +215,7 @@ export class StrategiesController {
     @Param('id') strategyId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     await this.strategiesService.deleteOne(userId, strategyId);
 
     return {
@@ -232,7 +233,7 @@ export class StrategiesController {
     @Body() regenerateSectionDto: RegenerateSectionDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const strategy = await this.strategiesService.regenerateSection(
       userId,
       strategyId,
@@ -255,7 +256,7 @@ export class StrategiesController {
     @Body() improveSectionDto: ImproveSectionDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
     const strategy = await this.strategiesService.improveSection(
       userId,
       strategyId,
@@ -278,7 +279,7 @@ export class StrategiesController {
     @Body() updateSectionDto: UpdateSectionDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
+    const userId = this.getAuthenticatedUserId(req);
 
     const updatedStrategy = await this.strategiesService.updateSection(
       userId,
@@ -291,5 +292,19 @@ export class StrategiesController {
       message: `Section "${updateSectionDto.sectionKey}" mise à jour avec succès`,
       data: updatedStrategy,
     };
+  }
+
+  private getAuthenticatedUserId(req: Request): string {
+    const rawUser = req.user as
+      | { sub?: string; id?: string; _id?: { toString(): string } }
+      | undefined;
+    const rawId =
+      rawUser?.id ?? rawUser?.sub ?? rawUser?._id?.toString?.();
+
+    if (!rawId || typeof rawId !== 'string') {
+      throw new BadRequestException('Utilisateur authentifie invalide');
+    }
+
+    return rawId;
   }
 }

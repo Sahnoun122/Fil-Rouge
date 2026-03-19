@@ -27,7 +27,7 @@ type RawLogsData = {
 
 const FEATURE_TYPES: AiFeatureType[] = ["strategy", "swot", "content", "planning"];
 const LOG_STATUSES: AiLogStatus[] = ["success", "failed"];
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002/api";
 const EXPORT_PAGE_SIZE = 100;
 const MAX_EXPORT_PAGES = 200;
 

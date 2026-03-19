@@ -1,8 +1,10 @@
 import {
-  Injectable,
   BadRequestException,
+  Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 interface OpenRouterResponse {
   choices: Array<{
@@ -18,10 +20,16 @@ export class AiService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
   private readonly model: string;
+  private readonly appUrl: string;
+  private readonly appTitle: string;
 
-  constructor() {
-    const apiUrl = process.env.OPENROUTER_API_URL;
-    const apiKey = process.env.OPENROUTER_API_KEY;
+  constructor(private readonly configService: ConfigService) {
+    const apiUrl = this.sanitizeEnvValue(
+      this.configService.get<string>('OPENROUTER_API_URL'),
+    );
+    const apiKey = this.sanitizeEnvValue(
+      this.configService.get<string>('OPENROUTER_API_KEY'),
+    );
 
     if (!apiUrl || !apiKey) {
       throw new InternalServerErrorException(
@@ -32,12 +40,19 @@ export class AiService {
     this.apiUrl = apiUrl;
     this.apiKey = apiKey;
     this.model =
-      process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-nano-30b-a3b:free';
+      this.sanitizeEnvValue(this.configService.get<string>('OPENROUTER_MODEL')) ||
+      'nvidia/nemotron-3-nano-30b-a3b:free';
+    this.appUrl =
+      this.sanitizeEnvValue(this.configService.get<string>('FRONTEND_URL')) ||
+      'http://localhost:3001';
+    this.appTitle = 'MarketPlan IA';
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 AI Service configured:', {
+      console.log('AI Service configured:', {
         url: this.apiUrl,
         model: this.model,
+        hasApiKey: Boolean(this.apiKey),
+        keyPrefix: this.apiKey.slice(0, 8),
       });
     }
   }
@@ -46,13 +61,19 @@ export class AiService {
     return this.model;
   }
 
-  /**
-   * Calls OpenRouter API (nvidia/nemotron-3-nano-30b-a3b:free) and returns the response text
-   */
+  getConfigurationSummary() {
+    return {
+      apiUrl: this.apiUrl,
+      model: this.model,
+      hasApiKey: Boolean(this.apiKey),
+      keyPrefix: this.apiKey.slice(0, 8),
+    };
+  }
+
   async callNemotron(prompt: string): Promise<string> {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('🤖 Calling OpenRouter API:', {
+        console.log('Calling OpenRouter API:', {
           url: this.apiUrl,
           model: this.model,
           promptLength: prompt.length,
@@ -64,6 +85,8 @@ export class AiService {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': this.appUrl,
+          'X-Title': this.appTitle,
         },
         body: JSON.stringify({
           model: this.model,
@@ -74,13 +97,27 @@ export class AiService {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('🔥 OpenRouter API Error:', {
+        const parsedMessage = this.extractOpenRouterErrorMessage(errorData);
+
+        console.error('OpenRouter API Error:', {
           status: response.status,
           statusText: response.statusText,
           data: errorData,
         });
+
+        if (response.status === 401) {
+          const normalizedUnauthorizedMessage =
+            this.normalizeUnauthorizedMessage(parsedMessage);
+
+          throw new UnauthorizedException(
+            normalizedUnauthorizedMessage ||
+              "Cle OpenRouter invalide ou revoquee. Verifiez OPENROUTER_API_KEY dans backend/.env et regenerez-la depuis OpenRouter si besoin.",
+          );
+        }
+
         throw new BadRequestException(
-          `OpenRouter API error: ${response.status} - ${response.statusText}`,
+          parsedMessage ||
+            `OpenRouter API error: ${response.status} - ${response.statusText}`,
         );
       }
 
@@ -94,17 +131,15 @@ export class AiService {
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '✅ OpenRouter API response received, length:',
-          content.length,
-        );
+        console.log('OpenRouter API response received, length:', content.length);
       }
 
       return content;
     } catch (error: any) {
       if (
         error instanceof BadRequestException ||
-        error instanceof InternalServerErrorException
+        error instanceof InternalServerErrorException ||
+        error instanceof UnauthorizedException
       ) {
         throw error;
       }
@@ -115,16 +150,10 @@ export class AiService {
     }
   }
 
-  /**
-   * Safely parses JSON text, returns null if parsing fails.
-   * Handles markdown-wrapped JSON (```json ... ```)
-   */
   safeJsonParse(text: string): any {
     try {
-      // Try direct parse first
       return JSON.parse(text.trim());
     } catch {
-      // Try to extract JSON from markdown code blocks
       const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
         try {
@@ -137,12 +166,7 @@ export class AiService {
     }
   }
 
-  /**
-   * Calls OpenRouter API and attempts to parse the response as JSON.
-   * Retries once with a JSON fix prompt if initial parsing fails.
-   */
   async callNemotronAndParseJson(prompt: string): Promise<any> {
-    // First attempt
     const firstResponse = await this.callNemotron(prompt);
     const firstParsed = this.safeJsonParse(firstResponse);
 
@@ -151,10 +175,9 @@ export class AiService {
     }
 
     console.warn(
-      '⚠️ First response was not valid JSON, retrying with fix prompt...',
+      'First response was not valid JSON, retrying with fix prompt...',
     );
 
-    // Retry with JSON fix prompt
     const fixPrompt = `The following text should be valid JSON but it is not. Fix it and return ONLY the valid JSON object, no explanation, no markdown:\n\n${firstResponse}`;
     const secondResponse = await this.callNemotron(fixPrompt);
     const secondParsed = this.safeJsonParse(secondResponse);
@@ -163,9 +186,50 @@ export class AiService {
       return secondParsed;
     }
 
-    // Both attempts failed
     throw new BadRequestException(
       'Failed to parse valid JSON from OpenRouter API response after retry',
     );
+  }
+
+  private sanitizeEnvValue(value?: string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    return value.trim().replace(/^['"]|['"]$/g, '');
+  }
+
+  private extractOpenRouterErrorMessage(rawBody: string): string | null {
+    const trimmed = rawBody.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed) as {
+        error?: { message?: string };
+        message?: string;
+      };
+
+      return parsed.error?.message || parsed.message || trimmed;
+    } catch {
+      return trimmed;
+    }
+  }
+
+  private normalizeUnauthorizedMessage(message: string | null): string | null {
+    if (!message) {
+      return null;
+    }
+
+    const normalized = message.trim().toLowerCase();
+    if (normalized === 'user not found.') {
+      return (
+        "Cle OpenRouter invalide ou rattachee a un compte inexistant. " +
+        'Regenerer OPENROUTER_API_KEY depuis OpenRouter puis redemarrer le backend.'
+      );
+    }
+
+    return message;
   }
 }

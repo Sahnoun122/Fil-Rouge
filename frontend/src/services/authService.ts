@@ -46,10 +46,9 @@ export class AuthService {
     const user = normalizeUser(res.user || res.data?.user);
     const tokens = res.tokens || res.data?.tokens;
 
-    if (!tokens?.accessToken || !tokens?.refreshToken)
-      throw new Error("Tokens invalides");
+    if (!tokens?.accessToken) throw new Error("Token d'acces invalide");
 
-    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+    TokenManager.setTokens(tokens.accessToken);
 
     return { user, tokens };
   }
@@ -63,10 +62,9 @@ export class AuthService {
     const user = normalizeUser(res.user || res.data?.user);
     const tokens = res.tokens || res.data?.tokens;
 
-    if (!tokens?.accessToken || !tokens?.refreshToken)
-      throw new Error("Tokens invalides");
+    if (!tokens?.accessToken) throw new Error("Token d'acces invalide");
 
-    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+    TokenManager.setTokens(tokens.accessToken);
 
     return { user, tokens };
   }
@@ -125,8 +123,7 @@ export class AuthService {
     shouldClearTokens: boolean;
   }> {
     const token = TokenManager.getAccessToken();
-    const refresh = TokenManager.getRefreshToken();
-    if (!token || !refresh) return { ok: false, shouldClearTokens: false };
+    if (!token) return { ok: false, shouldClearTokens: false };
 
     try {
       const me = await this.getCurrentUser();
@@ -136,29 +133,13 @@ export class AuthService {
         TokenManager.clearTokens();
         return { ok: false, shouldClearTokens: true };
       }
-      return this.trySecondCheck();
+
+      return { ok: false, shouldClearTokens: false };
     }
   }
 
   private static isUnauthorized(error: unknown): boolean {
     return error instanceof ApiError && error.status === 401;
-  }
-
-  private static async trySecondCheck(): Promise<{
-    ok: boolean;
-    user?: User;
-    shouldClearTokens: boolean;
-  }> {
-    try {
-      const me = await this.getCurrentUser();
-      return { ok: true, user: me, shouldClearTokens: false };
-    } catch (error) {
-      const shouldClear = this.isUnauthorized(error);
-      if (shouldClear) {
-        TokenManager.clearTokens();
-      }
-      return { ok: false, shouldClearTokens: shouldClear };
-    }
   }
 }
 
