@@ -41,9 +41,8 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       ) : null}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col bg-white border-r border-slate-100/80 shadow-2xl shadow-slate-300/20 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:shadow-none ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col bg-white border-r border-slate-100/80 shadow-2xl shadow-slate-300/20 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-[18px] border-b border-slate-100">
@@ -94,19 +93,17 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                 key={`${item.name}-${item.href}`}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  active
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${active
                     ? 'bg-violet-50 text-violet-700 shadow-sm'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 {active && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-violet-600" />
                 )}
                 <span
-                  className={`shrink-0 transition-colors ${
-                    active ? 'text-violet-600' : 'text-slate-400 group-hover:text-slate-600'
-                  }`}
+                  className={`shrink-0 transition-colors ${active ? 'text-violet-600' : 'text-slate-400 group-hover:text-slate-600'
+                    }`}
                 >
                   {item.icon}
                 </span>
@@ -124,11 +121,10 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           <Link
             href="/admin/settings"
             onClick={() => setIsOpen(false)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-150 ${
-              isActivePath('/admin/settings')
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-150 ${isActivePath('/admin/settings')
                 ? 'bg-violet-50 border-violet-100'
                 : 'bg-gradient-to-br from-slate-50 to-slate-100/80 border-slate-100 hover:border-violet-200 hover:bg-violet-50/60'
-            }`}
+              }`}
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm shadow-violet-500/30">
               {initials}
