@@ -8,11 +8,15 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 
 import { UsersService } from '../users/users.service';
 import { UserDocument, UserRole } from '../users/entities/user.entity';
+import { EmailService } from '../notifications/email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 export interface JwtPayload {
   sub: string;
@@ -46,6 +50,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
@@ -206,6 +211,100 @@ export class AuthService {
     }
   }
 
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const genericMessage =
+      'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.';
+
+    try {
+      const user = await this.usersService.findByEmail(forgotPasswordDto.email);
+
+      if (!user || user.isBanned) {
+        return { message: genericMessage };
+      }
+
+      const resetToken = randomBytes(32).toString('hex');
+      const resetTokenHash = this.hashValue(resetToken);
+      const expiresInMinutes = this.getResetPasswordExpiryMinutes();
+      const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+
+      await this.usersService.setResetPasswordToken(
+        user._id.toString(),
+        resetTokenHash,
+        expiresAt,
+      );
+
+      try {
+        await this.emailService.sendPasswordResetEmail({
+          to: user.email,
+          fullName: user.fullName,
+          resetUrl: this.buildResetPasswordUrl(resetToken),
+          expiresInMinutes,
+        });
+      } catch (error) {
+        await this.usersService.clearResetPasswordToken(user._id.toString());
+        this.logger.error(
+          `Password reset email failed for email=${user.email}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        throw new BadRequestException(
+          "Erreur lors de l'envoi de l'email de reinitialisation",
+        );
+      }
+
+      return { message: genericMessage };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        'Erreur lors de la demande de reinitialisation du mot de passe',
+      );
+    }
+  }
+
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    try {
+      const resetTokenHash = this.hashValue(resetPasswordDto.token);
+      const user =
+        await this.usersService.findByResetPasswordToken(resetTokenHash);
+
+      if (!user) {
+        throw new BadRequestException(
+          'Le lien de reinitialisation est invalide ou expire',
+        );
+      }
+
+      if (user.isBanned) {
+        throw new UnauthorizedException('Votre compte a ete banni');
+      }
+
+      user.password = resetPasswordDto.newPassword;
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = null;
+      await user.save();
+
+      await this.usersService.removeRefreshToken(user._id.toString());
+
+      return { message: 'Mot de passe reinitialise avec succes' };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        'Erreur lors de la reinitialisation du mot de passe',
+      );
+    }
+  }
+
   async validateUserByEmail(email: string): Promise<UserDocument | null> {
     try {
       return await this.usersService.findByEmail(email);
@@ -248,5 +347,34 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  private hashValue(value: string): string {
+    return createHash('sha256').update(value).digest('hex');
+  }
+
+  private getResetPasswordExpiryMinutes(): number {
+    const rawValue = this.configService.get<string>(
+      'RESET_PASSWORD_EXPIRES_MINUTES',
+    );
+    const parsedValue = Number(rawValue || 30);
+
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+      return 30;
+    }
+
+    return parsedValue;
+  }
+
+  private buildResetPasswordUrl(token: string): string {
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+    const configuredUrl =
+      this.configService.get<string>('RESET_PASSWORD_URL') ||
+      `${frontendUrl.replace(/\/$/, '')}/reset-password`;
+
+    const resetUrl = new URL(configuredUrl);
+    resetUrl.searchParams.set('token', token);
+    return resetUrl.toString();
   }
 }

@@ -1,5 +1,11 @@
 import { api, TokenManager, ApiError } from "../utils/fetcher";
-import { LoginData, RegisterData, User } from "../types/auth";
+import {
+  ForgotPasswordData,
+  LoginData,
+  RegisterData,
+  ResetPasswordData,
+  User,
+} from "../types/auth";
 
 const normalizeUser = (payload: any): User => {
   const rawId = payload?.id || payload?._id;
@@ -63,6 +69,26 @@ export class AuthService {
     TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
 
     return { user, tokens };
+  }
+
+  static async forgotPassword(data: ForgotPasswordData) {
+    const res: any = await api.post("/auth/forgot-password", data, false);
+
+    if (!res.success)
+      throw new Error(
+        res.message || "Erreur lors de l'envoi du lien de réinitialisation",
+      );
+
+    return res;
+  }
+
+  static async resetPassword(data: ResetPasswordData) {
+    const res: any = await api.post("/auth/reset-password", data, false);
+
+    if (!res.success)
+      throw new Error(res.message || "Erreur lors de la réinitialisation");
+
+    return res;
   }
 
   static async logout() {

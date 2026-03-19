@@ -33,6 +33,15 @@ export interface LoginData {
   password: string;
 }
 
+export interface ForgotPasswordData {
+  email: string;
+}
+
+export interface ResetPasswordData {
+  token: string;
+  newPassword: string;
+}
+
 export interface RegisterData {
   fullName: string;
   email: string;

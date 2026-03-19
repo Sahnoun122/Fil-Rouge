@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 
 import { UsersModule } from '../users/users.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UsersModule } from '../users/users.module';
 
     // Module Users pour accéder aux données utilisateur
     UsersModule,
+    NotificationsModule,
   ],
 
   controllers: [AuthController],

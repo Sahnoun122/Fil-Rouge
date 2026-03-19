@@ -100,6 +100,54 @@ export class UsersService {
     }
   }
 
+  async setResetPasswordToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    try {
+      await this.userModel.findByIdAndUpdate(userId, {
+        resetPasswordToken: tokenHash,
+        resetPasswordExpires: expiresAt,
+      });
+    } catch {
+      throw new BadRequestException(
+        'Erreur lors de la sauvegarde du token de reinitialisation',
+      );
+    }
+  }
+
+  async findByResetPasswordToken(
+    tokenHash: string,
+  ): Promise<UserDocument | null> {
+    try {
+      return await this.userModel
+        .findOne({
+          resetPasswordToken: tokenHash,
+          resetPasswordExpires: { $gt: new Date() },
+        })
+        .select('+password +resetPasswordToken +resetPasswordExpires')
+        .exec();
+    } catch {
+      return null;
+    }
+  }
+
+  async clearResetPasswordToken(userId: string): Promise<void> {
+    try {
+      await this.userModel.findByIdAndUpdate(userId, {
+        $unset: {
+          resetPasswordToken: 1,
+          resetPasswordExpires: 1,
+        },
+      });
+    } catch {
+      throw new BadRequestException(
+        'Erreur lors de la suppression du token de reinitialisation',
+      );
+    }
+  }
+
   async updateProfile(
     userId: string,
     updateData: UpdateUserDto,

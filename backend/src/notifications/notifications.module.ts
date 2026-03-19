@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   ScheduledPost,
@@ -13,6 +14,7 @@ import { Notification, NotificationSchema } from './schemas/notification.schema'
 
 @Module({
   imports: [
+    ConfigModule,
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
       { name: ScheduledPost.name, schema: ScheduledPostSchema },

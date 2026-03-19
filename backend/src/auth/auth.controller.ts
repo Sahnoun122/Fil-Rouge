@@ -12,6 +12,8 @@ import {
 import { AuthService, AuthResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
 
@@ -69,6 +71,36 @@ export class AuthController {
   /**
    * 🔄 Rafraîchissement du token d'accès
    */
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const result = await this.authService.forgotPassword(forgotPasswordDto);
+
+    return {
+      success: true,
+      message: result.message,
+    };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const result = await this.authService.resetPassword(resetPasswordDto);
+
+    return {
+      success: true,
+      message: result.message,
+    };
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body('refreshToken') refreshToken: string): Promise<{

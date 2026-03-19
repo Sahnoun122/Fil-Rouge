@@ -80,6 +80,18 @@ export class User {
   refreshToken?: string;
 
   @Prop({
+    select: false,
+  })
+  resetPasswordToken?: string;
+
+  @Prop({
+    type: Date,
+    default: null,
+    select: false,
+  })
+  resetPasswordExpires?: Date | null;
+
+  @Prop({
     type: Date,
     default: null,
   })
@@ -126,4 +138,5 @@ UserSchema.methods.comparePassword = async function (
 
 UserSchema.index({ role: 1 });
 UserSchema.index({ isBanned: 1 });
+UserSchema.index({ resetPasswordExpires: 1 });
 UserSchema.index({ createdAt: -1 });
