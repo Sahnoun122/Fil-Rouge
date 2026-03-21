@@ -329,18 +329,26 @@ export function useAdminUser() {
 
 export function useAdminUserCalendar(initialFilters: AdminUserCalendarFilters) {
   const [calendar, setCalendar] = useState<AdminUserCalendarResult | null>(null);
-  const [filters, setFilters] = useState<AdminUserCalendarFilters>(initialFilters);
+  const [filters, setFiltersState] = useState<AdminUserCalendarFilters>(initialFilters);
+  const filtersRef = useRef<AdminUserCalendarFilters>(initialFilters);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const setFilters = useCallback((nextFilters: AdminUserCalendarFilters) => {
+    filtersRef.current = nextFilters;
+    setFiltersState(nextFilters);
+  }, []);
+
   const loadCalendar = useCallback(
     async (userId: string, overrides?: Partial<AdminUserCalendarFilters>) => {
+      const currentFilters = filtersRef.current;
       const nextFilters = {
-        ...filters,
+        ...currentFilters,
         ...overrides,
       };
 
-      setFilters(nextFilters);
+      filtersRef.current = nextFilters;
+      setFiltersState(nextFilters);
       setIsLoadingCalendar(true);
       setError(null);
 
@@ -356,18 +364,20 @@ export function useAdminUserCalendar(initialFilters: AdminUserCalendarFilters) {
         setIsLoadingCalendar(false);
       }
     },
-    [filters],
+    [],
   );
 
   return {
     calendar,
     filters,
+    setFilters,
     error,
     isLoadingCalendar,
     loadCalendar,
     clearError: () => setError(null),
   };
 }
+
 
 export function useAdminStrategies(initialFilters?: AdminStrategiesFilters) {
   const initialResolvedFilters: Required<AdminStrategiesFilters> = {

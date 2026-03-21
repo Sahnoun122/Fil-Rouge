@@ -5,6 +5,8 @@ import {
   RegisterData,
   ResetPasswordData,
   User,
+  UpdateUserData,
+  ChangePasswordData,
 } from "../types/auth";
 
 const normalizeUser = (payload: any): User => {
@@ -135,6 +137,25 @@ export class AuthService {
       }
 
       return { ok: false, shouldClearTokens: false };
+    }
+  }
+
+  static async updateProfile(data: UpdateUserData): Promise<User> {
+    const res: any = await api.put("/users/profile", data, true);
+
+    if (!res.success) {
+      throw new Error(res.message || "Erreur lors de la mise à jour du profil");
+    }
+
+    const payload = res?.data?.user ?? res?.user ?? res?.data ?? res?.profile ?? null;
+    return normalizeUser(payload);
+  }
+
+  static async changePassword(data: ChangePasswordData): Promise<void> {
+    const res: any = await api.put("/users/password", data, true);
+
+    if (!res.success) {
+      throw new Error(res.message || "Erreur lors du changement de mot de passe");
     }
   }
 

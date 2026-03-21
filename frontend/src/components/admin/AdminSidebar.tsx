@@ -16,7 +16,19 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  const isActivePath = (path: string) => pathname === path || pathname?.startsWith(`${path}/`);
+  const isActivePath = (path: string, name: string) => {
+    const isCalendarPage = pathname?.includes('/calendar');
+
+    if (name === 'Calendar') {
+      return isCalendarPage;
+    }
+
+    if (name === 'Users' && isCalendarPage) {
+      return false;
+    }
+
+    return pathname === path || pathname?.startsWith(`${path}/`);
+  };
 
   const handleLogout = async () => {
     try {
@@ -87,7 +99,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         {/* Nav */}
         <nav className="flex-1 space-y-0.5 px-3 py-3 overflow-y-auto">
           {adminNavigation.map((item) => {
-            const active = isActivePath(item.href);
+            const active = isActivePath(item.href, item.name);
             return (
               <Link
                 key={`${item.name}-${item.href}`}
@@ -121,7 +133,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           <Link
             href="/admin/settings"
             onClick={() => setIsOpen(false)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-150 ${isActivePath('/admin/settings')
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-150 ${isActivePath('/admin/settings', 'Settings')
                 ? 'bg-violet-50 border-violet-100'
                 : 'bg-gradient-to-br from-slate-50 to-slate-100/80 border-slate-100 hover:border-violet-200 hover:bg-violet-50/60'
               }`}

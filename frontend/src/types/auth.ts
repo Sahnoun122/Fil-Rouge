@@ -57,3 +57,14 @@ export interface LoginResponse {
   user: User;
   tokens: AuthTokens;
 }
+export interface UpdateUserData {
+  fullName?: string;
+  phone?: string;
+  companyName?: string;
+  industry?: string;
+}
+
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
