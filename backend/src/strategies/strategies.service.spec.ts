@@ -48,8 +48,8 @@ describe('StrategiesService', () => {
   }
 
   class MockModel {
-    constructor(public data: any) { Object.assign(this, data); }
-    save() { return Promise.resolve(this); }
+    constructor(public data?: any) { if (data) Object.assign(this, data); }
+    save(): Promise<any> { return Promise.resolve(this); }
     static find = jest.fn().mockReturnValue(new MockQuery());
     static findOne = jest.fn().mockReturnValue(new MockQuery());
     static findById = jest.fn().mockReturnValue(new MockQuery());
