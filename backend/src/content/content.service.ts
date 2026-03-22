@@ -563,12 +563,6 @@ export class ContentService {
       campaign.strategyId.toString(),
     );
 
-    if (campaign.mode !== ContentMode.CONTENT_MARKETING) {
-      throw new BadRequestException(
-        'La planification automatique est reservee au mode CONTENT_MARKETING',
-      );
-    }
-
     if (!campaign.generatedPosts?.length) {
       throw new BadRequestException(
         'Aucun post genere a planifier pour cette campagne',

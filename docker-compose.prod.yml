@@ -1,8 +1,6 @@
-# Docker Compose pour Production - MarketPlan IA
 version: '3.8'
 
 services:
-  # Service MongoDB
   mongodb:
     image: mongo:7-jammy
     restart: always

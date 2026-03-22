@@ -1,4 +1,3 @@
-// src/auth/auth.controller.spec.ts - Tests pour AuthController
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
