@@ -130,9 +130,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
 
         {/* User footer */}
         <div className="border-t border-slate-100 p-4 space-y-3">
-          <Link
-            href="/admin/settings"
-            onClick={() => setIsOpen(false)}
+          <div
             className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-150 ${isActivePath('/admin/settings', 'Settings')
                 ? 'bg-violet-50 border-violet-100'
                 : 'bg-gradient-to-br from-slate-50 to-slate-100/80 border-slate-100 hover:border-violet-200 hover:bg-violet-50/60'
@@ -145,7 +143,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
               <p className="truncate text-sm font-semibold text-slate-900 leading-tight">{user?.fullName || 'Administrateur'}</p>
               <p className="truncate text-[11px] text-slate-500">{user?.email || '-'}</p>
             </div>
-          </Link>
+          </div>
 
           <button
             onClick={handleLogout}

@@ -186,7 +186,6 @@ export const adminNavigation: NavigationItem[] = [
     icon: analyticsIcon,
   },
   { name: "AI Monitoring", href: "/admin/ai-monitoring", icon: monitoringIcon },
-  { name: "Settings", href: "/admin/settings", icon: settingsIcon },
 ];
 
 export const getNavigationForRole = (role: AppRole): NavigationItem[] => {
