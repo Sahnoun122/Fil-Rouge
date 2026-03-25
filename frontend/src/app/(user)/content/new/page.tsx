@@ -426,6 +426,7 @@ export default function NewContentCampaignPage() {
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">Start date</label>
                   <input
                     type="date"
+                    min={new Date().toISOString().split('T')[0]}
                     {...register('startDate')}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                   />
@@ -435,6 +436,7 @@ export default function NewContentCampaignPage() {
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">End date</label>
                   <input
                     type="date"
+                    min={watch('startDate') || new Date().toISOString().split('T')[0]}
                     {...register('endDate')}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                   />
