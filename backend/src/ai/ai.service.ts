@@ -10,7 +10,7 @@ interface OpenRouterResponse {
   choices: Array<{
     message: {
       content: string;
-      reasoning_details?: any;
+      reasoning_details?: unknown;
     };
   }>;
 }
@@ -135,7 +135,7 @@ export class AiService {
       }
 
       return content;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (
         error instanceof BadRequestException ||
         error instanceof InternalServerErrorException ||
@@ -144,13 +144,14 @@ export class AiService {
         throw error;
       }
 
+      const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
-        `Failed to call OpenRouter API: ${error.message}`,
+        `Failed to call OpenRouter API: ${message}`,
       );
     }
   }
 
-  safeJsonParse(text: string): any {
+  safeJsonParse(text: string): unknown {
     try {
       return JSON.parse(text.trim());
     } catch {
@@ -166,7 +167,7 @@ export class AiService {
     }
   }
 
-  async callNemotronAndParseJson(prompt: string): Promise<any> {
+  async callNemotronAndParseJson(prompt: string): Promise<unknown> {
     const firstResponse = await this.callNemotron(prompt);
     const firstParsed = this.safeJsonParse(firstResponse);
 

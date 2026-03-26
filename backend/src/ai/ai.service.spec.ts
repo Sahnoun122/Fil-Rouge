@@ -30,7 +30,7 @@ describe('AiService', () => {
     configService = module.get(ConfigService);
     
     // Mock global fetch
-    (global as any).fetch = jest.fn();
+    (global as unknown as { fetch: unknown }).fetch = jest.fn();
   });
 
   afterEach(() => {
@@ -55,11 +55,11 @@ describe('AiService', () => {
           choices: [{ message: { content: 'AI Response' } }]
         }),
       };
-      (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+      (global as unknown as { fetch: jest.Mock }).fetch.mockResolvedValue(mockResponse);
 
       const result = await service.callNemotron('Hello');
       expect(result).toBe('AI Response');
-      expect(global.fetch).toHaveBeenCalled();
+      expect((global as unknown as { fetch: jest.Mock }).fetch).toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException on 401', async () => {
@@ -68,7 +68,7 @@ describe('AiService', () => {
         status: 401,
         text: jest.fn().mockResolvedValue(JSON.stringify({ error: { message: 'Invalid key' } })),
       };
-      (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+      (global as unknown as { fetch: jest.Mock }).fetch.mockResolvedValue(mockResponse);
 
       await expect(service.callNemotron('Hello')).rejects.toThrow(UnauthorizedException);
     });
@@ -76,12 +76,14 @@ describe('AiService', () => {
 
   describe('safeJsonParse', () => {
     it('should parse valid JSON', () => {
-      const result = service.safeJsonParse('{"key": "value"}');
+      const result = service.safeJsonParse('{"key": "value"}') as Record<string, string>;
       expect(result).toEqual({ key: 'value' });
     });
 
     it('should parse JSON inside markdown blocks', () => {
-      const result = service.safeJsonParse('Sure, here is your json: ```json\n{"key": "value"}\n``` and more text.');
+      const result = service.safeJsonParse(
+        'Sure, here is your json: ```json\n{"key": "value"}\n``` and more text.',
+      ) as Record<string, string>;
       expect(result).toEqual({ key: 'value' });
     });
 
@@ -94,17 +96,24 @@ describe('AiService', () => {
   describe('callNemotronAndParseJson', () => {
     it('should parse JSON from first response if valid', async () => {
       jest.spyOn(service, 'callNemotron').mockResolvedValue('{"success": true}');
-      const result = await service.callNemotronAndParseJson('prompt');
+      const result = (await service.callNemotronAndParseJson('prompt')) as Record<
+        string,
+        boolean
+      >;
       expect(result).toEqual({ success: true });
       expect(service.callNemotron).toHaveBeenCalledTimes(1);
     });
 
     it('should retry with fix prompt if first response is invalid', async () => {
-      jest.spyOn(service, 'callNemotron')
+      jest
+        .spyOn(service, 'callNemotron')
         .mockResolvedValueOnce('Invalid JSON')
         .mockResolvedValueOnce('{"fixed": true}');
-      
-      const result = await service.callNemotronAndParseJson('prompt');
+
+      const result = (await service.callNemotronAndParseJson('prompt')) as Record<
+        string,
+        boolean
+      >;
       expect(result).toEqual({ fixed: true });
       expect(service.callNemotron).toHaveBeenCalledTimes(2);
     });
