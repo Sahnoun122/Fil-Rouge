@@ -75,6 +75,18 @@ export interface AiUsageOverTimeItem {
   averageResponseTimeMs: number;
 }
 
+export interface AiOverviewResult {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  successRate: number;
+  averageResponseTimeMs: number;
+  uniqueUsers: number;
+  latestRequestAt: Date | null;
+  usageByFeature: AiUsageByFeatureItem[];
+  topUsers: AiUsageByUserItem[];
+}
+
 type CsvCellValue = string | number | boolean | null | undefined;
 
 @Injectable()
@@ -120,7 +132,7 @@ export class AiMonitoringService {
 
   async getOverview(
     filters: Partial<FilterAiLogsDto> = {},
-  ): Promise<Record<string, unknown>> {
+  ): Promise<AiOverviewResult> {
     const match = await this.buildMatchFilters(filters);
 
     const [summaryList, usageByFeature, topUsers, uniqueUsers] =
@@ -153,15 +165,19 @@ export class AiMonitoringService {
         this.aiLogModel.distinct('userId', match).exec(),
       ]);
 
-    const summary =
-      summaryList[0] ??
-      ({
-        totalRequests: 0,
-        successfulRequests: 0,
-        failedRequests: 0,
-        averageResponseTimeMs: 0,
-        latestRequestAt: null,
-      } as Record<string, unknown>);
+    const summary = (summaryList[0] as {
+      totalRequests?: number;
+      successfulRequests?: number;
+      failedRequests?: number;
+      averageResponseTimeMs?: number;
+      latestRequestAt?: Date | null;
+    }) ?? {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      averageResponseTimeMs: 0,
+      latestRequestAt: null,
+    };
 
     const totalRequests = Number(summary.totalRequests ?? 0);
     const successfulRequests = Number(summary.successfulRequests ?? 0);

@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 
 import { AiMonitoringService } from './ai-monitoring.service';
-import { AiLog } from './schemas/ai-log.schema';
+import { AiFeatureType, AiLog, AiLogStatus } from './schemas/ai-log.schema';
 import { User } from '../users/entities/user.entity';
 
 describe('AiMonitoringService', () => {
@@ -23,20 +23,20 @@ describe('AiMonitoringService', () => {
   };
 
   class MockQuery {
-    private result: any;
-    constructor(result: any = null) { this.result = result; }
+    private result: unknown;
+    constructor(result: unknown = null) { this.result = result; }
     populate = jest.fn().mockReturnThis();
     sort = jest.fn().mockReturnThis();
     skip = jest.fn().mockReturnThis();
     limit = jest.fn().mockReturnThis();
     lean = jest.fn().mockReturnThis();
     exec = jest.fn().mockImplementation(() => Promise.resolve(this.result));
-    then = jest.fn().mockImplementation((resolve, reject) => Promise.resolve(this.result).then(resolve, reject));
+    then = jest.fn().mockImplementation((resolve: (val: unknown) => void, reject: (err: unknown) => void) => Promise.resolve(this.result).then(resolve, reject));
   }
 
   class MockModel {
-    constructor(public data?: any) { if (data) Object.assign(this, data); }
-    save(): Promise<any> { return Promise.resolve(this); }
+    constructor(public data?: Record<string, unknown>) { if (data) Object.assign(this, data); }
+    save(): Promise<unknown> { return Promise.resolve(this); }
     static find = jest.fn().mockReturnValue(new MockQuery());
     static findOne = jest.fn().mockReturnValue(new MockQuery());
     static findById = jest.fn().mockReturnValue(new MockQuery());
@@ -75,9 +75,9 @@ describe('AiMonitoringService', () => {
     it('should successfully create a log', async () => {
       const payload = {
         userId: mockUserId,
-        featureType: 'content' as any,
+        featureType: 'content' as AiFeatureType,
         actionType: 'generate',
-        status: 'success' as any,
+        status: 'success' as AiLogStatus,
       };
 
       jest.spyOn(MockModel.prototype, 'save').mockResolvedValue(mockAiLog);
@@ -86,7 +86,7 @@ describe('AiMonitoringService', () => {
     });
 
     it('should return null if userId is invalid', async () => {
-      const result = await service.createLog({ userId: 'invalid', featureType: 'content' as any, actionType: 'test', status: 'success' as any });
+      const result = await service.createLog({ userId: 'invalid', featureType: 'content' as AiFeatureType, actionType: 'test', status: 'success' as AiLogStatus });
       expect(result).toBeNull();
     });
   });
