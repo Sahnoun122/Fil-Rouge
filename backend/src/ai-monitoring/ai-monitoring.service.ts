@@ -653,12 +653,12 @@ export class AiMonitoringService {
       const totalRequests = Number(item.totalRequests ?? 0);
       const successfulRequests = Number(item.successfulRequests ?? 0);
       const failedRequests = Number(item.failedRequests ?? 0);
-      const rawUserId = item.userId;
+      const rawUserId = item.userId as unknown;
 
       return {
         userId:
-          typeof rawUserId?.toString === 'function'
-            ? rawUserId.toString()
+          rawUserId && typeof (rawUserId as { toString(): string }).toString === 'function'
+            ? (rawUserId as { toString(): string }).toString()
             : String(rawUserId ?? ''),
         user: {
           fullName:
