@@ -83,6 +83,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     
     steps:
     - name: Checkout code
@@ -94,9 +97,9 @@ jobs:
     - name: Login to Docker Hub (optionnel)
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-      if: ${{ secrets.DOCKER_USERNAME }}
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ env.DOCKER_PASSWORD }}
+      if: env.DOCKER_USERNAME != ''
 
     - name: Build Backend Docker Image
       uses: docker/build-push-action@v5
@@ -104,10 +107,10 @@ jobs:
         context: ./backend
         file: ./backend/Dockerfile
         target: production
-        push: ${{ secrets.DOCKER_USERNAME != '' }}
+        push: ${{ env.DOCKER_USERNAME != '' }}
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/marketplan-backend:latest
-          ${{ secrets.DOCKER_USERNAME }}/marketplan-backend:${{ github.sha }}
+          ${{ env.DOCKER_USERNAME }}/marketplan-backend:latest
+          ${{ env.DOCKER_USERNAME }}/marketplan-backend:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -117,10 +120,10 @@ jobs:
         context: ./frontend
         file: ./frontend/Dockerfile
         target: production
-        push: ${{ secrets.DOCKER_USERNAME != '' }}
+        push: ${{ env.DOCKER_USERNAME != '' }}
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/marketplan-frontend:latest
-          ${{ secrets.DOCKER_USERNAME }}/marketplan-frontend:${{ github.sha }}
+          ${{ env.DOCKER_USERNAME }}/marketplan-frontend:latest
+          ${{ env.DOCKER_USERNAME }}/marketplan-frontend:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -130,6 +133,8 @@ jobs:
     needs: docker-build
     if: github.ref == 'refs/heads/main'
     environment: production
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
     steps:
     - name: Checkout code
@@ -139,8 +144,8 @@ jobs:
       run: |
         echo "🚀 Déploiement en production"
         echo "Docker images construites avec succès:"
-        echo "- Backend: ${{ secrets.DOCKER_USERNAME }}/marketplan-backend:${{ github.sha }}"
-        echo "- Frontend: ${{ secrets.DOCKER_USERNAME }}/marketplan-frontend:${{ github.sha }}"
+        echo "- Backend: ${{ env.DOCKER_USERNAME }}/marketplan-backend:${{ github.sha }}"
+        echo "- Frontend: ${{ env.DOCKER_USERNAME }}/marketplan-frontend:${{ github.sha }}"
         # Ici vous pouvez ajouter vos commandes de déploiement
         # Exemple: ssh, scp, docker-compose pull && up, etc.
 
