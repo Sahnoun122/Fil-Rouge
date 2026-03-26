@@ -656,10 +656,7 @@ export class AiMonitoringService {
       const rawUserId = item.userId as unknown;
 
       return {
-        userId:
-          rawUserId && typeof (rawUserId as { toString(): string }).toString === 'function'
-            ? (rawUserId as { toString(): string }).toString()
-            : String(rawUserId ?? ''),
+        userId: this.objectIdToString(rawUserId),
         user: {
           fullName:
             typeof item.user?.fullName === 'string'

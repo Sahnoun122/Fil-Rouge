@@ -1,4 +1,4 @@
-import { Transform } from 'class-transformer';
+import { Transform, TransformFnParams } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
@@ -39,7 +39,7 @@ const normalizeDateString = (value: unknown): unknown => {
 
 export class FilterMyAiActionTypesDto {
   @IsOptional()
-  @Transform(({ value }) => normalizeDateString(value))
+  @Transform(({ value }: TransformFnParams) => normalizeDateString(value))
   @IsDateString(
     {},
     { message: 'dateFrom doit etre une date ISO valide (YYYY-MM-DD)' },
@@ -47,7 +47,7 @@ export class FilterMyAiActionTypesDto {
   dateFrom?: string;
 
   @IsOptional()
-  @Transform(({ value }) => normalizeDateString(value))
+  @Transform(({ value }: TransformFnParams) => normalizeDateString(value))
   @IsDateString(
     {},
     { message: 'dateTo doit etre une date ISO valide (YYYY-MM-DD)' },
@@ -55,14 +55,14 @@ export class FilterMyAiActionTypesDto {
   dateTo?: string;
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: TransformFnParams) => (typeof value === 'string' ? value.trim() : (value as unknown)))
   @IsEnum(AI_FEATURE_TYPES, {
     message: `featureType doit etre l'une des valeurs: ${AI_FEATURE_TYPES.join(', ')}`,
   })
   featureType?: AiFeatureType;
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: TransformFnParams) => (typeof value === 'string' ? value.trim() : (value as unknown)))
   @IsEnum(AI_LOG_STATUSES, {
     message: `status doit etre l'une des valeurs: ${AI_LOG_STATUSES.join(', ')}`,
   })
@@ -73,18 +73,18 @@ export class FilterMyAiActionTypesDto {
   @MaxLength(120, {
     message: 'q ne peut pas depasser 120 caracteres',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: TransformFnParams) => (typeof value === 'string' ? value.trim() : (value as unknown)))
   q?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }: TransformFnParams) => {
     if (value === undefined || value === null || value === '') {
       return undefined;
     }
 
     const parsed = Number.parseInt(String(value), 10);
     if (!Number.isFinite(parsed)) {
-      return value;
+      return value as unknown;
     }
 
     return Math.min(20, Math.max(1, parsed));
