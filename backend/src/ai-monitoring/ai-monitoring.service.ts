@@ -307,7 +307,14 @@ export class AiMonitoringService {
       ])
       .exec();
 
-    return usage.map((item) => {
+    return usage.map((item: {
+      _id: any;
+      totalRequests?: number;
+      successfulRequests?: number;
+      failedRequests?: number;
+      averageResponseTimeMs?: number;
+      lastUsedAt?: Date | null;
+    }) => {
       const totalRequests = Number(item.totalRequests ?? 0);
       const successfulRequests = Number(item.successfulRequests ?? 0);
       const failedRequests = Number(item.failedRequests ?? 0);
@@ -377,7 +384,13 @@ export class AiMonitoringService {
       ])
       .exec();
 
-    return usage.map((item) => ({
+    return usage.map((item: {
+      _id?: string;
+      totalRequests?: number;
+      successfulRequests?: number;
+      failedRequests?: number;
+      averageResponseTimeMs?: number;
+    }) => ({
       date: String(item._id ?? ''),
       totalRequests: Number(item.totalRequests ?? 0),
       successfulRequests: Number(item.successfulRequests ?? 0),
@@ -432,7 +445,7 @@ export class AiMonitoringService {
       .exec();
 
     return suggestions
-      .map((item) =>
+      .map((item: { actionType?: string }) =>
         typeof item.actionType === 'string' ? item.actionType.trim() : '',
       )
       .filter((item) => item.length > 0);
@@ -623,7 +636,20 @@ export class AiMonitoringService {
 
     const usage = await this.aiLogModel.aggregate(pipeline).exec();
 
-    return usage.map((item) => {
+    return usage.map((item: {
+      userId: any;
+      totalRequests?: number;
+      successfulRequests?: number;
+      failedRequests?: number;
+      averageResponseTimeMs?: number;
+      lastUsedAt?: Date | null;
+      user?: {
+        fullName?: string;
+        email?: string;
+        companyName?: string;
+        role?: string;
+      };
+    }) => {
       const totalRequests = Number(item.totalRequests ?? 0);
       const successfulRequests = Number(item.successfulRequests ?? 0);
       const failedRequests = Number(item.failedRequests ?? 0);
