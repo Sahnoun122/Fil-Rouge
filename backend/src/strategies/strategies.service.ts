@@ -65,6 +65,7 @@ export interface StrategyPdfExportPayload {
   phases: StrategyPdfExportPhase[];
 }
 
+
 @Injectable()
 export class StrategiesService {
   constructor(
@@ -72,7 +73,7 @@ export class StrategiesService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private aiService: AiService,
     private readonly aiMonitoringService: AiMonitoringService,
-  ) {}
+  ) { }
 
   /**
    * Génère une stratégie marketing complète en utilisant l'IA
@@ -117,9 +118,9 @@ export class StrategiesService {
         execute: async () => {
           const aiResponse = await this.aiService.callNemotronAndParseJson(
             prompt,
-          );
+          ) as Record<string, unknown>;
 
-          if (!aiResponse || !aiResponse.avant || !aiResponse.pendant || !aiResponse.apres) {
+          if (!aiResponse || !aiResponse['avant'] || !aiResponse['pendant'] || !aiResponse['apres']) {
             throw new InternalServerErrorException('Format de reponse IA invalide');
           }
 
@@ -718,7 +719,7 @@ export class StrategiesService {
         businessInfoForPrompt,
         dto.sectionKey,
         dto.instruction ||
-          'Régénérez cette section avec un contenu frais et innovant',
+        'Régénérez cette section avec un contenu frais et innovant',
         existingSection,
       );
 
@@ -817,7 +818,7 @@ export class StrategiesService {
         businessInfoForPrompt,
         dto.sectionKey,
         dto.instruction ||
-          'Améliorez cette section en la rendant plus précise et actionnable',
+        'Améliorez cette section en la rendant plus précise et actionnable',
         existingSection,
       );
 

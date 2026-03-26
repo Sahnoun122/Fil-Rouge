@@ -12,10 +12,7 @@ interface BusinessInfo {
   language?: string;
 }
 
-/**
- * Génère un prompt pour créer une stratégie marketing complète "One Page Marketing Plan"
- * structurée en Avant/Pendant/Après avec contenu concret et professionnel
- */
+
 export function buildFullStrategyPrompt(businessInfo: BusinessInfo): string {
   const {
     companyName = "l'entreprise",
@@ -112,9 +109,7 @@ FORMAT JSON ATTENDU :
 Générez maintenant ce plan marketing stratégique complet :`;
 }
 
-/**
- * Génère un prompt pour régénérer une section spécifique du plan marketing
- */
+
 export function buildRegenerateSectionPrompt(
   businessInfo: BusinessInfo,
   sectionKey: string,
@@ -216,9 +211,7 @@ ${formatExample}
 Générez la nouvelle section maintenant :`;
 }
 
-/**
- * Génère un prompt pour améliorer une section existante sans changer sa logique principale
- */
+
 export function buildImproveSectionPrompt(
   businessInfo: BusinessInfo,
   sectionKey: string,
